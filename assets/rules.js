@@ -313,9 +313,25 @@
         // plus sévère que le socle, soit plus laxiste, jamais juste.
         var fit = root.TechnoHabFit;
         if (!fit || !fit.fits) return [];
+        // Une pièce composée doit loger les deux programmes. Le cache ne
+        // connaît que les types simples : faute d'une entrée « salle d'eau
+        // avec WC », on exige que chacun tienne dans le rectangle et que
+        // l'aire couvre au moins la somme des deux plus petits rectangles
+        // meublables. Nécessaire, pas suffisant — le verdict exact demande
+        // une entrée de cache dédiée aux compositions (D3, reste ouvert).
+        function loge(room, largeur, hauteur) {
+          if (!fit.fits(room.type, largeur, hauteur)) return false;
+          var propre = fit.smallest(room.type);
+          return (room.composedWith || []).every(function (absorbe) {
+            if (!fit.fits(absorbe, largeur, hauteur)) return false;
+            var besoin = fit.smallest(absorbe);
+            return !besoin || !propre ||
+              largeur * hauteur >= besoin.w * besoin.h + propre.w * propre.h;
+          });
+        }
         return plan.rooms.filter(function (room) {
           var main = usable(room);
-          return !fit.fits(room.type, main.x1 - main.x0, main.y1 - main.y0);
+          return !loge(room, main.x1 - main.x0, main.y1 - main.y0);
         }).map(function (room) {
           var main = usable(room);
           var need = fit.smallest(room.type);
@@ -323,6 +339,7 @@
             entityId: room.id,
             message: room.label + ' mesure ' + (main.x1 - main.x0).toFixed(2) + ' × ' +
               (main.y1 - main.y0).toFixed(2) + ' m et ne peut pas recevoir son mobilier' +
+              ((room.composedWith || []).length ? ', programme composé compris,' : '') +
               (need ? ' — il faut au moins ' + need.w.toFixed(2) + ' × ' + need.h.toFixed(2) + ' m.' : '.')
           };
         });

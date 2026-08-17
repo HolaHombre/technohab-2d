@@ -127,14 +127,60 @@
     };
   }
 
+  /* --- Fusion de pièces ------------------------------------------------------
+     Une option qui retire une pièce du programme ne doit pas retirer la
+     fonction du plan : elle la verse à la pièce qui l'absorbe. La pièce
+     composée garde un identifiant, un contour et une étiquette uniques, mais
+     porte les deux programmes — côté équipements par `TechnoHabRoomModel`,
+     côté surface ici.
+
+     Le minimum composé n'est pas la somme des minima. Un `minArea` porte la
+     marge de confort de sa pièce ; les additionner demande deux fois la même
+     chose, et c'est mesuré : le séjour passe à 27 m², la salle d'eau cesse
+     d'être meublable dès 75 m² avec deux chambres. À surface totale fixe,
+     durcir un minimum se paie sur les autres pièces.
+
+     Le minimum garantit une seule chose — que la pièce se meuble. Le
+     composé vaut donc le plancher de confort de la pièce d'accueil, ou la
+     somme des **plus petits rectangles meublables** du socle si elle est
+     plus exigeante. Même source que les poids, même raison : ce qui se
+     calcule ne se décrète pas.
+
+     En pratique : séjour + cuisine = max(20 ; 3,24 + 2,52) → 20, le séjour
+     était déjà assez grand. Salle d'eau + WC = max(3 ; 1,98 + 1,05) → 3,03,
+     et cette fois le supplément est réel. */
+  function coutReel(type) {
+    var fit = root.TechnoHabFit;
+    var plus_petit = fit && fit.smallest ? fit.smallest(type) : null;
+    return plus_petit ? plus_petit.w * plus_petit.h : DEFINITIONS[type].minArea;
+  }
+
+  function composeInto(room, type, label) {
+    var addition = DEFINITIONS[type];
+    if (!room || !addition) return room;
+    room.label = label;
+    room.minArea = round(Math.max(room.minArea, coutReel(room.type) + coutReel(type)), 2);
+    room.minSide = Math.max(room.minSide, addition.minSide);
+    // Le poids ne s'additionne pas. Il dit ce qu'un mètre carré *de plus*
+    // apporte à la pièce, pas ce qu'elle doit contenir — ce besoin est déjà
+    // porté par `minArea`. Le cumuler ferait deux fois la même demande, et
+    // c'est mesuré : la salle d'eau cesse alors d'être meublable à 75 m².
+    room.weight = Math.max(room.weight, poidsDe(type));
+    room.composedWith = (room.composedWith || []).concat([type]);
+    return room;
+  }
+
   function buildProgram(rawOptions) {
     var options = normalizeOptions(rawOptions);
     var rooms = [createRoom('living')];
     var index;
     if (options.separateKitchen) rooms.push(createRoom('kitchen'));
+    else composeInto(rooms[0], 'kitchen', 'Séjour avec cuisine ouverte');
     for (index = 1; index <= options.bedrooms; index += 1) rooms.push(createRoom('bedroom', index));
     for (index = 1; index <= options.bathrooms; index += 1) rooms.push(createRoom('bath', index));
     if (options.includeWc) rooms.push(createRoom('wc'));
+    else composeInto(rooms.find(function (room) { return room.id === 'bath_1'; }), 'wc',
+      options.bathrooms > 1 ? 'Salle d’eau 1 avec WC' : 'Salle d’eau avec WC');
     if (rooms.length >= 4) {
       // Une circulation qui dessert huit pièces n'est pas une circulation qui
       // en dessert deux : sa surface doit suivre ce qu'elle relie, sinon le
@@ -1096,6 +1142,10 @@
         var usable = parts[0];
         return {
           id: room.id, type: room.type, label: room.label,
+          // Les programmes absorbés voyagent avec la pièce : sans eux, une
+          // règle ou un rendu la jugerait sur son seul type et manquerait la
+          // moitié de ce qu'elle doit contenir (D3).
+          composedWith: room.composedWith ? room.composedWith.slice() : undefined,
           minArea: room.minArea, minSide: room.minSide, targetArea: room.targetArea,
           area: round(partsArea(parts)),
           storageArea: round(partsArea(parts.filter(function (p) { return p.role === 'storage'; }))),

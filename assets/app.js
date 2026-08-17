@@ -212,6 +212,9 @@
     var programmeContext = {
       area: room.area || room.targetArea,
       openKitchen: room.type === 'living' && plan.options && !plan.options.separateKitchen,
+      // Le WC intégré rejoint la première salle d'eau, celle que le programme
+      // a effectivement composée (generator.js, composeInto).
+      integratedWc: room.id === 'bath_1' && plan.options && !plan.options.includeWc,
       includeOptional: true
     };
     var designation = modele.designate(room.type, room.variant || variante, programmeContext);

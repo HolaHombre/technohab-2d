@@ -976,7 +976,20 @@ Reprend l'observation N°4 de l'audit des plans rendus, jamais traitée.
 - [ ] conserver les parties comme donnée interne de découpe, non comme
   entité de plan.
 
-### 5.3 — D3, la fusion est implémentée comme une suppression
+### 5.3 — D3, la fusion est implémentée comme une suppression — **corrigé le 18 août**
+
+Livré : table `COMPOSITIONS` dans `room-model.js`, `composeInto()` dans
+`generator.js`, contexte `integratedWc` dans `app.js`, `TH2D-ROOM-002`
+étendue aux programmes composés, et `scripts/test-fusion.mjs` qui tient
+l'invariant « aucune option ne fait disparaître une fonction ».
+
+Trois enseignements, détaillés dans `SUIVI_REGLES_PIECES.md` : le minimum
+composé n'est pas la somme des minima — mesuré, cela rendait la salle d'eau
+non meublable à 75 m² ; le poids ne s'additionne pas davantage ; et le cache
+de faisabilité ne connaissant que les types simples, le contrôle reste
+nécessaire sans être suffisant.
+
+Énoncé d'origine, conservé :
 
 Décocher « WC indépendant » ne fusionne pas le WC dans la salle d'eau : il
 disparaît. Aucune pièce n'est créée, et `socle.data.js` ne prévoit pas de
@@ -1271,7 +1284,10 @@ outils : ce chantier ne crée pas de banc, il l'étend.
    type change le domaine de faisabilité. Un lot qui ne régénère pas
    `fit.data.js` livre un cache faux.
 4. **Non-régression sur le banc** — `scripts/scan-capacites.mjs` sur les 24
-   configurations, plus `scan-seeds.mjs` : conformité, diversité,
+   configurations, plus `scan-seeds.mjs`, **à graines fixes** : le banc tire
+   aujourd'hui ses graines au hasard et deux passages du même code diffèrent
+   autant que deux versions différentes (défaut D4). Tant qu'il n'est pas
+   rejouable, cette preuve n'en est pas une. Conformité, diversité,
    meublabilité et durée ne se dégradent pas sur les programmes qui
    n'utilisent pas la pièce ajoutée. C'est le test le plus important du lot,
    et le seul qui détecte le coût caché d'une pièce nouvelle sur toutes les
@@ -1594,7 +1610,11 @@ que la case à cocher.
 
 - [ ] D1 — contact façade dans `scoreCandidate()`, règle `TH2D-ENTREE-001` ;
 - [ ] D2 — union des parties au dessin et à la pose ;
-- [ ] D3 — fusion traitée comme composition, variantes `bath` et `living`.
+- [x] D3 — fusion traitée comme composition, `room-model.js` + `composeInto()`
+  + `TH2D-ROOM-002` étendue + `test-fusion.mjs` *(18 août)* ;
+- [ ] D4 — rendre `scan-capacites.mjs` rejouable : graine de base en argument,
+  fixe par défaut. Découvert en cherchant à prouver la non-régression de D3,
+  et prérequis de toute mesure d'évolution.
 
 **12 b — mesure de la qualité perçue** *(chantier 6)*
 

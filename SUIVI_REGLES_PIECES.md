@@ -175,7 +175,37 @@ les parties, pas sur leur union.
 Recoupe l'observation N°4 de `AUDIT_PLANS_RENDUS.md` (dépôt archivé) : union
 propre des contours, jamais faite.
 
-### D3 — Le WC intégré n'existe nulle part
+### D3 — Le WC intégré n'existe nulle part — **corrigé le 18 août 2026**
+
+Correction livrée : la fusion est traitée comme une composition.
+`room-model.js` porte une table `COMPOSITIONS` — `living` absorbe `kitchen`,
+`bath` absorbe `wc` — qui généralise le cas particulier du séjour ouvert déjà
+présent. `generator.js` verse la surface et l'étiquette à la pièce d'accueil
+(`composeInto`), `app.js` passe le contexte `integratedWc`, et
+`TH2D-ROOM-002` juge désormais une pièce composée sur ses deux programmes.
+
+Trois enseignements de la mise en œuvre, chacun mesuré :
+
+- **le minimum composé n'est pas la somme des minima.** Additionner les
+  `minArea` décrétés porte le séjour à 27 m² et rend la salle d'eau non
+  meublable à 75 m² avec deux chambres : à surface totale fixe, durcir un
+  minimum se paie sur les autres pièces. Le composé vaut donc le plancher de
+  la pièce d'accueil, ou la somme des plus petits rectangles meublables du
+  socle si elle est plus exigeante — 20 m² pour séjour + cuisine, 3,03 m²
+  pour salle d'eau + WC ;
+- **le poids ne s'additionne pas** non plus : il dit ce qu'un mètre carré de
+  plus apporte, pas ce que la pièce doit contenir ;
+- **le cache de faisabilité ne connaît que les types simples.** La règle
+  contrôle donc que chaque programme tient et que l'aire couvre la somme des
+  deux plus petits rectangles : nécessaire, pas suffisant. Une entrée de
+  cache dédiée aux compositions reste à produire.
+
+Reste ouvert : sous environ 3,3 m², la salle d'eau avec WC est déclarée non
+meublable plutôt que dessinée sans cuvette. C'est le comportement voulu — la
+fonction ne disparaît plus en silence — mais un programme trop serré produit
+maintenant un refus explicite là où il produisait un plan faussement complet.
+
+### D3 — énoncé d'origine
 
 `buildProgram` : `if (options.includeWc) rooms.push(createRoom('wc'))`.
 Case décochée — « WC indépendant » non coché, donc WC intégré à la salle
@@ -193,6 +223,23 @@ en variante « avec WC », `living` reçoit le linéaire de cuisine en variante
 P3, qui devient bloquant : il ne s'agit plus d'enrichir le modèle mais de
 réparer deux options du formulaire qui produisent aujourd'hui un plan faux.
 
+### D4 — Le banc de capacités n'est pas rejouable
+
+Découvert en cherchant à prouver la non-régression de D3.
+`scripts/scan-capacites.mjs` tire ses graines avec `Math.random()`. Deux
+exécutions du **même code** donnent 7 puis 12 signatures distinctes sur la
+même configuration, et 63 % puis 93 % de formes en L.
+
+Conséquence directe : le banc **ne peut pas** servir de contrôle de
+non-régression, alors que le chantier 7 en fait la quatrième preuve exigée
+de chaque lot. Aujourd'hui, seuls les tests à graines fixes
+(`test-composition-model.mjs`, `test-fusion.mjs`) tiennent ce rôle.
+
+Correction : passer une graine de base en argument, par défaut fixe, et ne
+tirer au hasard que sur demande explicite. Peu de code, et il conditionne
+toute mesure d'évolution — y compris la corrélation score/jugement du
+chantier 6.
+
 ## Journal de suivi
 
 | Date | Changement | État |
@@ -201,7 +248,8 @@ réparer deux options du formulaire qui produisent aujourd'hui un plan faux.
 | 2026-08-18 | Localisation des défauts D1 (entrée hors scoring), D2 (parties dessinées séparément), D3 (WC et cuisine fusionnés supprimés) | fait |
 | — | D1 : contact façade porté dans `scoreCandidate` | à faire |
 | — | D2 : union des contours au dessin et à la pose | à faire |
-| — | D3 : fusion traitée comme composition, `wc_pan` en variante de `bath` | à faire |
+| 2026-08-18 | D3 corrigé : fusion traitée comme composition ; `test-fusion.mjs` ajouté | fait |
+| — | D4 : `scan-capacites.mjs` tire ses graines au hasard, le banc n'est pas rejouable | à faire |
 | — | Réconciliation des documents devenus périmés après l'ajout des ouvertures et parcours | à faire |
 | — | Activation du bureau dans le programme | à faire |
 | — | Première remontée des verdicts de placement par pièce | à faire |

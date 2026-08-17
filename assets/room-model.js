@@ -42,12 +42,25 @@
     });
   }
 
+  /* Une pièce fusionnée n'est pas deux pièces : c'est une pièce qui porte
+     deux programmes. Contour, étiquette et solveur restent uniques ; seuls
+     les équipements s'additionnent.
+
+     La table remplace le cas particulier du séjour : une option qui retire
+     une pièce du programme doit verser ses équipements à celle qui l'absorbe,
+     jamais les faire disparaître (ROADMAP §5.3, défaut D3). */
+  var COMPOSITIONS = {
+    living: { flag: 'openKitchen', with: 'kitchen' },
+    bath: { flag: 'integratedWc', with: 'wc' }
+  };
+
   function mergeProgram(type, variant, context) {
     var room = socle.rooms[type];
     if (!room) return { rooms: [], equipments: [], relations: [], services: [] };
     var programs = [{ type: type, room: room, variant: variant }];
-    if (type === 'living' && context.openKitchen && socle.rooms.kitchen) {
-      programs.push({ type: 'kitchen', room: socle.rooms.kitchen, variant: null });
+    var composition = COMPOSITIONS[type];
+    if (composition && context[composition.flag] && socle.rooms[composition.with]) {
+      programs.push({ type: composition.with, room: socle.rooms[composition.with], variant: null });
     }
     var equipments = [];
     var relations = [];
@@ -150,6 +163,7 @@
   root.TechnoHabRoomModel = {
     designate: designate,
     existenceRules: EXISTENCE_RULES,
-    relationKinds: RELATION_KINDS.slice()
+    relationKinds: RELATION_KINDS.slice(),
+    compositions: COMPOSITIONS
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
