@@ -3,10 +3,13 @@
 Document de pilotage de l'intégration de TechnoHab et de l'évolution du
 générateur de plans 2D.
 
-**Mise à jour : 16 août 2026**  
-**Statut : prototype local intégré, audité, moteur à consolider**
+**Mise à jour : 18 août 2026**  
+**Statut : prototype local intégré, audité, moteur à consolider — trois
+défauts bloquants ouverts, chantier 5**
 
-Documents liés : `SOCLE_AGENCEMENT.md` (équipements, placement, PMR),
+Documents liés : `SUIVI_REGLES_PIECES.md` (état consolidé pièce par pièce,
+défauts localisés), `agencement/` (valeurs d'usage sourcées par typologie),
+`SOCLE_AGENCEMENT.md` (équipements, placement, PMR),
 `DOCTRINE_AGENCEMENT.md` (pré-calcul des gabarits, niveaux de règles),
 `APPROCHES_GENERATION.md` (revue des méthodes de génération, choix de fond),
 `DATASOURCE_EQUIPEMENTS.md` (sourcing du mobilier et des dégagements),
@@ -16,8 +19,11 @@ Documents liés : `SOCLE_AGENCEMENT.md` (équipements, placement, PMR),
 `DA_ICONES_PLAN.md` (icônes de pièces),
 `DA_CHEMINEMENT_PLAN.md` (parcours de desserte et accès),
 `DA_FORMES_ENVELOPPE.md` (vignettes de choix de forme),
-`technohab_rules.md` dans le dépôt de développement (référentiel de règles
-comparé), `../DA_GRAPHIQUE.md` (direction artistique de Wonderland).
+`../DA_GRAPHIQUE.md` (direction artistique de Wonderland).
+
+*Le dépôt de développement `technohab` et son `technohab_rules.md` sont
+archivés depuis le 18 août : le dossier de travail est unique, ici même, et
+suivi avec le dépôt `wonderland`.*
 
 ---
 
@@ -923,6 +929,140 @@ contrainte de découpe ne sera décidée qu'au vu des taux d'échec mesurés.
 Séquence, critères d'acceptation et grille de comparaison des trois
 stratégies : voir le document.
 
+## 5 quinquies. Chantier 5 — Défauts bloquants et couverture des pièces
+
+**Ouvert le 18 août 2026. Prioritaire sur tout le reste de la roadmap.**
+Défauts localisés dans le code : voir
+[`SUIVI_REGLES_PIECES.md`](SUIVI_REGLES_PIECES.md).
+
+La différence avec les chantiers précédents tient en une phrase : ceux-là
+amélioraient un moteur qui produisait des plans justes ; celui-ci répare un
+moteur qui, sur trois points, **produit un plan faux**. Deux options du
+questionnaire donnent aujourd'hui un résultat que l'utilisateur ne peut pas
+interpréter autrement que comme un bug.
+
+### 5.1 — D1, l'entrée n'est pas une contrainte de génération
+
+`poserEntree()` s'exécute après que les candidats ont été notés et le
+meilleur retenu ; `scoreCandidate()` ne regarde ni la façade ni l'entrée. La
+circulation n'a donc aucune raison d'atteindre l'enveloppe : elle finit
+enclavée, et l'entrée redescend la chaîne `ENTREE_ORDRE` vers le séjour ou la
+cuisine — quand elle ne renvoie pas `null`.
+
+Le chantier 4 disait vrai en 2026 : sans segments de façade ni nœud
+`exterior`, aucune règle d'accès n'était écrivable. **Ces trois prérequis
+existent désormais** — `facadeSegments()`, `edgesToExterior()`, `poserEntree()`.
+Il ne manque plus que de les faire peser sur la sélection.
+
+- [ ] porter le contact façade de la pièce éligible dans `scoreCandidate()` ;
+- [ ] pénaliser lourdement le plan sans entrée, au lieu de le retenir puis de
+  le signaler ;
+- [ ] `TH2D-ENTREE-001` : la pièce d'accueil de l'entrée touche l'enveloppe
+  sur au moins 0,90 m de linéaire ;
+- [ ] mesurer, sur graines fixes, la part de plans où la circulation atteint
+  la façade avant et après.
+
+### 5.2 — D2, une pièce fusionnée reste dessinée en parties
+
+`app.js` trace chaque `part` séparément : une pièce en L montre le trait de
+refend entre ses parties, et le solveur de pose raisonne lui aussi sur les
+parties plutôt que sur leur union. C'est l'inverse du comportement attendu —
+**le contour extérieur seul, et l'agencement travaille ce volume unifié**.
+
+Reprend l'observation N°4 de l'audit des plans rendus, jamais traitée.
+
+- [ ] union des parties d'une pièce en un contour unique au dessin ;
+- [ ] transmettre au solveur le polygone unifié, non la liste des parties ;
+- [ ] conserver les parties comme donnée interne de découpe, non comme
+  entité de plan.
+
+### 5.3 — D3, la fusion est implémentée comme une suppression
+
+Décocher « WC indépendant » ne fusionne pas le WC dans la salle d'eau : il
+disparaît. Aucune pièce n'est créée, et `socle.data.js` ne prévoit pas de
+`wc_pan` parmi les équipements de `bath`, sous aucune variante. Décocher
+« Cuisine séparée » fait de même : la pièce part sans que ses équipements
+rejoignent le séjour.
+
+C'est le point « programmes composés » du modèle commun, qui cesse d'être un
+enrichissement pour devenir une réparation.
+
+- [ ] variante `bath` « avec WC » portant `wc_pan` et ses dégagements ;
+- [ ] variante `living` « avec cuisine ouverte » portant le linéaire ;
+- [ ] `room-model.js` désigne la variante selon les options du questionnaire ;
+- [ ] une pièce fusionnée porte un programme réuni, un contour, une étiquette
+  composée — jamais deux entités.
+
+### 5.4 — Couverture des pièces
+
+Le générateur produit six types : séjour, cuisine, chambre, salle d'eau, WC,
+circulation. Le socle en décrit treize. **Le manque immédiat est donc de sept
+pièces déjà modélisées mais jamais générées**, ce qui est le meilleur rapport
+valeur/coût de la roadmap : le socle est fait, il manque l'activation.
+
+**Déjà modélisées, non générées**
+
+| Pièce | Ce qui manque |
+|---|---|
+| Bureau | activation dans le programme et le générateur ; fiche et équipements prêts |
+| Entrée | la pièce elle-même — la porte d'entrée existe déjà |
+| Salle à manger | décision préalable : pièce autonome ou zone du séjour |
+| Cellier | règles d'adjacence cuisine, stockage, circulation |
+| Buanderie | règles de réseaux et d'usage, relation cellier / local technique |
+| Local technique | règles de maintenance, réseaux, éloignement des pièces sensibles |
+| Garage | gabarit véhicule, accès, porte, sas, liaison au logement |
+
+**Fonctions partiellement couvertes**
+
+| Fonction | État |
+|---|---|
+| Rangements | produits comme annexes, pas comme pièce |
+| Dressing | composant possible, sans programme de pièce autonome |
+| Cuisine ouverte | composition partielle, sans statut distinct — cf. 5.3 |
+| Coin repas | absorbé dans le séjour, sans désignation autonome |
+| Coin bureau | non géré comme zone optionnelle du séjour ou d'une chambre |
+
+**Programmes composés manquants** — suite parentale (chambre + rangement ou
+dressing + salle d'eau), chambre d'enfant comme variante fonctionnelle
+distincte, chambre d'amis éventuellement combinée à un bureau, studio avec
+ses règles de fusion, sas d'entrée reliant extérieur, garage et logement,
+arrière-cuisine à distinguer du cellier et de la buanderie.
+
+**Hors modèle actuel** — escalier, palier, étage, mezzanine, terrasse,
+balcon, loggia, véranda, jardin ou cour, cave, grenier, combles, atelier,
+local vélo, local poubelles. Deux évolutions structurelles les commandent :
+le multi-niveaux et une famille d'espaces extérieurs avec leurs seuils.
+Aucune n'est un ajout de règle.
+
+### 5.5 — Ordre retenu
+
+1. **D1, D2, D3** — les trois défauts, avant toute nouvelle pièce. Générer
+   sept typologies de plus dans un moteur qui dessine mal les fusions et
+   place l'entrée au hasard multiplierait le défaut par sept.
+2. Bureau, puis entrée — les deux plus proches de la génération.
+3. Salle à manger, après la décision « pièce ou zone ».
+4. Cellier, puis buanderie.
+5. Suite parentale — premier programme composé, il valide le mécanisme de
+   composition livré en 5.3.
+6. Local technique, puis garage.
+7. Programmes fusionnés : studio, cuisine ouverte, coin bureau.
+8. Étages et espaces extérieurs.
+
+L'ordre n'est pas discutable sur son premier point : 5.3 livre le mécanisme
+de composition dont dépend l'étape 5, et 5.2 livre le contour unifié dont
+dépend tout programme composé. Les défauts ne sont pas seulement urgents, ils
+sont en amont.
+
+### Critères d'acceptation du chantier 5
+
+- aucune option du questionnaire ne fait disparaître une fonction du plan ;
+- une pièce fusionnée se dessine d'un seul contour et se meuble comme un
+  volume unique ;
+- la part de plans dont la circulation atteint la façade est mesurée avant et
+  après D1, sur graines fixes ;
+- chaque pièce nouvellement générée satisfait les sept points de la
+  définition de « terminé » de `SUIVI_REGLES_PIECES.md`.
+
 ## 6. Roadmap technique
 
 ### Phase 0 — Intégration autonome ✅
@@ -1196,6 +1336,44 @@ fréquent se lit** — et il conditionne l'ordre des travaux ci-dessous.
 - [ ] `S4` du socle — chemin continu de la porte à chaque zone d'usage, ce
   qui est le cheminement de la phase 9 à l'échelle de la pièce.
 
+### Phase 12 — Couverture des pièces et programmes composés
+
+Détail, inventaire et ordre : §5 quinquies. Cette phase ne démarre qu'une
+fois D1, D2 et D3 corrigés.
+
+**12 a — les défauts d'abord**
+
+- [ ] D1 — contact façade dans `scoreCandidate()`, règle `TH2D-ENTREE-001` ;
+- [ ] D2 — union des parties au dessin et à la pose ;
+- [ ] D3 — fusion traitée comme composition, variantes `bath` et `living`.
+
+**12 b — activer les pièces déjà modélisées**
+
+- [ ] bureau ;
+- [ ] entrée comme pièce, et non comme seule porte ;
+- [ ] salle à manger, après arbitrage « pièce autonome ou zone du séjour » ;
+- [ ] cellier, puis buanderie ;
+- [ ] local technique, puis garage.
+
+**12 c — programmes composés**
+
+- [ ] suite parentale, premier cas d'usage du mécanisme livré en D3 ;
+- [ ] chambre d'enfant et chambre d'amis comme variantes fonctionnelles ;
+- [ ] studio, avec ses règles de fusion ;
+- [ ] sas d'entrée, arrière-cuisine ;
+- [ ] coin repas et coin bureau comme zones désignées d'une pièce hôte.
+
+**12 d — hors modèle actuel**
+
+- [ ] famille d'espaces extérieurs — terrasse, balcon, loggia, véranda,
+  jardin, cour — avec leurs seuils propres ;
+- [ ] multi-niveaux — escalier, palier, étage, mezzanine, combles, cave ;
+- [ ] annexes — atelier, local vélo, local poubelles.
+
+Ces trois lots sont des évolutions structurelles du moteur, pas des ajouts de
+règle : ils changent ce qu'est un plan, aujourd'hui mono-niveau et sans
+extérieur.
+
 ## 7. Définition d'une génération valide
 
 Une proposition peut être affichée uniquement lorsque :
@@ -1426,7 +1604,17 @@ surévalué, et aucune comparaison de méthodes ne vaudrait rien sur cette base.
 
 ## Prochaine action
 
-Quatre temps, dans cet ordre. Chacun rend le suivant mesurable.
+**Révisée le 18 août 2026.** Les trois défauts du chantier 5 passent devant :
+tant qu'une option du questionnaire fait disparaître une fonction du plan,
+aucune mesure faite sur ce moteur ne décrit ce que l'utilisateur voit.
+
+**0. Réparer avant de mesurer.** D3 d'abord — le plus circonscrit, et il
+livre le mécanisme de composition dont dépendent la suite parentale et le
+studio. Puis D1, qui ne touche qu'à `scoreCandidate()`. Puis D2, le plus
+profond, qui change ce que le solveur reçoit.
+
+Les quatre temps ci-dessous restent valides et suivent immédiatement. Chacun
+rend le suivant mesurable.
 
 **1. Rendre observable.** Diagnostic exportable avec graine, gravité des
 violations, invariant de couverture en préalable. Ne change aucun résultat,

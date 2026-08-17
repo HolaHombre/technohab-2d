@@ -1,5 +1,8 @@
 # Fiches d'agencement par typologie
 
+Le statut consolidé des pièces, des règles actives et des manques est tenu
+dans [`SUIVI_REGLES_PIECES.md`](../SUIVI_REGLES_PIECES.md).
+
 Valeurs d'**usage** par type de pièce — emprises de mobilier, dégagements,
 distances ergonomiques — chacune adossée à une source identifiée.
 
