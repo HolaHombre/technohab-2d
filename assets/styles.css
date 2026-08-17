@@ -1,0 +1,216 @@
+:root {
+  color-scheme: dark;
+  --bg: #0B0B0B;
+  --bg-2: #101010;
+  --gold: #D4AF37;
+  --gold-dim: rgba(212, 175, 55, .35);
+  --gold-faint: rgba(212, 175, 55, .14);
+  --marble: #ECE9E2;
+  --marble-dim: rgba(236, 233, 226, .62);
+  --marble-faint: rgba(236, 233, 226, .12);
+  --blue: #6FA8DC;
+  --title: "Cinzel", Georgia, serif;
+  --body: "IBM Plex Serif", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  background: var(--bg);
+  color: var(--marble);
+  font-family: var(--body);
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; background: var(--bg); }
+body { margin: 0; background: var(--bg); }
+button, input, select { color: inherit; font: inherit; }
+button { cursor: pointer; }
+a { color: var(--blue); }
+
+.app-shell { min-height: 100vh; max-width: 1280px; margin: 0 auto; padding: 0 28px 36px; }
+.topbar { min-height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--marble-faint); }
+.brand { display: inline-flex; align-items: center; gap: 12px; color: var(--blue); text-decoration: none; font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.brand:hover { color: var(--gold); }
+.brand:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 1px solid var(--blue); outline-offset: 4px; }
+.brand-mark { width: 31px; height: 31px; display: grid; place-items: center; border: 1px solid var(--gold-dim); color: var(--gold); font-size: 10px; }
+.topbar-meta { display: flex; align-items: center; gap: 14px; }
+.mode-badge, .version, .status-badge { font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.mode-badge { padding-bottom: 4px; border-bottom: 1px solid var(--gold-dim); color: var(--gold); }
+.version { color: var(--marble-dim); }
+
+.intro { display: grid; grid-template-columns: 1.35fr .65fr; gap: 54px; align-items: end; padding: 70px 0 56px; }
+.eyebrow { display: flex; align-items: center; gap: 14px; margin: 0 0 22px; color: var(--gold); font: 500 11px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; }
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: linear-gradient(to right, var(--gold-dim), transparent); }
+h1, h2, p { margin-top: 0; }
+h1, h2 { font-family: var(--title); font-weight: 400; letter-spacing: .012em; }
+h1 { margin-bottom: 0; max-width: 820px; font-size: clamp(2.35rem, 5.2vw, 4.5rem); line-height: 1.08; }
+h2 { margin-bottom: 0; font-size: 1.45rem; line-height: 1.2; }
+.intro-copy { max-width: 440px; margin: 0; color: var(--marble-dim); font-size: 1rem; line-height: 1.7; }
+
+.workspace { display: grid; grid-template-columns: minmax(280px, 350px) minmax(0, 1fr); border-top: 1px solid var(--gold-dim); border-bottom: 1px solid var(--marble-faint); }
+.controls-panel, .plan-panel { padding: 34px 0; }
+.controls-panel { padding-right: 30px; border-right: 1px solid var(--marble-faint); }
+.plan-panel { min-width: 0; padding-left: 30px; }
+.panel-heading { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 30px; }
+.step-number { color: var(--gold); font: 500 10px/1.4 var(--mono); }
+.panel-heading .eyebrow { margin-bottom: 7px; font-size: 9px; letter-spacing: .14em; }
+.panel-heading .eyebrow::after { display: none; }
+
+.field { display: grid; gap: 8px; margin-bottom: 20px; color: var(--marble-dim); font: 500 10px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.field input[type="number"], .field select { width: 100%; height: 44px; border: 0; border-bottom: 1px solid var(--marble-faint); border-radius: 0; background: transparent; padding: 0 10px; outline: none; }
+.field input:focus, .field select:focus { border-color: var(--blue); }
+.input-with-unit { position: relative; }
+.input-with-unit input { padding-right: 48px !important; }
+.input-with-unit em { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); color: var(--marble-dim); font-style: normal; }
+.priority-field { gap: 0; border: 0; padding: 0; margin: 4px 0 22px; }
+.priority-field legend { margin-bottom: 8px; }
+.choice { display: grid; grid-template-columns: 15px 1fr; gap: 10px; align-items: center; min-height: 50px; border-top: 1px solid var(--marble-faint); cursor: pointer; }
+.choice:last-child { border-bottom: 1px solid var(--marble-faint); }
+.choice input { appearance: none; width: 9px; height: 9px; border: 1.5px solid var(--blue); border-radius: 50%; margin: 0; }
+.choice input:checked { background: var(--blue); }
+.choice span { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.choice strong { color: var(--marble); font: 400 13px/1.2 var(--body); text-transform: none; letter-spacing: 0; }
+.choice small { color: var(--marble-dim); font-size: 9px; letter-spacing: .05em; }
+.switches { display: grid; gap: 12px; margin-bottom: 26px; }
+.switch { display: flex; align-items: center; gap: 9px; color: var(--marble); font-size: .9rem; cursor: pointer; }
+.switch input { accent-color: var(--blue); width: 15px; height: 15px; }
+.primary-button { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--gold-dim); background: transparent; padding: 0 15px; color: var(--blue); font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; transition: color .22s ease, border-color .22s ease, background .22s ease; }
+.primary-button:hover { border-color: var(--gold); background: var(--gold); color: var(--bg); }
+
+.room-composer { margin-top: 28px; border-top: 1px solid var(--marble-faint); border-bottom: 1px solid var(--marble-faint); }
+.room-composer summary { min-height: 48px; display: flex; align-items: center; color: var(--blue); cursor: pointer; font: 500 10px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.room-composer summary:hover { color: var(--gold); }
+.room-composer summary:focus-visible { outline: 1px solid var(--blue); outline-offset: 4px; }
+.room-composer[open] summary { border-bottom: 1px solid var(--gold-dim); }
+.composer-content { padding: 22px 0 26px; }
+.composer-content > p { margin-bottom: 22px; color: var(--marble-dim); font-size: .88rem; line-height: 1.6; }
+.composer-fieldset { min-width: 0; margin: 0 0 22px; padding: 0; border: 0; }
+.composer-fieldset legend { margin-bottom: 14px; color: var(--gold); font: 500 10px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.composer-add-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; margin-bottom: 14px; }
+.composer-add-row select { min-width: 0; height: 44px; border: 0; border-bottom: 1px solid var(--marble-faint); border-radius: 0; background: transparent; padding: 0 8px; }
+.secondary-action { min-height: 44px; border: 0; border-bottom: 1px solid rgba(111, 168, 220, .35); background: transparent; padding: 0 4px; color: var(--blue); font: 500 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.secondary-action:hover { border-color: var(--gold-dim); color: var(--gold); }
+.composer-empty, .composer-verdict { color: var(--marble-dim); font-size: .82rem; line-height: 1.55; }
+.composer-empty { margin: 0; }
+.composer-list { margin: 0; padding: 0; list-style: none; }
+.composer-list li { min-height: 48px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; border-top: 1px solid var(--marble-faint); color: var(--marble); font-size: .82rem; line-height: 1.4; }
+.composer-list li:last-child { border-bottom: 1px solid var(--marble-faint); }
+.composer-list button { min-height: 44px; border: 0; background: transparent; padding: 0 4px; color: var(--blue); font: 500 9px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.composer-list button:hover { color: var(--gold); }
+.composer-verdict { min-height: 44px; margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--marble-faint); }
+.composer-verdict[data-state="accepted"] { color: var(--blue); border-color: var(--blue); }
+.composer-verdict[data-state="refused"] { color: var(--gold); border-color: var(--gold); }
+
+.plan-panel { display: flex; flex-direction: column; }
+.plan-heading { align-items: center; }
+.status-badge { margin-left: auto; padding-bottom: 5px; border-bottom: 1px solid var(--blue); color: var(--blue); }
+.status-badge[data-state="warning"] { border-color: var(--gold); color: var(--gold); }
+.canvas-frame { position: relative; flex: 1; min-height: 430px; display: grid; place-items: center; overflow: hidden; background: var(--bg-2); padding: 46px; }
+.canvas-frame::before { content: ""; position: absolute; inset: 0; opacity: .34; pointer-events: none; background-image: linear-gradient(var(--marble-faint) 1px, transparent 1px), linear-gradient(90deg, var(--marble-faint) 1px, transparent 1px); background-size: 24px 24px; }
+#plan-svg { position: relative; display: block; width: 100%; height: 100%; max-height: 480px; overflow: visible; }
+.plan-background { fill: var(--bg); }
+.room-shape { fill: var(--gold-faint); stroke: var(--gold); stroke-width: 1px; }
+.room--bedroom .room-shape, .room--bath .room-shape { fill: rgba(111, 168, 220, .14); stroke: var(--blue); }
+.room--circulation .room-shape, .room--wc .room-shape { fill: var(--marble-faint); stroke: var(--marble-dim); }
+/* Un rangement appartient à sa pièce : il en porte le fond, sinon il se lit
+   comme un trou dans le plan. Seul le trait de raccord, en pointillé, dit
+   qu'il s'agit d'un rangement et non d'une pièce distincte. */
+.room-storage { stroke-dasharray: 3 2; opacity: .72; }
+.plan-legend { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0 0; padding: 0; list-style: none; }
+.plan-legend li { display: flex; align-items: center; gap: 9px; color: var(--marble-dim); font: 400 9px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.plan-legend .plan-legend-hint { margin-left: auto; color: var(--blue); }
+.plan-legend svg { flex: none; width: 26px; height: 14px; overflow: visible; }
+.legend-room { fill: var(--gold-faint); stroke: var(--gold); stroke-width: 1; }
+.legend-storage { fill: var(--gold-faint); stroke: var(--gold); stroke-width: 1; stroke-dasharray: 3 2; opacity: .72; }
+.legend-circulation { fill: var(--marble-faint); stroke: var(--marble-dim); stroke-width: 1; }
+.room-info { pointer-events: none; opacity: 0; transition: opacity .25s ease; }
+.room-icon { pointer-events: none; color: var(--gold-dim); }
+.room--bedroom .room-icon, .room--bath .room-icon { color: rgba(111, 168, 220, .58); }
+.room--circulation .room-icon, .room--wc .room-icon { color: var(--marble-dim); }
+.room-label { pointer-events: none; fill: var(--marble); font: 500 .22px/1 var(--mono); letter-spacing: .025em; text-transform: uppercase; }
+.room-meta { pointer-events: none; fill: var(--marble-dim); font: 400 .14px/1 var(--mono); letter-spacing: .01em; }
+.room:focus { outline: none; }
+.room:focus-visible { outline: 1px solid var(--blue); outline-offset: 2px; }
+.room:hover .room-info, .room:focus .room-info { opacity: 1; }
+.north-marker { position: absolute; top: 17px; right: 18px; color: var(--gold); font: 500 10px/1 var(--mono); }
+.north-marker::before { content: "↑"; display: block; margin-bottom: 4px; text-align: center; }
+.stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); margin: 22px 0 0; border-top: 1px solid var(--marble-faint); border-bottom: 1px solid var(--marble-faint); }
+.stats-strip div { padding: 15px 10px; border-right: 1px solid var(--marble-faint); }
+.stats-strip div:first-child { padding-left: 0; }
+.stats-strip div:last-child { border-right: 0; }
+.stats-strip dt { margin-bottom: 6px; color: var(--marble-dim); font: 400 9px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.stats-strip dd { margin: 0; color: var(--marble); font: 400 1rem/1 var(--title); }
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding-top: 16px; }
+.plan-switch { margin-right: auto; font: 500 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--marble-dim); }
+/* Le mobilier est un tracé de second plan : il informe sans disputer la
+   lecture des pièces, dont il partage la couleur en plus ténu. */
+.room-furniture { fill: none; stroke: var(--gold-dim); stroke-width: .012px; transition: opacity .25s ease; }
+.room--bedroom .room-furniture, .room--bath .room-furniture { stroke: rgba(111, 168, 220, .42); }
+.room--circulation .room-furniture, .room--wc .room-furniture { stroke: var(--marble-faint); }
+.room:hover .room-furniture, .room:focus .room-furniture { opacity: 0; }
+.secondary-button { border: 0; border-bottom: 1px solid rgba(111, 168, 220, .35); background: transparent; padding: 7px 0; color: var(--blue); font: 500 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.secondary-button:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+.rules-section { display: grid; grid-template-columns: .72fr 1.28fr; gap: 60px; padding: 70px 0; border-bottom: 1px solid var(--marble-faint); }
+.rules-intro > p:last-child { max-width: 430px; margin: 18px 0 0; color: var(--marble-dim); font-size: .95rem; line-height: 1.7; }
+.rules-meta { margin: 0 0 14px; color: var(--marble-dim); font: 500 10px/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.rules-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.rule-item { display: grid; grid-template-columns: minmax(180px, .8fr) 1.2fr; gap: 18px; padding: 16px 0; border-top: 1px solid var(--marble-faint); font-size: .88rem; line-height: 1.5; }
+.rule-item:last-child { border-bottom: 1px solid var(--marble-faint); }
+.rule-item strong { color: var(--gold); font: 500 10px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.rule-item span { color: var(--marble-dim); }
+.rule-item--success strong { color: var(--blue); }
+/* L'intertitre sépare ce que le plan viole de ce que le moteur ne tient pas.
+   Un filet plein et de l'air, pas un encadré : la rangée dit d'elle-même que
+   ce qui suit n'est pas de même nature que ce qui précède. */
+.rule-item--intertitre { margin-top: 22px; border-top: 1px solid var(--gold-dim); padding-top: 20px; }
+.rule-item--intertitre strong { color: var(--gold); }
+.rule-item--limite strong { color: var(--marble-dim); }
+.rule-item--limite span { color: var(--marble-dim); opacity: .78; }
+.rules-history-wrap { margin-top: 26px; border-top: 1px solid var(--marble-faint); padding-top: 14px; }
+.rules-history-wrap summary { cursor: pointer; color: var(--gold); font: 500 10px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.rules-history-wrap summary:focus-visible { outline: 1px solid var(--gold); outline-offset: 4px; }
+.rules-history { display: grid; gap: 0; margin: 14px 0 0; padding: 0; list-style: none; }
+.history-item { display: grid; grid-template-columns: minmax(50px, .2fr) 1fr; gap: 18px; padding: 10px 0; border-top: 1px solid var(--marble-faint); font-size: .82rem; }
+.history-item[data-seed] { cursor: pointer; }
+.history-item[data-seed]:hover strong { color: var(--gold); }
+.history-item strong { color: var(--blue); font: 500 10px/1.4 var(--mono); letter-spacing: .06em; transition: color .22s ease; }
+#stat-seed { font-family: var(--mono); font-size: .82rem; letter-spacing: .06em; }
+.history-item span { color: var(--marble-dim); }
+footer { display: flex; justify-content: space-between; gap: 20px; padding-top: 24px; color: var(--marble-dim); font: 400 9px/1.5 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+
+@media (max-width: 900px) {
+  .intro { grid-template-columns: 1fr; gap: 22px; }
+  .workspace { grid-template-columns: 1fr; }
+  .controls-panel { padding-right: 0; border-right: 0; border-bottom: 1px solid var(--marble-faint); }
+  .plan-panel { padding-left: 0; }
+  .rules-section { grid-template-columns: 1fr; gap: 30px; }
+}
+@media (max-width: 560px) {
+  .app-shell { padding-inline: 16px; }
+  .topbar { min-height: 58px; }
+  .brand span:last-child, .version { display: none; }
+  .intro { padding: 46px 0 40px; }
+  h1 { font-size: 2.35rem; }
+  .plan-heading { flex-wrap: wrap; }
+  .status-badge { width: 100%; margin: 5px 0 0 28px; }
+  .canvas-frame { min-height: 330px; padding: 36px 18px; }
+  .plan-legend .plan-legend-hint { width: 100%; margin-left: 0; }
+  .stats-strip { grid-template-columns: 1fr 1fr; }
+  .stats-strip div:nth-child(2) { border-right: 0; }
+  .stats-strip div:nth-child(-n+2) { border-bottom: 1px solid var(--marble-faint); }
+  .stats-strip div:nth-child(3) { padding-left: 0; }
+  .rule-item { grid-template-columns: 1fr; gap: 6px; }
+  .composer-add-row { grid-template-columns: 1fr; }
+  footer { flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+
+/* Troisième couche : le parcours. Portes en trait plein sur le mur qu'elles
+   percent, débattement en arc ténu, pièces non atteintes hachurées d'or.
+   Se superpose aux deux autres sans les masquer. */
+.plan-door { stroke: var(--marble); stroke-width: .07px; stroke-linecap: butt; }
+.plan-door--entry { stroke: var(--gold); stroke-width: .1px; }
+.plan-window { stroke: var(--marble); stroke-width: .025px; stroke-linecap: butt; }
+.plan-swing { fill: none; stroke: var(--marble-faint); stroke-width: .02px; stroke-dasharray: .1 .08; }
+.plan-unreached { fill: var(--gold-faint); stroke: var(--gold); stroke-width: .03px; stroke-dasharray: .2 .12; }

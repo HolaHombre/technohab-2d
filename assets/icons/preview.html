@@ -1,0 +1,27 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Planche mobilier</title>
+<style>
+:root{--blue:#6FA8DC}
+body{background:#0B0B0B;color:#D4AF37;font:11px/1 ui-monospace,monospace;margin:0;padding:30px}
+h2{font-size:12px;letter-spacing:.2em;color:#ECE9E2;font-weight:400;margin:0 0 18px}
+.wrap{display:flex;flex-wrap:wrap;align-items:flex-end;gap:26px}
+figure{margin:0;text-align:center}
+figcaption{margin-top:8px;letter-spacing:.12em;text-transform:uppercase;font-size:9px;color:#D4AF37}
+b{display:block;color:rgba(236,233,226,.55);font-weight:400;margin-top:3px}
+svg{color:#D4AF37;display:block}
+</style></head><body>
+<h2>ÉCHELLE COMMUNE — 1 m = 110 px</h2>
+<div class="wrap" id="w"></div>
+<script>
+fetch('./furniture.svg').then(r=>r.text()).then(t=>{
+  const host=document.createElement('div'); host.innerHTML=t; host.firstElementChild.style.display='none';
+  document.body.appendChild(host);
+  const PX=110;
+  host.querySelectorAll('symbol').forEach(sym=>{
+    const vb=sym.getAttribute('viewBox').split(/\s+/).map(Number);
+    const f=document.createElement('figure');
+    f.innerHTML='<svg width="'+(vb[2]/100*PX)+'" height="'+(vb[3]/100*PX)+'" viewBox="'+sym.getAttribute('viewBox')+'"><use href="#'+sym.id+'"/></svg>'
+      +'<figcaption>'+sym.dataset.label+'<b>'+sym.dataset.w+' × '+sym.dataset.h+' m</b></figcaption>';
+    document.getElementById('w').appendChild(f);
+  });
+});
+</script></body></html>

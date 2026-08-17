@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true" data-technohab-sprite="room-icons">
+  <!-- Pictogrammes de pièces, vue de dessus, selon DA_ICONES_PLAN.md.
+       viewBox commun 0 0 64 64, trait uniforme en currentColor.
+       data-orient : proportion naturelle du dessin.
+       data-rotatable : le pictogramme accepte un quart de tour lorsque la
+       pièce est orientée dans l'autre sens (mobilier orientable). -->
+
+  <symbol id="icon-living" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-orient="landscape" data-rotatable="true">
+    <path d="M10 10h46v36H40V26H10z" />
+    <path d="M10 17h37" />
+    <path d="M47 17v29" />
+    <path d="M22 17v9M33 17v9" />
+    <path d="M5 13h5v13H5z" />
+    <circle cx="21" cy="43" r="9" />
+  </symbol>
+
+  <symbol id="icon-bedroom" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-orient="portrait" data-rotatable="true">
+    <path d="M13 11h38v42H13z" />
+    <path d="M13 11h38v13H13z" />
+    <path d="M18 14h11v7H18zM35 14h11v7H35z" />
+    <circle cx="7" cy="13" r="4" />
+    <circle cx="57" cy="13" r="4" />
+  </symbol>
+
+  <symbol id="icon-bath" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-orient="square" data-rotatable="false">
+    <path d="M10 10h39v44H10z" />
+    <path d="M29 10v13" />
+    <path d="M20 23h18l-4 5h-10z" />
+    <path d="M49 24h5v16h-5z" />
+  </symbol>
+
+  <symbol id="icon-wc" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="round" data-orient="portrait" data-rotatable="true">
+    <rect x="20" y="8" width="24" height="12" rx="3" />
+    <circle cx="32" cy="14" r="2" />
+    <path d="M22 20h20v3H22z" />
+    <path d="M23 23c-2 12 0 27 9 30 9-3 11-18 9-30z" />
+    <ellipse cx="32" cy="38" rx="7" ry="11" />
+    <rect x="30" y="35" width="4" height="7" rx="1.6" />
+  </symbol>
+
+  <symbol id="icon-kitchen" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-orient="landscape" data-rotatable="true">
+    <path d="M6 19h52v26H6z" />
+    <circle cx="16" cy="27" r="3.5" />
+    <circle cx="16" cy="37" r="3.5" />
+    <rect x="30" y="24" width="21" height="16" rx="2" />
+    <path d="M43 19v6" />
+  </symbol>
+
+  <symbol id="icon-circulation" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="miter" data-orient="landscape" data-rotatable="true">
+    <path d="M5 32h39" stroke-dasharray="0.1 6" />
+    <path d="M46 24l14 8-14 8z" fill="currentColor" stroke-width="2" stroke-linejoin="round" />
+  </symbol>
+
+  <symbol id="icon-entree" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-orient="landscape" data-rotatable="true">
+    <path d="M4 48h10M50 48h10" />
+    <rect x="12" y="44" width="4" height="8" fill="currentColor" stroke="none" />
+    <rect x="48" y="44" width="4" height="8" fill="currentColor" stroke="none" />
+    <path d="M14 48L38 12" />
+    <path d="M38 12a30 30 0 0 1 12 36" />
+  </symbol>
+
+  <symbol id="icon-bureau" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-orient="landscape" data-rotatable="true">
+    <path d="M8 14h48v20H8z" />
+    <rect x="25" y="36" width="14" height="12" rx="2" />
+    <path d="M23 50h18v6H23z" />
+  </symbol>
+
+  <symbol id="icon-buanderie" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-orient="portrait" data-rotatable="false">
+    <path d="M12 10h40v44H12z" />
+    <path d="M12 21h40" />
+    <path d="M25 10v11" />
+    <circle cx="32" cy="38" r="11" />
+  </symbol>
+
+  <symbol id="icon-local_technique" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-orient="square" data-rotatable="false">
+    <path transform="rotate(45 32 32)" d="M6 18v8l11 3v6L6 38v8a15 15 0 0 0 21-7l23-3a4 4 0 0 0 0-8l-23-3a15 15 0 0 0-21-7z" />
+  </symbol>
+
+  <symbol id="icon-garage" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-orient="portrait" data-rotatable="true">
+    <path d="M22 6c-6 0-8 6-8 15v22c0 9 2 15 8 15h20c6 0 8-6 8-15V21c0-9-2-15-8-15z" />
+    <path d="M18 22c6-4 22-4 28 0v18H18z" />
+    <path d="M18 46c6 3 22 3 28 0" />
+    <path d="M14 24l-4 2M50 24l4 2" />
+    <path d="M20 55h6M38 55h6" />
+  </symbol>
+
+  <symbol id="icon-cellier" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-orient="portrait" data-rotatable="true">
+    <path d="M11 8h5v48h-5zM48 8h5v48h-5z" />
+    <path d="M11 8h42M16 23h32M16 38h32M16 53h32" />
+  </symbol>
+
+  <symbol id="icon-salle_a_manger" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-orient="portrait" data-rotatable="true">
+    <path d="M20 14h24v36H20z" />
+    <path d="M26 6h12v8H26zM26 50h12v8H26z" />
+    <path d="M12 18h8v12h-8zM12 34h8v12h-8z" />
+    <path d="M44 18h8v12h-8zM44 34h8v12h-8z" />
+  </symbol>
+
+  <!-- Fonctions du référentiel qui partagent un glyphe (technohab_rules.md §1). -->
+  <symbol id="icon-salon" viewBox="0 0 64 64" data-orient="landscape" data-rotatable="true"><use href="#icon-living" /></symbol>
+  <symbol id="icon-cuisine" viewBox="0 0 64 64" data-orient="landscape" data-rotatable="true"><use href="#icon-kitchen" /></symbol>
+  <symbol id="icon-salle_de_bain" viewBox="0 0 64 64" data-orient="square" data-rotatable="false"><use href="#icon-bath" /></symbol>
+  <symbol id="icon-chambre_enfant" viewBox="0 0 64 64" data-orient="portrait" data-rotatable="true"><use href="#icon-bedroom" /></symbol>
+  <symbol id="icon-chambre_parentale" viewBox="0 0 64 64" data-orient="portrait" data-rotatable="true"><use href="#icon-bedroom" /></symbol>
+</svg>

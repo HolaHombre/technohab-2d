@@ -1,0 +1,211 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true" data-technohab-sprite="furniture">
+  <!-- Mobilier et équipements, vue de dessus, à l'échelle.
+       Dessins repris de la planche `assets/generated/mobilier-cote.png`,
+       cotes alignées sur SOCLE_AGENCEMENT.md §5 qui fait foi.
+
+       Le viewBox est exprimé en CENTIMÈTRES et vaut l'emprise dessinée.
+       Le moteur place cette emprise en mètres puis applique autour de son
+       centre la rotation cardinale calculée par le solveur.
+
+       L'identifiant sans le préfixe `furn-` est la clé de jointure avec
+       `equipments[].id` du socle. Zone d'usage, ancrage, réseaux et caractère
+       obligatoire vivent dans le socle et ne sont pas dupliqués ici — ce
+       fichier porte le dessin, pas la règle.
+
+       data-w, data-h ....... emprise de l'équipement en mètres ; égale au
+                              viewBox sauf lorsque le dessin inclut une assise
+       data-stretch ......... "x" si la longueur est variable (linéaires) ;
+                              au-delà d'environ 30 % d'étirement, poser
+                              plusieurs modules plutôt que déformer le dessin
+       data-rotatable ....... accepte 90 / 180 / 270 degrés
+
+       Trait uniforme de 2 cm réels ; contours tracés à 1 cm du bord pour que
+       le trait reste dans l'emprise. -->
+
+  <symbol id="furn-sofa" viewBox="0 0 180 90" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Canapé" data-w="1.80" data-h="0.90" data-rotatable="true">
+    <path d="M1 1h178v88H1z" />
+    <path d="M24 1v88M156 1v88" />
+    <path d="M24 26h132" />
+    <path d="M68 26v63M112 26v63" />
+  </symbol>
+
+  <symbol id="furn-coffee_table" viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Table basse" data-w="1.10" data-h="0.60" data-rotatable="true">
+    <path d="M1 1h108v58H1z" />
+  </symbol>
+
+  <symbol id="furn-tv_unit" viewBox="0 0 120 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Meuble bas" data-w="1.20" data-h="0.40" data-stretch="x" data-rotatable="true">
+    <path d="M1 1h118v38H1z" />
+    <path d="M41 1v38M80 1v38" />
+  </symbol>
+
+  <symbol id="furn-dining_table_4" viewBox="0 0 220 160" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Table 4 places" data-w="1.40" data-h="0.80" data-rotatable="true">
+    <path d="M41 41h138v78H41z" />
+    <path d="M84 3h52v36H84zM84 121h52v36H84z" />
+    <path d="M3 54h36v52H3zM181 54h36v52h-36z" />
+    <path d="M84 11h52M84 149h52M11 54v52M209 54v52" />
+  </symbol>
+
+  <symbol id="furn-bed_90" viewBox="0 0 90 190" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Lit simple 90" data-w="0.90" data-h="1.90" data-rotatable="true">
+    <path d="M1 1h88v188H1z" />
+    <path d="M10 9h70v30H10z" />
+    <path d="M1 62h88" />
+    <path d="M89 62v30l-30-30z" />
+  </symbol>
+
+  <symbol id="furn-bed_140" viewBox="0 0 140 190" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Lit double 140" data-w="1.40" data-h="1.90" data-rotatable="true">
+    <path d="M1 1h138v188H1z" />
+    <path d="M9 9h58v30H9zM73 9h58v30H73z" />
+    <path d="M1 62h138" />
+    <path d="M139 62v32l-32-32z" />
+  </symbol>
+
+  <symbol id="furn-wardrobe" viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Penderie" data-w="1.20" data-h="0.60" data-stretch="x" data-rotatable="true">
+    <path d="M1 1h118v58H1z" />
+    <path d="M9 20h102" />
+    <path d="M30 20v6M60 20v6M90 20v6" />
+    <path d="M19 40l11-12 11 12M49 40l11-12 11 12M79 40l11-12 11 12" />
+  </symbol>
+
+  <symbol id="furn-sink" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Évier" data-w="0.60" data-h="0.60" data-rotatable="true">
+    <path d="M1 1h58v58H1z" />
+    <rect x="8" y="19" width="44" height="32" rx="3" />
+    <circle cx="30" cy="9" r="4" />
+    <path d="M30 13v4" />
+  </symbol>
+
+  <symbol id="furn-hob" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Plaque de cuisson" data-w="0.60" data-h="0.60" data-rotatable="true">
+    <path d="M1 1h58v58H1z" />
+    <circle cx="18" cy="18" r="8" />
+    <circle cx="42" cy="18" r="8" />
+    <circle cx="18" cy="42" r="8" />
+    <circle cx="42" cy="42" r="8" />
+  </symbol>
+
+  <symbol id="furn-oven" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Four" data-w="0.60" data-h="0.60" data-rotatable="true">
+    <path d="M1 1h58v58H1z" />
+    <circle cx="19" cy="9" r="2" />
+    <circle cx="30" cy="9" r="2" />
+    <circle cx="41" cy="9" r="2" />
+    <path d="M9 18h42" />
+  </symbol>
+
+  <symbol id="furn-fridge" viewBox="0 0 60 65" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Réfrigérateur" data-w="0.60" data-h="0.65" data-rotatable="true">
+    <path d="M1 1h58v63H1z" />
+    <path d="M12 1v63" />
+    <path d="M1 34h58" />
+    <path d="M17 18v10M17 42v10" />
+  </symbol>
+
+  <symbol id="furn-dishwasher" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Lave-vaisselle" data-w="0.60" data-h="0.60" data-rotatable="true">
+    <path d="M1 1h58v58H1z" />
+    <path d="M1 15h58" />
+    <path d="M12 7h4M22 7h4M32 7h4M42 7h4" />
+    <path d="M12 26v26M20 26v26M28 26v26M36 26v26M44 26v26" />
+  </symbol>
+
+  <symbol id="furn-worktop" viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Plan de travail" data-w="1.20" data-h="0.60" data-stretch="x" data-rotatable="true">
+    <path d="M1 1h118v58H1z" />
+    <path d="M1 13h118" />
+  </symbol>
+
+  <symbol id="furn-shower" viewBox="0 0 90 90" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Douche" data-w="0.90" data-h="0.90" data-rotatable="true">
+    <path d="M1 1h88v88H1z" />
+    <path d="M9 9h72v72H9z" />
+    <circle cx="24" cy="24" r="5" />
+    <path d="M32 32l10 10M26 38l6 6M38 26l6 6" />
+  </symbol>
+
+  <symbol id="furn-bathtub" viewBox="0 0 170 70" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Baignoire" data-w="1.70" data-h="0.70" data-rotatable="true">
+    <path d="M1 1h168v68H1z" />
+    <rect x="10" y="9" width="150" height="52" rx="24" />
+    <circle cx="36" cy="35" r="4" />
+  </symbol>
+
+  <symbol id="furn-washbasin" viewBox="0 0 60 50" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Lavabo" data-w="0.60" data-h="0.50" data-rotatable="true">
+    <path d="M1 1h58v48H1z" />
+    <ellipse cx="30" cy="30" rx="18" ry="11" />
+    <circle cx="30" cy="9" r="3" />
+    <path d="M30 12v5" />
+  </symbol>
+
+  <symbol id="furn-double_washbasin" viewBox="0 0 120 50" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Double lavabo" data-w="1.20" data-h="0.50" data-rotatable="true">
+    <path d="M1 1h118v48H1z" />
+    <ellipse cx="32" cy="30" rx="17" ry="11" />
+    <ellipse cx="88" cy="30" rx="17" ry="11" />
+    <circle cx="32" cy="9" r="3" />
+    <circle cx="88" cy="9" r="3" />
+    <path d="M32 12v5M88 12v5" />
+  </symbol>
+
+  <symbol id="furn-wc_pan" viewBox="0 0 40 70" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="round" data-label="Cuvette WC" data-w="0.40" data-h="0.70" data-rotatable="true">
+    <path d="M4 1h32v17H4z" />
+    <circle cx="20" cy="9" r="2.5" />
+    <ellipse cx="20" cy="43" rx="14" ry="25" />
+  </symbol>
+
+  <symbol id="furn-handbasin" viewBox="0 0 40 30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Lave-mains" data-w="0.40" data-h="0.30" data-rotatable="true">
+    <path d="M1 1h38v28H1z" />
+    <ellipse cx="20" cy="19" rx="12" ry="7" />
+    <path d="M20 6v4" />
+  </symbol>
+
+  <symbol id="furn-closet" viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Placard" data-w="1.20" data-h="0.60" data-stretch="x" data-rotatable="true">
+    <path d="M1 1h118v58H1z" />
+    <path d="M60 1v58" />
+    <path d="M9 47h102" stroke-dasharray="8 6" />
+  </symbol>
+
+  <symbol id="furn-desk" viewBox="0 0 140 115" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Bureau avec assise" data-w="1.40" data-h="0.70" data-rotatable="true">
+    <path d="M1 1h138v68H1z" />
+    <rect x="45" y="75" width="50" height="38" rx="5" />
+    <path d="M45 103h50" />
+  </symbol>
+
+  <symbol id="furn-bookcase" viewBox="0 0 120 35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Bibliothèque" data-w="1.20" data-h="0.35" data-stretch="x" data-rotatable="true">
+    <path d="M1 1h118v33H1z" />
+    <path d="M31 1v33M60 1v33M89 1v33" />
+  </symbol>
+
+  <symbol id="furn-washer" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Lave-linge" data-w="0.60" data-h="0.60" data-rotatable="true">
+    <path d="M1 1h58v58H1z" />
+    <path d="M1 15h58" />
+    <circle cx="30" cy="38" r="15" />
+    <circle cx="49" cy="8" r="2.5" />
+  </symbol>
+
+  <symbol id="furn-dryer" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Sèche-linge" data-w="0.60" data-h="0.60" data-rotatable="true">
+    <path d="M1 1h58v58H1z" />
+    <path d="M1 15h58" />
+    <circle cx="28" cy="38" r="15" />
+    <circle cx="49" cy="8" r="2.5" />
+    <path d="M45 32h8M45 40h8M45 48h8" />
+  </symbol>
+
+  <symbol id="furn-shelving" viewBox="0 0 120 45" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Étagères" data-w="1.20" data-h="0.45" data-stretch="x" data-rotatable="true">
+    <path d="M1 1h118v43H1z" />
+    <path d="M41 1v43M80 1v43" />
+  </symbol>
+
+  <!-- Emprise carrée de 0,70 selon le socle ; le ballon lui-même fait Ø 0,60,
+       le reste est l'habillage et le raccordement. -->
+  <symbol id="furn-water_heater" viewBox="0 0 70 70" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Ballon d’eau chaude" data-w="0.70" data-h="0.70" data-rotatable="false">
+    <circle cx="35" cy="35" r="29" />
+    <circle cx="35" cy="53" r="3" />
+  </symbol>
+
+  <symbol id="furn-electrical_panel" viewBox="0 0 60 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Tableau électrique" data-w="0.60" data-h="0.15" data-rotatable="true">
+    <path d="M1 1h58v13H1z" />
+    <path d="M9 4h8v7H9zM20 4h8v7h-8zM31 4h8v7h-8zM42 4h8v7h-8z" />
+  </symbol>
+
+  <!-- Le bleu accent marque une emprise à réserver, non bâtie — convention à
+       reprendre pour l'aire de rotation et le débattement de porte. -->
+  <symbol id="furn-parking_space" viewBox="0 0 250 500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-label="Emplacement véhicule" data-w="2.50" data-h="5.00" data-rotatable="true">
+    <path d="M2 2h246v496H2z" stroke="var(--blue, #6FA8DC)" stroke-dasharray="18 12" />
+    <path d="M95 35c-35 0-60 20-60 80v270c0 60 25 80 60 80h60c35 0 60-20 60-80V115c0-60-25-80-60-80z" />
+    <path d="M60 150c25-15 105-15 130 0v170H60z" />
+    <path d="M60 350c25 12 105 12 130 0" />
+    <path d="M35 130l-18 8M215 130l18 8" />
+    <path d="M62 442h30M158 442h30" />
+  </symbol>
+</svg>
