@@ -15,6 +15,7 @@ défauts localisés), `agencement/` (valeurs d'usage sourcées par typologie),
 `DATASOURCE_EQUIPEMENTS.md` (sourcing du mobilier et des dégagements),
 `OUVERTURES_ET_PARCOURS.md` (ouvertures en façade, cheminement, ordre de coopération),
 `PLACEMENT_ET_ADJACENCES.md` (nature des adjacences, placement des pièces),
+`MURS_EPAIS.md` (murs dimensionnés, surfaces utiles et méthode MVP),
 `VEILLE_NORMATIVE.md` (sources, cotes tracées, matrice de contrôle),
 `DA_ICONES_PLAN.md` (icônes de pièces),
 `DA_CHEMINEMENT_PLAN.md` (parcours de desserte et accès),
@@ -1284,10 +1285,9 @@ outils : ce chantier ne crée pas de banc, il l'étend.
    type change le domaine de faisabilité. Un lot qui ne régénère pas
    `fit.data.js` livre un cache faux.
 4. **Non-régression sur le banc** — `scripts/scan-capacites.mjs` sur les 24
-   configurations, plus `scan-seeds.mjs`, **à graines fixes** : le banc tire
-   aujourd'hui ses graines au hasard et deux passages du même code diffèrent
-   autant que deux versions différentes (défaut D4). Tant qu'il n'est pas
-   rejouable, cette preuve n'en est pas une. Conformité, diversité,
+   configurations, plus `scan-seeds.mjs`. Le banc est rejouable depuis D4 :
+   comparer l'**empreinte** affichée en fin de tableau avant et après le lot,
+   à graine égale, suffit à trancher. Conformité, diversité,
    meublabilité et durée ne se dégradent pas sur les programmes qui
    n'utilisent pas la pièce ajoutée. C'est le test le plus important du lot,
    et le seul qui détecte le coût caché d'une pièce nouvelle sur toutes les
@@ -1612,9 +1612,9 @@ que la case à cocher.
 - [ ] D2 — union des parties au dessin et à la pose ;
 - [x] D3 — fusion traitée comme composition, `room-model.js` + `composeInto()`
   + `TH2D-ROOM-002` étendue + `test-fusion.mjs` *(18 août)* ;
-- [ ] D4 — rendre `scan-capacites.mjs` rejouable : graine de base en argument,
-  fixe par défaut. Découvert en cherchant à prouver la non-régression de D3,
-  et prérequis de toute mesure d'évolution.
+- [x] D4 — banc rejouable : graine fixe par défaut, `--seed=<n>`, `--random`
+  étiqueté comme non rejouable, et empreinte des résultats hors durées
+  *(18 août)*.
 
 **12 b — mesure de la qualité perçue** *(chantier 6)*
 
@@ -1633,6 +1633,51 @@ que la case à cocher.
 - [ ] L6 — studio, cuisine ouverte, coin repas, coin bureau, variantes de chambre ;
 - [ ] L7 — extérieurs, multi-niveaux, annexes *(changement de modèle, pas
   extension)*.
+
+### Phase 13 — Murs dimensionnés et surfaces utiles
+
+Transformer les séparations sans épaisseur en objets constructifs mesurables.
+Le cadrage, les décisions, le schéma cible, les règles et les critères de
+réception vivent dans [`MURS_EPAIS.md`](MURS_EPAIS.md).
+
+Le MVP conserve la partition actuelle comme source de génération. Il en
+dérive ensuite les murs, leurs faces intérieures et les surfaces utiles : il
+ne commence ni par une réécriture du générateur ni par un modèle BIM complet.
+
+**Dépendances :** D2 (union réelle des parties), portes et fenêtres stables,
+parcours rejouable et banc de tests à graines fixes.
+
+**13 a — MVP géométrique**
+
+- [ ] M1 — référentiel unique des murs intérieurs et extérieurs, avec
+  épaisseurs configurables ;
+- [ ] M2 — contours intérieurs, surfaces utiles et conservation explicite
+  `emprise brute = surfaces utiles + murs` ;
+- [ ] préserver la surface habitable demandée en calculant séparément
+  l'emprise extérieure ;
+- [ ] règles `TH2D-WALL-001` à `TH2D-WALL-004` et tests des rectangles,
+  pièces en L, angles et jonctions en T.
+
+**13 b — MVP fonctionnel**
+
+- [ ] M3 — portes et fenêtres rattachées à un mur et à une réservation ;
+- [ ] M4 — mobilier ancré sur les faces intérieures et parcours bloqué par
+  les murs hors ouvertures ;
+- [ ] règles `TH2D-WALL-005` et `TH2D-WALL-006` ;
+- [ ] recalculer `TH2D-ROOM-002` sur la géométrie intérieure utile.
+
+**13 c — livraison**
+
+- [ ] M5 — murs rendus comme surfaces, ouvertures découpées, distinction des
+  surfaces dans l'interface et l'export ;
+- [ ] versionner le schéma JSON et préserver la lecture des anciens exports ;
+- [ ] valider les 24 configurations de référence sur plusieurs graines ;
+- [ ] publier les écarts avant/après : surface utile, meublabilité,
+  cheminement, violations et emprise extérieure.
+
+**Après le MVP seulement :** systèmes constructifs détaillés, murs porteurs,
+performances thermique/acoustique/feu, quantitatifs, coût, carbone et
+continuité verticale. Ces sujets ne doivent pas ralentir les lots M1 à M5.
 
 ## 7. Définition d'une génération valide
 

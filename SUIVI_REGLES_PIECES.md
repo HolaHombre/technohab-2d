@@ -223,7 +223,26 @@ en variante « avec WC », `living` reçoit le linéaire de cuisine en variante
 P3, qui devient bloquant : il ne s'agit plus d'enrichir le modèle mais de
 réparer deux options du formulaire qui produisent aujourd'hui un plan faux.
 
-### D4 — Le banc de capacités n'est pas rejouable
+### D4 — Le banc de capacités n'est pas rejouable — **corrigé le 18 août 2026**
+
+Correction livrée : graine de base fixe (`20260818`), `--seed=<n>` pour en
+changer, `--random` pour un tirage libre — explicitement étiqueté « non
+rejouable » dans l'en-tête du tableau. Les graines par configuration et par
+variante dérivent de la base par multiplication impaire, pour que deux
+configurations voisines ne reçoivent pas des suites voisines : sinon la
+diversité mesurée serait celle des graines, pas celle du moteur.
+
+Le tableau se termine désormais par une **empreinte** des seules colonnes de
+résultat, durées exclues — la durée mesure la machine, pas le moteur.
+Vérifié : deux passages à graine égale donnent `6434c9d4`, `--seed=7` donne
+`f88db235`. Comparer deux empreintes remplace la lecture de 24 lignes, et
+c'est la preuve n°4 exigée de chaque lot du chantier 7.
+
+Corrigé au passage dans les deux bancs : le chemin des sources était écrit en
+dur en absolu (`/Users/theoseguret/…`), ce qui les rendait inexécutables
+ailleurs que sur cette machine.
+
+### D4 — énoncé d'origine
 
 Découvert en cherchant à prouver la non-régression de D3.
 `scripts/scan-capacites.mjs` tire ses graines avec `Math.random()`. Deux
@@ -249,7 +268,7 @@ chantier 6.
 | — | D1 : contact façade porté dans `scoreCandidate` | à faire |
 | — | D2 : union des contours au dessin et à la pose | à faire |
 | 2026-08-18 | D3 corrigé : fusion traitée comme composition ; `test-fusion.mjs` ajouté | fait |
-| — | D4 : `scan-capacites.mjs` tire ses graines au hasard, le banc n'est pas rejouable | à faire |
+| 2026-08-18 | D4 corrigé : banc rejouable, graine en argument, empreinte des résultats | fait |
 | — | Réconciliation des documents devenus périmés après l'ajout des ouvertures et parcours | à faire |
 | — | Activation du bureau dans le programme | à faire |
 | — | Première remontée des verdicts de placement par pièce | à faire |

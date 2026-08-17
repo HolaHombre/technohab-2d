@@ -1,8 +1,40 @@
+// Banc de capacités : 24 configurations × 30 tirages, conformité, diversité,
+// meublabilité, écart de surface et durée.
+//
+// D4 — les graines sont DÉTERMINISTES par défaut. Elles ont longtemps été
+// tirées avec Math.random(), et deux exécutions du même code donnaient alors
+// 7 puis 12 signatures distinctes sur la même configuration : le banc ne
+// pouvait pas servir de contrôle de non-régression, ce qu'il est pourtant
+// censé être pour chaque lot du chantier 7.
+//
+//   node technohab/scripts/scan-capacites.mjs              graine 20260818
+//   node technohab/scripts/scan-capacites.mjs --seed=1234  autre graine
+//   node technohab/scripts/scan-capacites.mjs --random     tirage libre
+//
+// Une mesure ne se compare qu'à une mesure de même graine : le tableau
+// l'affiche en tête pour qu'un résultat collé ailleurs reste interprétable.
 import fs from 'fs';
 import vm from 'vm';
-const A = '/Users/theoseguret/Documents/Wonderland/technohab/assets/';
-for (const f of ['fit.data.js', 'generator.js', 'rules.js']) vm.runInThisContext(fs.readFileSync(A + f, 'utf8'));
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const A = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets');
+for (const f of ['fit.data.js', 'generator.js', 'rules.js']) vm.runInThisContext(fs.readFileSync(join(A, f), 'utf8'));
 const G = globalThis.TechnoHabGenerator, R = globalThis.TechnoHabRules, F = globalThis.TechnoHabFit;
+
+const GRAINE_PAR_DEFAUT = 20260818;
+const argSeed = process.argv.find((a) => a.startsWith('--seed='));
+const aleatoire = process.argv.includes('--random');
+const graineBase = aleatoire
+  ? (Math.random() * 4294967296) >>> 0
+  : (Number(argSeed ? argSeed.slice(7) : GRAINE_PAR_DEFAUT) >>> 0);
+
+// Décorrélation par multiplication impaire : deux configurations voisines ne
+// doivent pas recevoir des suites de graines voisines, sinon la diversité
+// mesurée serait celle des graines, pas celle du moteur.
+function graineDe(indexConfig, variante) {
+  return (Math.imul(graineBase ^ (indexConfig * 0x9E3779B1), 0x85EBCA6B) + variante * 0x27D4EB2F) >>> 0;
+}
 
 // 24 configurations balayant surface, programme, priorité.
 const CONFIGS = [
@@ -24,14 +56,14 @@ const N = 30;
 const ruleTotals = {}, fitFail = {};
 let rows = [];
 
-for (const [surface, bedrooms, bathrooms, sepK, wc, priority] of CONFIGS) {
+CONFIGS.forEach(([surface, bedrooms, bathrooms, sepK, wc, priority], indexConfig) => {
   const opts = { surface, bedrooms, bathrooms, separateKitchen: sepK, includeWc: wc, priority };
   const prog = G.buildProgram(opts);
   const saturation = prog.minimumTotal / surface;
   let hard = 0, sigs = new Set(), worst = 0, roomsTot = 0, fitOk = 0, nonRect = 0, ms = 0, t0 = Date.now();
   const by = {};
   for (let v = 0; v < N; v++) {
-    const p = G.generatePlan(opts, v, (Math.random() * 4294967296) >>> 0);
+    const p = G.generatePlan(opts, v, graineDe(indexConfig, v));
     const rep = R.evaluatePlan(p);
     if (rep.summary.hard) hard++;
     rep.violations.forEach(x => { by[x.ruleId] = (by[x.ruleId] || 0) + 1; ruleTotals[x.ruleId] = (ruleTotals[x.ruleId] || 0) + 1; });
@@ -50,8 +82,9 @@ for (const [surface, bedrooms, bathrooms, sepK, wc, priority] of CONFIGS) {
     label: `${surface}m² ${bedrooms}ch ${bathrooms}sdb ${sepK ? 'K' : '-'}${wc ? 'W' : '-'} ${priority.slice(0, 4)}`,
     sat: saturation, hard, div: sigs.size, fit: fitOk / roomsTot, nonRect: nonRect / roomsTot, worst, ms, by
   });
-}
+});
 
+console.log('graine de base : ' + graineBase + (aleatoire ? ' (tirage libre, non rejouable)' : ' (rejouable)'));
 console.log('configuration                  | satur | HARD  | div   | meublable | formes L | ecart | ms');
 console.log('-'.repeat(100));
 for (const r of rows) {
@@ -65,6 +98,18 @@ for (const r of rows) {
     r.worst.toFixed(3).padStart(5) + ' | ' + String(r.ms).padStart(3)
   );
 }
+// Empreinte des seules colonnes de résultat. La durée en est exclue : c'est
+// une mesure de la machine, pas du moteur, et elle varie d'un passage à
+// l'autre. Deux empreintes égales à graine égale = aucune régression ; c'est
+// la preuve n°4 exigée de chaque lot du chantier 7, en une ligne.
+const empreinte = rows.map((r) => [r.sat.toFixed(4), r.hard, r.div, r.fit.toFixed(4), r.nonRect.toFixed(4), r.worst.toFixed(3)].join(','))
+  .join(';')
+  .split('')
+  .reduce((h, c) => (Math.imul(h ^ c.charCodeAt(0), 0x01000193) >>> 0), 0x811C9DC5)
+  .toString(16)
+  .padStart(8, '0');
+console.log('\nempreinte des résultats (hors durées) : ' + empreinte);
+
 console.log('\n--- regles declenchees, tous scenarios confondus ---');
 Object.entries(ruleTotals).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => console.log('  ' + k.padEnd(22) + String(v).padStart(5)));
 console.log('\n--- pieces non meublables selon le socle (fits) ---');

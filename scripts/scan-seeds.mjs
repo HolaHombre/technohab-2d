@@ -1,14 +1,21 @@
-// Banc complémentaire de scan-capacites.mjs : 15 seeds FIXES, donc rejouables,
-// au lieu des seeds aléatoires du banc principal. Objectif : mesurer la
-// dispersion inter-seed, pas la moyenne. Le banc principal agrège 30 tirages en
-// un seul chiffre par configuration ; ici on garde le détail par seed pour
-// pouvoir répondre à « le seed change-t-il quelque chose ? ».
+// Banc complémentaire de scan-capacites.mjs : 15 seeds FIXES, gardés en clair.
+// Objectif : mesurer la dispersion inter-seed, pas la moyenne. Le banc
+// principal agrège 30 tirages en un seul chiffre par configuration ; ici on
+// garde le détail par seed pour répondre à « le seed change-t-il quelque
+// chose ? ».
+//
+// Depuis D4 (18 août 2026), le banc principal est lui aussi rejouable : sa
+// graine de base est fixe par défaut et affichée en tête de tableau. Ces deux
+// bancs ne s'opposent plus par le déterminisme, mais par la question posée —
+// la moyenne d'un côté, la dispersion de l'autre.
 import fs from 'fs';
 import vm from 'vm';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
-const A = '/Users/theoseguret/Documents/Wonderland/technohab/assets/';
+const A = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets');
 for (const f of ['fit.data.js', 'generator.js', 'rules.js']) {
-  vm.runInThisContext(fs.readFileSync(A + f, 'utf8'));
+  vm.runInThisContext(fs.readFileSync(join(A, f), 'utf8'));
 }
 const G = globalThis.TechnoHabGenerator, R = globalThis.TechnoHabRules, F = globalThis.TechnoHabFit;
 
