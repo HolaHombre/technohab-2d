@@ -42,6 +42,16 @@
     var contactY = Math.abs(a.y1 - b.y0) < CONTACT || Math.abs(b.y1 - a.y0) < CONTACT;
     return (contactX && overlapY > 0) || (contactY && overlapX > 0);
   }
+  /* Depuis D2, le rectangle utile d'une pièce dont les parties pavent leur
+     boîte englobante est cette boîte : la bande de rangement s'y trouve alors
+     *incluse* au lieu d'être accolée. Une bande incluse est rattachée, et
+     mieux que si elle était en contact — exiger un contact d'arête ferait
+     échouer la règle sur les pièces les plus régulières. */
+  function rattache(main, part) {
+    var inclus = part.x0 >= main.x0 - CONTACT && part.x1 <= main.x1 + CONTACT &&
+      part.y0 >= main.y0 - CONTACT && part.y1 <= main.y1 + CONTACT;
+    return inclus || touches(main, part);
+  }
   /* L'extérieur est un nœud du graphe mais n'est pas un espace desservi :
      une circulation qui longe la façade ne dessert pas la rue. Les fonctions
      qui raisonnent en pièces doivent donc l'ignorer. */
@@ -266,7 +276,7 @@
         plan.rooms.forEach(function (room) {
           var main = usable(room);
           storageParts(room).forEach(function (part) {
-            if (!touches(main, part)) {
+            if (!rattache(main, part)) {
               violations.push({ entityId: room.id, message: 'Le rangement de ' + room.label + ' n’est pas attenant à la pièce.' });
             }
           });
@@ -302,6 +312,31 @@
             message: room.label + ' compte ' + edgeCount(room) + ' arêtes, pour un maximum de ' + maximum + '.'
           };
         });
+      }
+    },
+    {
+      /* D1 — jusqu'ici le moteur pouvait retenir un plan sans accès depuis
+         l'extérieur et se contenter de le signaler dans le détail de
+         l'entrée. Un logement dans lequel on n'entre pas n'est pas un
+         logement : le verdict est bloquant. La pièce d'accueil doit exister,
+         être éligible, et offrir de quoi poser un vantail de 0,90 m. */
+      id: 'TH2D-ENTREE-001', level: 'HARD', label: 'Entrée depuis l’extérieur',
+      evaluate: function (plan) {
+        if (!plan.entree) {
+          return [{ entityId: 'plan', message: 'Aucune pièce en façade ne peut recevoir l’entrée : le logement n’a pas d’accès depuis l’extérieur.' }];
+        }
+        if (plan.entree.mur + 0.005 < plan.entree.largeur) {
+          var accueil = plan.rooms.find(function (room) {
+            return (plan.entree.entre || []).indexOf(room.id) !== -1;
+          });
+          return [{
+            entityId: accueil ? accueil.id : 'plan',
+            message: 'La façade de ' + (accueil ? accueil.label : 'la pièce d’accueil') + ' ne mesure que ' +
+              plan.entree.mur.toFixed(2) + ' m : trop peu pour une porte d’entrée de ' +
+              plan.entree.largeur.toFixed(2) + ' m.'
+          }];
+        }
+        return [];
       }
     },
     {

@@ -403,8 +403,68 @@
     }));
   }
 
-  function scoreCandidate(boxes, edges, program) {
+  /* D1 — l'entrée était posée après coup, sur le candidat déjà retenu : rien
+     dans la recherche ne poussait une pièce éligible vers l'enveloppe. La
+     circulation finissait enclavée et l'entrée redescendait la chaîne
+     d'éligibilité vers le séjour ou la cuisine, quand elle ne renvoyait pas
+     `null`. Le contact de façade devient donc un critère de sélection.
+
+     Deux peines distinctes, et l'écart entre elles est voulu : un plan sans
+     entrée n'est pas un logement, un plan dont l'entrée ouvre sur la cuisine
+     en est un, simplement moins bon. */
+  function rangEntree(type) {
+    var rang = ENTREE_ORDRE.indexOf(type);
+    return rang < 0 ? ENTREE_ORDRE.length : rang;
+  }
+
+  /* Les pièces où l'on vit doivent toucher la façade : sans elle, ni fenêtre
+     ni entrée d'air. `TH2D-FACADE-001` le juge en HARD, mais la recherche
+     l'ignorait — exactement le défaut de D1, sur une autre règle. Mesuré en
+     corrigeant l'entrée seule : pousser un hôte vers l'enveloppe prend de la
+     façade aux chambres et fait passer cette règle de 39 à 53 violations sur
+     720 plans. Deux critères qui se disputent le même bord doivent être
+     arbitrés dans le score, pas l'un après l'autre. */
+  var PIECES_EN_FACADE = ['living', 'bedroom', 'kitchen', 'dining', 'bureau'];
+
+  function penaliteFacade(boxes, width, height) {
+    var parId = {};
+    var rangIdeal = -1;
+    boxes.forEach(function (box) {
+      parId[box.id] = box;
+      if (ENTREE_INTERDITE.indexOf(box.type) >= 0) return;
+      var rang = rangEntree(box.type);
+      if (rangIdeal < 0 || rang < rangIdeal) rangIdeal = rang;
+    });
+    var meilleurRang = -1;
+    var enFacade = {};
+    facadeSegments(boxes, width, height).forEach(function (segment) {
+      var box = parId[segment.room];
+      if (!box) return;
+      enFacade[box.id] = true;
+      if (ENTREE_INTERDITE.indexOf(box.type) >= 0) return;
+      if (segment.longueur < PORTE_ENTREE) return;
+      var rang = rangEntree(box.type);
+      if (meilleurRang < 0 || rang < meilleurRang) meilleurRang = rang;
+    });
     var score = 0;
+    boxes.forEach(function (box) {
+      if (PIECES_EN_FACADE.indexOf(box.type) >= 0 && !enFacade[box.id]) score += 100;
+    });
+    // Aucune pièce éligible en façade : le plan n'a pas d'entrée possible.
+    // La peine vaut deux adjacences manquées, parce que le défaut est pire.
+    if (meilleurRang < 0) return score + 220;
+    // Sinon, on paie l'écart au meilleur hôte que *ce programme* permet. La
+    // référence est relative, sans quoi un plan sans pièce d'entrée dédiée —
+    // c'est-à-dire tous aujourd'hui — ne pourrait jamais atteindre un score
+    // nul, et la recherche perdrait sa sortie anticipée.
+    // 18 par rang : assez pour départager deux plans par ailleurs
+    // équivalents, trop peu pour sacrifier une desserte (110) ou la façade
+    // d'une chambre (100).
+    return score + Math.max(0, meilleurRang - Math.max(0, rangIdeal)) * 18;
+  }
+
+  function scoreCandidate(boxes, edges, program, width, height) {
+    var score = penaliteFacade(boxes, width, height);
     /* La recherche vise la desserte, non le simple contact : sinon elle
        optimiserait un critère que la règle ne juge pas, et un contact de
        24 cm passerait pour un succès. La pénalité décroît avec la longueur
@@ -494,6 +554,19 @@
 
   function partsArea(parts) {
     return parts.reduce(function (sum, p) { return sum + (p.x1 - p.x0) * (p.y1 - p.y0); }, 0);
+  }
+
+  /* D2 — une pièce dont les parties pavent exactement leur boîte englobante
+     est un rectangle, quel que soit le nombre de morceaux qui l'ont produite.
+     La découpe est un moyen ; la pièce est ce qui en sort. Tant qu'on servait
+     `parts[0]` au rendu et au solveur, une pièce rectangulaire née d'une
+     cession se dessinait avec un trait de refend au milieu et se meublait sur
+     une fraction de sa surface. */
+  function unionEstRectangle(parts) {
+    if (parts.length < 2) return true;
+    var bounds = partsBounds(parts);
+    var pave = (bounds.x1 - bounds.x0) * (bounds.y1 - bounds.y0);
+    return Math.abs(pave - partsArea(parts)) < 0.005;
   }
 
   // Les pièces bordant un côté du couloir, avec la portion de longueur que
@@ -760,10 +833,13 @@
      est au nord et y = H au sud. Ce n'est pas une orientation réelle — le
      questionnaire ne décrit pas le terrain — mais un repère cohérent avec le
      dessin, et le seul qu'on puisse tenir honnêtement aujourd'hui. */
+  /* Accepte aussi bien les pièces découpées en parties que les rectangles
+     bruts de la boucle de recherche : la façade doit se mesurer avant la
+     sélection du candidat, pas seulement sur le gagnant (D1). */
   function facadeSegments(boxes, width, height) {
     var segments = [];
     boxes.forEach(function (box) {
-      box.parts.forEach(function (part) {
+      (box.parts && box.parts.length ? box.parts : [box]).forEach(function (part) {
         [
           { cote: 'nord', sur: Math.abs(part.y0) < CONTACT, longueur: part.x1 - part.x0,
             x0: part.x0, y0: 0, x1: part.x1, y1: 0 },
@@ -1093,7 +1169,7 @@
       var boxes = [];
       layout(order, { x: 0, y: 0, width: width, height: height }, 0, program.options.priority, random, boxes);
       var edges = actualEdges(boxes);
-      var score = scoreCandidate(boxes, edges, program);
+      var score = scoreCandidate(boxes, edges, program, width, height);
       if (!best || score < best.score) {
         best = { boxes: boxes, edges: edges, score: score, attempt: attempt, width: width, height: height };
       }
@@ -1139,7 +1215,10 @@
           return { role: part.role, x0: round(part.x0), y0: round(part.y0), x1: round(part.x1), y1: round(part.y1) };
         });
         var bounds = partsBounds(parts);
-        var usable = parts[0];
+        // Le rectangle utile est la boîte englobante quand les parties la
+        // pavent : la pièce est alors rectangulaire, et la servir en morceaux
+        // la ferait dessiner et meubler plus petite qu'elle n'est (D2).
+        var usable = unionEstRectangle(parts) ? bounds : parts[0];
         return {
           id: room.id, type: room.type, label: room.label,
           // Les programmes absorbés voyagent avec la pièce : sans eux, une
@@ -1166,8 +1245,92 @@
     };
   }
 
+  /* D2 — contour extérieur d'un ensemble de rectangles à axes alignés.
+     Une pièce est une pièce : elle se dessine d'un seul trait, sans le refend
+     que laissait un rectangle par partie.
+
+     Méthode : les abscisses et ordonnées présentes découpent un damier ; une
+     cellule appartient à la pièce si une partie la couvre ; une arête de
+     cellule est au contour si sa voisine n'y appartient pas. Il ne reste qu'à
+     chaîner ces arêtes. Peu de cellules — deux ou trois parties — donc le
+     coût est négligeable devant la découpe elle-même. */
+  function contourParties(parts) {
+    if (!parts || !parts.length) return [];
+    var xs = [], ys = [];
+    parts.forEach(function (part) {
+      if (xs.indexOf(part.x0) < 0) xs.push(part.x0);
+      if (xs.indexOf(part.x1) < 0) xs.push(part.x1);
+      if (ys.indexOf(part.y0) < 0) ys.push(part.y0);
+      if (ys.indexOf(part.y1) < 0) ys.push(part.y1);
+    });
+    xs.sort(function (a, b) { return a - b; });
+    ys.sort(function (a, b) { return a - b; });
+
+    function couverte(i, j) {
+      if (i < 0 || j < 0 || i >= xs.length - 1 || j >= ys.length - 1) return false;
+      var cx = (xs[i] + xs[i + 1]) / 2, cy = (ys[j] + ys[j + 1]) / 2;
+      return parts.some(function (part) {
+        return cx > part.x0 && cx < part.x1 && cy > part.y0 && cy < part.y1;
+      });
+    }
+
+    // Arêtes orientées : le contour extérieur tourne dans un sens, un trou
+    // dans l'autre. L'orientation vient du côté plein de l'arête.
+    var aretes = [];
+    for (var i = 0; i < xs.length - 1; i += 1) {
+      for (var j = 0; j < ys.length - 1; j += 1) {
+        if (!couverte(i, j)) continue;
+        if (!couverte(i, j - 1)) aretes.push([xs[i], ys[j], xs[i + 1], ys[j]]);
+        if (!couverte(i + 1, j)) aretes.push([xs[i + 1], ys[j], xs[i + 1], ys[j + 1]]);
+        if (!couverte(i, j + 1)) aretes.push([xs[i + 1], ys[j + 1], xs[i], ys[j + 1]]);
+        if (!couverte(i - 1, j)) aretes.push([xs[i], ys[j + 1], xs[i], ys[j]]);
+      }
+    }
+
+    var boucles = [];
+    var cle = function (x, y) { return x.toFixed(4) + ',' + y.toFixed(4); };
+    var restantes = aretes.slice();
+    while (restantes.length) {
+      var depart = restantes.shift();
+      var boucle = [[depart[0], depart[1]], [depart[2], depart[3]]];
+      var courant = cle(depart[2], depart[3]);
+      var securite = restantes.length + 2;
+      while (courant !== cle(depart[0], depart[1]) && securite > 0) {
+        securite -= 1;
+        var index = -1;
+        for (var k = 0; k < restantes.length; k += 1) {
+          if (cle(restantes[k][0], restantes[k][1]) === courant) { index = k; break; }
+        }
+        if (index < 0) break;
+        var suivante = restantes.splice(index, 1)[0];
+        boucle.push([suivante[2], suivante[3]]);
+        courant = cle(suivante[2], suivante[3]);
+      }
+      boucles.push(boucle);
+    }
+    return boucles;
+  }
+
+  // Les points alignés sont retirés : un contour de pièce rectangulaire doit
+  // avoir quatre sommets, pas les six que laisse le damier.
+  function cheminContour(parts) {
+    return contourParties(parts).map(function (boucle) {
+      var points = boucle.slice(0, -1).filter(function (point, index, tous) {
+        var avant = tous[(index - 1 + tous.length) % tous.length];
+        var apres = tous[(index + 1) % tous.length];
+        var alignéX = Math.abs(avant[0] - point[0]) < 0.0005 && Math.abs(apres[0] - point[0]) < 0.0005;
+        var alignéY = Math.abs(avant[1] - point[1]) < 0.0005 && Math.abs(apres[1] - point[1]) < 0.0005;
+        return !alignéX && !alignéY;
+      });
+      return 'M' + points.map(function (p) { return p[0] + ' ' + p[1]; }).join('L') + 'Z';
+    }).join(' ');
+  }
+
   root.TechnoHabGenerator = {
     buildProgram: buildProgram, generatePlan: generatePlan, normalizeOptions: normalizeOptions,
+    // Exposé pour le rendu : le contour est une propriété de la pièce, pas
+    // une affaire de dessin (D2).
+    cheminContour: cheminContour,
     /* Rejouable avec des obstacles : le générateur ignore le mobilier, dont
        les poses sont calculées à l'affichage. L'interface recalcule donc le
        parcours une fois les meubles connus — sans quoi le verdict porte sur

@@ -321,13 +321,30 @@
         (room.storageArea ? ', dont ' + room.storageArea.toFixed(1) + ' m² de rangement' : '');
       group.setAttribute('aria-label', title.textContent);
       group.appendChild(title);
-      // Une pièce peut être un rectangle ou une forme en L : on trace chacune
-      // de ses parties, le rangement se distinguant de l'espace principal.
-      (room.parts && room.parts.length ? room.parts : [room]).forEach(function (part) {
+      /* Une pièce se trace d'un seul contour, même née de plusieurs parties :
+         le refend entre deux parties n'est pas un mur (D2). Le rangement
+         garde sa teinte propre, mais en remplissage seul — il indique une
+         vocation, il ne découpe pas la pièce. */
+      var parties = room.parts && room.parts.length ? room.parts : [room];
+      var contour = root.TechnoHabGenerator && root.TechnoHabGenerator.cheminContour;
+      if (contour) {
+        group.appendChild(svgElement('path', {
+          d: contour(parties), class: 'room-shape', 'vector-effect': 'non-scaling-stroke'
+        }));
+      } else {
+        parties.forEach(function (part) {
+          group.appendChild(svgElement('rect', {
+            x: part.x0, y: part.y0, width: part.x1 - part.x0, height: part.y1 - part.y0,
+            class: 'room-shape', 'vector-effect': 'non-scaling-stroke'
+          }));
+        });
+      }
+      // Le rangement se signale par-dessus, en pointillé : il dit une
+      // vocation à l'intérieur de la pièce, il ne la coupe pas en deux.
+      parties.filter(function (part) { return part.role === 'storage'; }).forEach(function (part) {
         group.appendChild(svgElement('rect', {
           x: part.x0, y: part.y0, width: part.x1 - part.x0, height: part.y1 - part.y0,
-          class: part.role === 'storage' ? 'room-shape room-storage' : 'room-shape',
-          'vector-effect': 'non-scaling-stroke'
+          class: 'room-shape room-storage', 'vector-effect': 'non-scaling-stroke', 'aria-hidden': 'true'
         }));
       });
       if (afficherMobilier) {
@@ -421,9 +438,17 @@
       // Les pièces que le parcours n'atteint pas, hachurées : c'est le
       // constat le plus utile de la couche.
       var atteintes = (plan.parcoursMeuble || plan.parcours || {}).atteintes || {};
+      var contourNonAtteinte = root.TechnoHabGenerator && root.TechnoHabGenerator.cheminContour;
       plan.rooms.forEach(function (room) {
         if (atteintes[room.id]) return;
-        (room.parts && room.parts.length ? room.parts : [room]).forEach(function (part) {
+        var parties = room.parts && room.parts.length ? room.parts : [room];
+        if (contourNonAtteinte) {
+          planSvg.appendChild(svgElement('path', {
+            d: contourNonAtteinte(parties), class: 'plan-unreached', 'aria-hidden': 'true'
+          }));
+          return;
+        }
+        parties.forEach(function (part) {
           planSvg.appendChild(svgElement('rect', {
             x: part.x0, y: part.y0, width: part.x1 - part.x0, height: part.y1 - part.y0,
             class: 'plan-unreached', 'aria-hidden': 'true'

@@ -150,7 +150,60 @@ Trois défauts remontés à l'usage, vérifiés sur le moteur. Les deux derniers
 n'en font qu'un : **la fusion de pièces est implémentée comme une
 suppression**.
 
-### D1 — L'entrée n'est pas une contrainte de génération
+### D1 — L'entrée n'est pas une contrainte de génération — **corrigé le 18 août 2026**
+
+`scoreCandidate()` porte désormais une pénalité d'entrée, calculée avant la
+sélection : 220 points — deux adjacences manquées — si aucune pièce éligible
+n'a 0,90 m de façade, et 18 points par rang d'écart au meilleur hôte que le
+programme permet. La référence est **relative** au programme : sans cela, un
+plan dépourvu de pièce d'entrée dédiée — c'est-à-dire tous aujourd'hui — ne
+pourrait jamais atteindre un score nul, et la recherche perdrait sa sortie
+anticipée. `facadeSegments()` accepte maintenant les rectangles bruts de la
+boucle de recherche, pas seulement les pièces déjà découpées.
+
+Règle `TH2D-ENTREE-001` (HARD) ajoutée : un logement dans lequel on n'entre
+pas n'est pas un logement. Elle contrôle l'existence de l'entrée et la
+longueur de façade disponible pour le vantail.
+
+Mesuré à graines fixes, 240 plans sur 8 configurations :
+
+| | avant | après |
+|---|---|---|
+| circulation en façade | 31,9 % | **55,2 %** |
+| entrée accueillie par la circulation | 67 | **116** |
+| entrée accueillie par le séjour | 173 | 124 |
+| plans sans entrée | 0 | 0 |
+
+Le dernier chiffre corrige l'énoncé d'origine : le cas « aucune entrée » était
+**déjà rare** sur ces configurations. Le vrai défaut n'était pas l'absence
+d'entrée mais son emplacement — un seuil qui ouvre directement dans le séjour
+plutôt que sur un espace de distribution. Sur le banc complet, 720 plans,
+`TH2D-ENTREE-001` ne se déclenche jamais.
+
+**Le banc a rendu visible le coût de la correction, et un second défaut de
+même nature.** En poussant un hôte d'entrée vers l'enveloppe, on prend de la
+façade aux chambres : `TH2D-FACADE-001` — HARD, « pièce principale en
+façade » — est passée de 39 à 53 violations. Cette règle non plus n'était
+représentée dans `scoreCandidate()`, si bien que la recherche ne pouvait pas
+arbitrer entre deux exigences qui se disputent le même bord. Elle y est
+maintenant, à 100 points par pièce principale enclavée :
+
+| règle (720 plans, graine 20260818) | référence | entrée seule | entrée + façade |
+|---|---|---|---|
+| `TH2D-FACADE-001` (HARD) | 39 | 53 | **2** |
+| `TH2D-ROOM-001` (GUIDELINE) | 73 | 57 | **55** |
+| `TH2D-CIRC-004` (GUIDELINE) | 265 | 309 | 298 |
+| `TH2D-SIZING-001` | 182 | 186 | 185 |
+| `TH2D-PROJECT-001` | 30 | 30 | 30 |
+
+Bilan assumé : une règle bloquante quasi éteinte — 39 → 2 — contre une
+circulation un peu plus généreuse, `TH2D-CIRC-004` restant 33 points au-dessus
+de la référence. La circulation en façade est plus longue ; c'est le prix du
+seuil bien placé, et c'est un conseil, pas un refus.
+
+Empreinte du banc : `6434c9d4` → `f3ed28a2`.
+
+### D1 — énoncé d'origine
 
 `poserEntree` (`generator.js`) s'exécute **après** que les 96 candidats ont
 été notés et le meilleur retenu ; `scoreCandidate` ne contient aucun critère
@@ -163,7 +216,36 @@ Correction : porter le contact façade de la pièce éligible dans
 juste, mais son manque principal est celui-ci, pas seulement l'absence d'un
 espace `entree` généré.
 
-### D2 — Une pièce fusionnée reste dessinée en parties séparées
+### D2 — Une pièce fusionnée reste dessinée en parties séparées — **corrigé le 18 août 2026**
+
+Deux corrections, l'une visible, l'autre plus lourde de conséquences.
+
+**Au dessin** : `cheminContour()` calcule le contour extérieur d'un ensemble
+de rectangles à axes alignés — damier des abscisses et ordonnées présentes,
+arêtes de cellule dont la voisine est vide, chaînage en boucle, suppression
+des points alignés. Une pièce se trace d'un seul `path`, le rangement se
+signalant par-dessus en pointillé : il dit une vocation à l'intérieur de la
+pièce, il ne la coupe pas en deux. Vérifié dans le navigateur : 6 contours,
+0 rectangle résiduel, aucune erreur console.
+
+**À la pose** : `usableRect` valait `parts[0]`. Une pièce dont les parties
+**pavent** leur boîte englobante est pourtant un rectangle entier — la
+découpe est un moyen de production, pas une entité de plan. Mesuré sur 150
+plans : **176 pièces sur 530** en plusieurs parties étaient dans ce cas, soit
+**623 m² de surface meublable** que le solveur ne voyait pas, environ 4 m² par
+pièce concernée.
+
+Effet de bord attrapé au passage : `TH2D-RANGEMENT-002` exigeait un contact
+d'arête entre la bande et le rectangle utile. La bande étant désormais
+**incluse** dans ce rectangle, la règle échouait sur les pièces les plus
+régulières. Une bande incluse est rattachée, et mieux qu'en contact.
+
+**Reste ouvert** : le solveur reste rectangulaire. Une pièce en L lui est
+servie par sa partie principale, faute de mieux — `placement.js` et le cache
+`fit.data.js` sont indexés par rectangle, et les rendre polygonaux est un
+chantier, pas un correctif.
+
+### D2 — énoncé d'origine
 
 `app.js` dessine chaque `part` indépendamment (deux boucles
 `room.parts && room.parts.length ? room.parts : [room]`). Une pièce en L
@@ -265,8 +347,9 @@ chantier 6.
 |---|---|---|
 | 2026-08-18 | Inventaire initial des fiches, du socle, du générateur et des règles actives | fait |
 | 2026-08-18 | Localisation des défauts D1 (entrée hors scoring), D2 (parties dessinées séparément), D3 (WC et cuisine fusionnés supprimés) | fait |
-| — | D1 : contact façade porté dans `scoreCandidate` | à faire |
-| — | D2 : union des contours au dessin et à la pose | à faire |
+| 2026-08-18 | D1 corrigé : pénalité d'entrée dans le scoring, règle `TH2D-ENTREE-001`, `test-entree.mjs` | fait |
+| 2026-08-18 | D2 corrigé : contour unifié au dessin, rectangle utile = union quand elle pave, `test-contour.mjs` | fait |
+| — | Solveur polygonal : une pièce en L est encore servie par sa partie principale | à faire |
 | 2026-08-18 | D3 corrigé : fusion traitée comme composition ; `test-fusion.mjs` ajouté | fait |
 | 2026-08-18 | D4 corrigé : banc rejouable, graine en argument, empreinte des résultats | fait |
 | — | Réconciliation des documents devenus périmés après l'ajout des ouvertures et parcours | à faire |

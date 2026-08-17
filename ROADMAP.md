@@ -942,7 +942,19 @@ moteur qui, sur trois points, **produit un plan faux**. Deux options du
 questionnaire donnent aujourd'hui un résultat que l'utilisateur ne peut pas
 interpréter autrement que comme un bug.
 
-### 5.1 — D1, l'entrée n'est pas une contrainte de génération
+### 5.1 — D1, l'entrée n'est pas une contrainte de génération — **corrigé le 18 août**
+
+Livré : pénalité d'entrée dans `scoreCandidate()`, règle `TH2D-ENTREE-001`
+(HARD), `test-entree.mjs`. La circulation atteint la façade dans 55,2 % des
+plans contre 31,9 %, et l'entrée y est accueillie 116 fois contre 67.
+
+La mesure a révélé un second défaut de même nature : `TH2D-FACADE-001` est
+HARD mais n'était pas non plus dans le score, si bien que pousser l'entrée
+vers l'enveloppe prenait la façade des chambres — 39 → 53 violations. Une
+pénalité de 100 points par pièce principale enclavée la ramène à **2**.
+Détail et tableau : `SUIVI_REGLES_PIECES.md`.
+
+Énoncé d'origine, conservé :
 
 `poserEntree()` s'exécute après que les candidats ont été notés et le
 meilleur retenu ; `scoreCandidate()` ne regarde ni la façade ni l'entrée. La
@@ -963,7 +975,19 @@ Il ne manque plus que de les faire peser sur la sélection.
 - [ ] mesurer, sur graines fixes, la part de plans où la circulation atteint
   la façade avant et après.
 
-### 5.2 — D2, une pièce fusionnée reste dessinée en parties
+### 5.2 — D2, une pièce fusionnée reste dessinée en parties — **corrigé le 18 août**
+
+Livré : `cheminContour()` trace le pourtour d'un ensemble de rectangles, le
+rendu n'émet plus qu'un `path` par pièce, et le rectangle utile devient la
+boîte englobante dès que les parties la pavent — 176 pièces sur 530 y
+retrouvent 623 m² meublables que le solveur ne voyait pas. `test-contour.mjs`
+tient l'invariant.
+
+Reste ouvert : le solveur est rectangulaire. Une pièce en L lui est servie par
+sa partie principale ; `placement.js` et le cache `fit.data.js` sont indexés
+par rectangle, les rendre polygonaux est un chantier, pas un correctif.
+
+Énoncé d'origine, conservé :
 
 `app.js` trace chaque `part` séparément : une pièce en L montre le trait de
 refend entre ses parties, et le solveur de pose raisonne lui aussi sur les
@@ -1608,8 +1632,11 @@ que la case à cocher.
 
 **12 a — les trois défauts** *(chantier 5)*
 
-- [ ] D1 — contact façade dans `scoreCandidate()`, règle `TH2D-ENTREE-001` ;
-- [ ] D2 — union des parties au dessin et à la pose ;
+- [x] D1 — contact façade dans `scoreCandidate()`, règle `TH2D-ENTREE-001`,
+  et pénalité de façade des pièces principales, découverte en mesurant D1 :
+  `TH2D-FACADE-001` passe de 39 à 2 violations sur 720 plans *(18 août)* ;
+- [x] D2 — contour unifié au dessin, rectangle utile = union quand les parties
+  la pavent : 176 pièces sur 530 retrouvent 623 m² meublables *(18 août)* ;
 - [x] D3 — fusion traitée comme composition, `room-model.js` + `composeInto()`
   + `TH2D-ROOM-002` étendue + `test-fusion.mjs` *(18 août)* ;
 - [x] D4 — banc rejouable : graine fixe par défaut, `--seed=<n>`, `--random`
