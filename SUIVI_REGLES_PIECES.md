@@ -85,14 +85,22 @@ dans le rapport général, pièce par pièce.
 
 ### P2 — Activer les pièces déjà prêtes dans le socle
 
-Ordre recommandé :
+**Exécution portée par le chantier 7 de `ROADMAP.md` (§5 septies)** : lots
+L1 à L7, dépendances, tests exigés et définition de terminé. Ce document
+reste l'état de référence pièce par pièce ; la roadmap porte l'ordre et les
+conditions d'entrée.
 
-1. **bureau**, déjà documenté et équipé ;
-2. **entrée**, déjà impliquée par les portes et les parcours ;
-3. **salle à manger**, après décision « pièce ou zone » ;
-4. **cellier** puis **buanderie**, proches des capacités actuelles ;
-5. **local technique** et **garage**, qui exigent davantage de règles
-   techniques et d'accès.
+Rappel de l'ordre retenu :
+
+1. **bureau** et **entrée** — lot pilote, il livre la mécanique d'activation ;
+2. **salle à manger** et **cellier**, après décision « pièce ou zone » ;
+3. **buanderie** et **local technique**, qui apportent les réseaux ;
+4. **suite parentale**, premier programme composé ;
+5. **garage** et **sas d'entrée** ;
+6. programmes fusionnés, puis extérieurs et multi-niveaux.
+
+Aucun lot ne démarre avant la correction de D1, D2, D3 et la première mesure
+à l'aveugle.
 
 ### P3 — Compléter le modèle commun
 

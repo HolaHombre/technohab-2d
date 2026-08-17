@@ -929,7 +929,7 @@ contrainte de découpe ne sera décidée qu'au vu des taux d'échec mesurés.
 Séquence, critères d'acceptation et grille de comparaison des trois
 stratégies : voir le document.
 
-## 5 quinquies. Chantier 5 — Défauts bloquants et couverture des pièces
+## 5 quinquies. Chantier 5 — Trois défauts bloquants de génération
 
 **Ouvert le 18 août 2026. Prioritaire sur tout le reste de la roadmap.**
 Défauts localisés dans le code : voir
@@ -993,7 +993,21 @@ enrichissement pour devenir une réparation.
 - [ ] une pièce fusionnée porte un programme réuni, un contour, une étiquette
   composée — jamais deux entités.
 
-### 5.4 — Couverture des pièces
+### 5.4 — Couverture des pièces *(déplacée)*
+
+L'inventaire et l'exécution de l'extension du programme font désormais l'objet
+d'un chantier dédié : **§5 septies, chantier 7**. Ce qui reste ici est le seul
+constat qui commande l'ordre du chantier 5.
+
+Le générateur produit six types ; le socle en décrit treize. **Le manque
+immédiat est de sept pièces déjà modélisées mais jamais générées.** Elles ne
+seront pas activées avant D1, D2 et D3 : générer sept typologies de plus dans
+un moteur qui dessine mal les fusions et place l'entrée au hasard
+multiplierait le défaut par sept.
+
+<details>
+<summary>Inventaire détaillé — conservé pour mémoire, repris au chantier 7</summary>
+
 
 Le générateur produit six types : séjour, cuisine, chambre, salle d'eau, WC,
 circulation. Le socle en décrit treize. **Le manque immédiat est donc de sept
@@ -1034,24 +1048,18 @@ local vélo, local poubelles. Deux évolutions structurelles les commandent :
 le multi-niveaux et une famille d'espaces extérieurs avec leurs seuils.
 Aucune n'est un ajout de règle.
 
+</details>
+
 ### 5.5 — Ordre retenu
 
-1. **D1, D2, D3** — les trois défauts, avant toute nouvelle pièce. Générer
-   sept typologies de plus dans un moteur qui dessine mal les fusions et
-   place l'entrée au hasard multiplierait le défaut par sept.
-2. Bureau, puis entrée — les deux plus proches de la génération.
-3. Salle à manger, après la décision « pièce ou zone ».
-4. Cellier, puis buanderie.
-5. Suite parentale — premier programme composé, il valide le mécanisme de
-   composition livré en 5.3.
-6. Local technique, puis garage.
-7. Programmes fusionnés : studio, cuisine ouverte, coin bureau.
-8. Étages et espaces extérieurs.
+1. **D1, D2, D3** — les trois défauts, et rien d'autre dans ce chantier.
+2. Première mesure à l'aveugle — chantier 6.
+3. Extension du programme de pièces — chantier 7.
 
-L'ordre n'est pas discutable sur son premier point : 5.3 livre le mécanisme
-de composition dont dépend l'étape 5, et 5.2 livre le contour unifié dont
-dépend tout programme composé. Les défauts ne sont pas seulement urgents, ils
-sont en amont.
+L'ordre n'est pas discutable : 5.3 livre le mécanisme de composition dont
+dépendent tous les programmes composés du chantier 7, et 5.2 livre le contour
+unifié sans lequel une pièce fusionnée ne peut ni se dessiner ni se meubler.
+Les défauts ne sont pas seulement urgents, ils sont **en amont**.
 
 ### Critères d'acceptation du chantier 5
 
@@ -1173,6 +1181,135 @@ pas : le panel du §6.2 étalonne, le quiz suit.
 - [ ] corrélation score interne / note d'habitabilité, dès 50 entrées ;
 - [ ] test de l'instrument (§6.3) avant la première mesure à l'aveugle ;
 - [ ] première mesure de discrimination (§6.2), qui ouvre la phase 12 b.
+
+## 5 septies. Chantier 7 — Extension du programme de pièces
+
+**Ouvert le 18 août 2026.** Porte l'exécution de ce que le §5.4 ne faisait
+que constater : passer de six types générés aux treize décrits par le socle,
+puis aux programmes composés, puis aux espaces que le modèle ne sait pas
+encore représenter.
+
+État de référence pièce par pièce :
+[`SUIVI_REGLES_PIECES.md`](SUIVI_REGLES_PIECES.md), qui fait foi sur le
+statut ; ce chantier fait foi sur l'ordre et les conditions.
+
+### 7.0 — Conditions d'entrée
+
+Aucun lot ne démarre tant que les trois ne sont pas vraies :
+
+1. **D1, D2, D3 corrigés** (chantier 5). D3 livre le mécanisme de
+   composition, D2 le contour unifié : sans eux, les lots L4 et L5 n'ont pas
+   de fondation.
+2. **Première mesure à l'aveugle faite** (chantier 6 §6.2). On ne multiplie
+   pas un plan dont on ignore la valeur.
+3. **Trois arbitrages rendus** — ils changent la nature du travail, pas son
+   volume :
+   - la **salle à manger** est-elle une pièce autonome ou une zone désignée
+     du séjour ?
+   - le **dressing** reste-t-il un équipement, devient-il une annexe ou une
+     pièce ?
+   - un **rangement** est-il une pièce générable, ou définitivement une
+     annexe rattachée à une pièce hôte ?
+
+Ces trois questions se répondent une fois pour toutes ; les laisser ouvertes
+ferait diverger L2, L3 et L4.
+
+### 7.1 — Lots
+
+Chaque lot est livrable seul, testable seul, et n'ouvre le suivant que
+lorsqu'il est terminé au sens du §7.4.
+
+| Lot | Contenu | Dépend de | Livre |
+|---|---|---|---|
+| **L1** | Bureau, entrée | 7.0 | le mécanisme d'activation d'un type déjà présent au socle |
+| **L2** | Salle à manger, cellier | L1 + arbitrage « pièce ou zone » | la désignation d'une zone dans une pièce hôte |
+| **L3** | Buanderie, local technique | L2 | les règles de réseaux et de regroupement humide |
+| **L4** | Suite parentale | L1, D3 | le premier programme **composé** réel |
+| **L5** | Garage, sas d'entrée | L4 | la relation au non-habité et le seuil extérieur |
+| **L6** | Studio, cuisine ouverte, coin repas, coin bureau, chambres enfant/amis | L4 | les variantes fonctionnelles et la fusion complète |
+| **L7** | Espaces extérieurs, multi-niveaux, annexes | tout ce qui précède | deux évolutions structurelles du modèle |
+
+**L1 est le lot pilote** : deux pièces sans difficulté propre, dont le seul
+enjeu est de faire apparaître la mécanique d'activation — programme,
+désignation de variante, génération, pose, règles, tests. Les lots suivants
+la réutilisent ; s'il faut trois jours pour L1 et trois jours pour L2, c'est
+que L1 n'a pas livré de mécanique réutilisable et il faut s'arrêter.
+
+**L7 n'est pas une extension, c'est un changement de modèle.** Le moteur est
+mono-niveau et sans extérieur ; escalier, terrasse et cave ne s'ajoutent pas
+comme une pièce de plus. Ce lot reste dans ce chantier pour être visible, pas
+pour être traité à la suite des autres.
+
+### 7.2 — Dépendances transverses
+
+Trois capacités manquent et sont réclamées par plusieurs lots. Les traiter
+dans le lot qui les réclame en premier, pas à part :
+
+| Capacité | Réclamée par | Traitée dans |
+|---|---|---|
+| Zone désignée à l'intérieur d'une pièce hôte | salle à manger, coin repas, coin bureau | **L2** |
+| Réseaux humides et regroupement technique | buanderie, local technique, arrière-cuisine | **L3** |
+| Adjacences typées — obligatoire, interdite, souhaitable, déconseillée | cellier ↔ cuisine, garage ↔ logement, WC ↔ repas | **L2**, étendu en L5 |
+
+L'adjacence typée mérite d'être signalée : elle est aujourd'hui binaire
+(demandée / obtenue). Le cellier attend « souhaitable près de la cuisine », le
+garage « obligatoirement relié par un sas », le WC « interdit ouvrant sur les
+repas » (`REF-008`, cf. `agencement/README.md` §2). Trois besoins, une seule
+évolution.
+
+### 7.3 — Tests exigés par lot
+
+Aucun lot n'est terminé sans ces quatre preuves. Elles existent déjà comme
+outils : ce chantier ne crée pas de banc, il l'étend.
+
+1. **Modèle** — `scripts/test-room-model.mjs` : le nouveau type est désigné
+   avec ses exigences et ses variantes, cas passant et cas refusé.
+2. **Pose** — `npm run fit:test` (`scripts/test-placement.mjs`) : les
+   équipements requis tiennent dans le gabarit annoncé, et un gabarit trop
+   petit est refusé pour la bonne raison.
+3. **Cache de faisabilité** — `npm run fit:build` régénéré : tout nouveau
+   type change le domaine de faisabilité. Un lot qui ne régénère pas
+   `fit.data.js` livre un cache faux.
+4. **Non-régression sur le banc** — `scripts/scan-capacites.mjs` sur les 24
+   configurations, plus `scan-seeds.mjs` : conformité, diversité,
+   meublabilité et durée ne se dégradent pas sur les programmes qui
+   n'utilisent pas la pièce ajoutée. C'est le test le plus important du lot,
+   et le seul qui détecte le coût caché d'une pièce nouvelle sur toutes les
+   autres.
+
+Deux seuils à tenir, hérités du budget existant : la durée de génération
+reste sous 110 ms, et la diversité au-dessus de vingt signatures distinctes
+sur trente tirages.
+
+### 7.4 — Définition de terminé
+
+Un lot est terminé quand **chacune** de ses pièces satisfait les sept points
+de `SUIVI_REGLES_PIECES.md` — fiche, socle, désignation, génération,
+validation par le solveur, verdicts identifiés dans le rapport, tests — et
+quand les quatre conditions de lot sont vraies :
+
+- les quatre tests du §7.3 passent, cache régénéré ;
+- le banc ne régresse sur aucune des 24 configurations ;
+- `SUIVI_REGLES_PIECES.md` est mis à jour : ligne de matrice, journal, et
+  passage de « Socle seul » à « Couvert » ou « Partiel » avec le manque
+  résiduel nommé ;
+- aucune option du questionnaire ne fait disparaître une fonction — invariant
+  hérité de D3, à revérifier à chaque lot puisque chaque pièce nouvelle ajoute
+  une option.
+
+### 7.5 — Ce qui ferait échouer ce chantier
+
+Deux façons de le rater, à surveiller explicitement :
+
+- **La dérive par accumulation** — chaque pièce ajoutée élargit le programme,
+  donc contraint la découpe, donc dégrade les adjacences des programmes
+  existants. Le §7.3.4 est là pour l'attraper tôt ; si la dégradation apparaît
+  dès L2, ce n'est pas un défaut du lot, c'est le signe que la méthode de
+  génération est à bout — et l'essai typologie devient prioritaire sur la
+  suite du chantier.
+- **La pièce décorative** — un type généré, jamais meublé, sans règle propre,
+  qui gonfle le catalogue sans rien apporter. Le §7.4 l'interdit en exigeant
+  les sept points, pas seulement la génération.
 
 ## 6. Roadmap technique
 
@@ -1447,44 +1584,35 @@ fréquent se lit** — et il conditionne l'ordre des travaux ci-dessous.
 - [ ] `S4` du socle — chemin continu de la porte à chaque zone d'usage, ce
   qui est le cheminement de la phase 9 à l'échelle de la pièce.
 
-### Phase 12 — Couverture des pièces et programmes composés
+### Phase 12 — Défauts bloquants, mesure, extension du programme
 
-Détail, inventaire et ordre : §5 quinquies. Cette phase ne démarre qu'une
-fois D1, D2 et D3 corrigés.
+Suivi d'exécution des chantiers 5, 6 et 7. Le détail — lots, dépendances,
+tests, définition de terminé — vit dans ces chantiers ; cette phase n'en est
+que la case à cocher.
 
-**12 a — les défauts d'abord**
+**12 a — les trois défauts** *(chantier 5)*
 
 - [ ] D1 — contact façade dans `scoreCandidate()`, règle `TH2D-ENTREE-001` ;
 - [ ] D2 — union des parties au dessin et à la pose ;
 - [ ] D3 — fusion traitée comme composition, variantes `bath` et `living`.
 
-**12 b — activer les pièces déjà modélisées** *(ouvert par la première mesure
-à l'aveugle du chantier 6, pas avant)*
+**12 b — mesure de la qualité perçue** *(chantier 6)*
 
-- [ ] bureau ;
-- [ ] entrée comme pièce, et non comme seule porte ;
-- [ ] salle à manger, après arbitrage « pièce autonome ou zone du séjour » ;
-- [ ] cellier, puis buanderie ;
-- [ ] local technique, puis garage.
+- [ ] quiz embarqué et journal local exporté ;
+- [ ] test de l'instrument par un plan d'architecte passé au banc ;
+- [ ] première mesure de discrimination à l'aveugle — **elle ouvre 12 c**.
 
-**12 c — programmes composés**
+**12 c — extension du programme** *(chantier 7, lots L1 à L7)*
 
-- [ ] suite parentale, premier cas d'usage du mécanisme livré en D3 ;
-- [ ] chambre d'enfant et chambre d'amis comme variantes fonctionnelles ;
-- [ ] studio, avec ses règles de fusion ;
-- [ ] sas d'entrée, arrière-cuisine ;
-- [ ] coin repas et coin bureau comme zones désignées d'une pièce hôte.
-
-**12 d — hors modèle actuel**
-
-- [ ] famille d'espaces extérieurs — terrasse, balcon, loggia, véranda,
-  jardin, cour — avec leurs seuils propres ;
-- [ ] multi-niveaux — escalier, palier, étage, mezzanine, combles, cave ;
-- [ ] annexes — atelier, local vélo, local poubelles.
-
-Ces trois lots sont des évolutions structurelles du moteur, pas des ajouts de
-règle : ils changent ce qu'est un plan, aujourd'hui mono-niveau et sans
-extérieur.
+- [ ] arbitrages d'entrée : salle à manger, dressing, rangement ;
+- [ ] L1 — bureau, entrée *(lot pilote : livre la mécanique d'activation)* ;
+- [ ] L2 — salle à manger, cellier *(livre la zone désignée et l'adjacence typée)* ;
+- [ ] L3 — buanderie, local technique *(livre les réseaux)* ;
+- [ ] L4 — suite parentale *(premier programme composé)* ;
+- [ ] L5 — garage, sas d'entrée ;
+- [ ] L6 — studio, cuisine ouverte, coin repas, coin bureau, variantes de chambre ;
+- [ ] L7 — extérieurs, multi-niveaux, annexes *(changement de modèle, pas
+  extension)*.
 
 ## 7. Définition d'une génération valide
 
@@ -1724,6 +1852,10 @@ aucune mesure faite sur ce moteur ne décrit ce que l'utilisateur voit.
 livre le mécanisme de composition dont dépendent la suite parentale et le
 studio. Puis D1, qui ne touche qu'à `scoreCandidate()`. Puis D2, le plus
 profond, qui change ce que le solveur reçoit.
+
+**0 bis. Mesurer avant d'étendre.** Première mesure à l'aveugle (chantier 6),
+puis les trois arbitrages d'entrée du chantier 7 — salle à manger, dressing,
+rangement — avant le lot pilote L1.
 
 Les quatre temps ci-dessous restent valides et suivent immédiatement. Chacun
 rend le suivant mesurable.
