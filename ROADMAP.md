@@ -1063,6 +1063,117 @@ sont en amont.
 - chaque pièce nouvellement générée satisfait les sept points de la
   définition de « terminé » de `SUIVI_REGLES_PIECES.md`.
 
+**Critère de sortie ajouté le 18 août** : la phase 12 b ne démarre pas avant
+la première mesure à l'aveugle du chantier 6. Ajouter sept pièces à un plan
+de base médiocre produit un plan médiocre à sept pièces de plus.
+
+## 5 sexies. Chantier 6 — Mesure de la qualité perçue
+
+**Ouvert le 18 août 2026.** Répond à une question que ni le banc ni les
+règles ne savent traiter : les plans produits sont-ils *utilisables et
+inspirants*, et pas seulement conformes.
+
+### 6.1 — Pourquoi le banc actuel ne peut pas y répondre
+
+`scripts/scan-capacites.mjs` mesure conformité, diversité, meublabilité,
+écart de surface et durée. Aucune de ces grandeurs ne décrit ce qu'un
+habitant ressent devant un plan.
+
+Deux angles morts, à nommer avant de construire quoi que ce soit :
+
+- `TH2D-ROOM-002` dit **meublable**, pas **agréable**. Une pièce où le lit
+  entre au millimètre passe la règle ;
+- la diversité comptée en signatures distinctes mesure la **variation**, pas
+  la **qualité**. Un générateur peut être très divers et uniformément
+  médiocre — c'est le résultat attendu si l'on augmente le tirage sans
+  changer le modèle.
+
+Le banc reste le témoin de la conformité. Il ne devient pas un juge de la
+qualité, et il ne doit pas être modifié pour prétendre l'être.
+
+### 6.2 — Quatre mesures, pré-enregistrées
+
+| Mesure | Protocole | Ce qu'elle établit |
+|---|---|---|
+| **Discrimination** | 10 plans générés mêlés à 10 plans réels de même surface et même programme, 5 juges à l'aveugle dont 2 architectes si possible | taux de confusion ; 50 % = indiscernable. La seule qui ne se triche pas |
+| **Préférence par paires** | généré contre référence, deux à deux | % de victoires, plus stable qu'une note absolue, donne une courbe entre versions |
+| **Conservation** | sur utilisateurs réels : plans sauvegardés, rejoués, montrés | observe un comportement au lieu de demander un avis |
+| **Surprise utile** | deux questions distinctes : « y auriez-vous pensé ? » et « y habiteriez-vous ? » | inspirant = *non* à la première, *oui* à la seconde. C'est la définition opérationnelle de l'inspiration retenue par le projet |
+
+### 6.3 — Tester l'instrument avant de s'en servir
+
+Faire dessiner par un architecte le plan d'un des programmes du banc, puis
+passer ce plan dans le banc. **S'il obtient un mauvais score, ce sont les
+critères qui sont faux, pas le plan.**
+
+Une heure de travail, et elle valide — ou invalide — l'instrument avec lequel
+on pilotera le reste de la feuille de route. À faire avant la première mesure
+à l'aveugle.
+
+### 6.4 — Le quiz embarqué et le journal d'évaluation
+
+Les mesures du §6.2 sont justes mais rares et coûteuses. Il manque un signal
+**continu**, recueilli à chaque génération, au moment où le plan est sous les
+yeux.
+
+**Le dispositif.** Un mini-quiz dans la page, proposé après l'affichage du
+plan — jamais bloquant, toujours refusable. Chaque réponse est jointe aux
+caractéristiques de la génération et versée à un journal local exporté en
+JSON.
+
+**Contrainte non négociable, et elle décide de l'architecture** : les
+principes du projet interdisent tout service externe et imposent `file://`.
+Le journal ne part donc nulle part. Il s'accumule dans le navigateur et
+s'exporte par un bouton, en un fichier que l'on classe à la main. Pas de
+collecte silencieuse, pas de serveur, pas de compte.
+
+**Ce qu'une entrée doit contenir** pour rester exploitable dans six mois :
+
+- la **graine** et les options du questionnaire — sans elles le jugement
+  n'est pas rejouable, donc perdu ;
+- la **version du moteur**, sans quoi on mélangera des avis portant sur des
+  plans que le même code ne produit plus ;
+- les métriques déjà calculées : score, conformité, violations, meublabilité,
+  diversité de la série, durée ;
+- les réponses du quiz, horodatées ;
+- rien qui identifie la personne.
+
+**Progression du quiz**, calée sur la crédibilité du moteur :
+
+1. *Aujourd'hui* — deux questions, pas plus : « y habiteriez-vous ? » et
+   « y auriez-vous pensé ? », plus un champ libre d'un mot pour le principal
+   défaut. Un quiz long sur un moteur qui produit encore des plans faux
+   récolte du bruit et fatigue le répondant.
+2. *Après le chantier 5* — le défaut cité devient une liste fermée, alimentée
+   par les mots libres les plus fréquents. C'est la façon la moins arbitraire
+   de construire les options.
+3. *Quand la génération sera crédible* — jugement pièce par pièce,
+   comparaison par paires entre deux variantes de la même graine, et note de
+   surprise séparée de la note d'habitabilité.
+
+**Ce que le journal permettra, et dans quel ordre.** L'objectif immédiat
+n'est pas d'apprendre : c'est de **vérifier que `scoreCandidate()` a un
+rapport avec le jugement humain**. Corrélation entre score interne et note
+d'habitabilité — si elle est nulle, le moteur optimise du bruit depuis le
+début, et c'est le résultat le plus utile que ce chantier puisse produire.
+Ensuite seulement, et à condition d'avoir des centaines d'entrées, on pourra
+re-pondérer les critères de score. Quelques dizaines d'avis ne permettent
+d'entraîner quoi que ce soit, et prétendre le contraire ferait de ce journal
+un ornement.
+
+**Le biais à ne jamais oublier** : ce quiz est rempli par qui développe le
+moteur, ou par des proches. Ce n'est pas une mesure à l'aveugle. Il donne une
+**tendance longitudinale** — est-ce que ça s'améliore ? — pas une vérité sur
+la qualité. Les deux dispositifs sont complémentaires et ne se remplacent
+pas : le panel du §6.2 étalonne, le quiz suit.
+
+- [ ] quiz deux questions dans `index.html`, refusable, non bloquant ;
+- [ ] journal accumulé en `localStorage`, schéma ci-dessus ;
+- [ ] export JSON par bouton, fichier ignoré par git ;
+- [ ] corrélation score interne / note d'habitabilité, dès 50 entrées ;
+- [ ] test de l'instrument (§6.3) avant la première mesure à l'aveugle ;
+- [ ] première mesure de discrimination (§6.2), qui ouvre la phase 12 b.
+
 ## 6. Roadmap technique
 
 ### Phase 0 — Intégration autonome ✅
@@ -1347,7 +1458,8 @@ fois D1, D2 et D3 corrigés.
 - [ ] D2 — union des parties au dessin et à la pose ;
 - [ ] D3 — fusion traitée comme composition, variantes `bath` et `living`.
 
-**12 b — activer les pièces déjà modélisées**
+**12 b — activer les pièces déjà modélisées** *(ouvert par la première mesure
+à l'aveugle du chantier 6, pas avant)*
 
 - [ ] bureau ;
 - [ ] entrée comme pièce, et non comme seule porte ;
