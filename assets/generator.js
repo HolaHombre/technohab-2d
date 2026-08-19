@@ -109,6 +109,11 @@
       bathrooms: Math.min(2, Math.max(1, Math.trunc(Number(input.bathrooms) || 1))),
       separateKitchen: Boolean(input.separateKitchen),
       includeWc: input.includeWc !== false,
+      // Chantier 1 — la forme de l'enveloppe est une donnée du projet, pas un
+      // sous-produit de la surface. Trois familles : primitive (carré,
+      // rectangle), soustractive (L, U, un quartier retiré du rectangle
+      // englobant), additive — celle-ci pas encore servie.
+      shape: ['square', 'rectangle', 'lShape', 'uShape'].indexOf(input.shape) >= 0 ? input.shape : 'rectangle',
       priority: ['compact', 'light', 'economy'].indexOf(input.priority) >= 0 ? input.priority : 'compact'
     };
   }
@@ -426,7 +431,7 @@
      arbitrés dans le score, pas l'un après l'autre. */
   var PIECES_EN_FACADE = ['living', 'bedroom', 'kitchen', 'dining', 'bureau'];
 
-  function penaliteFacade(boxes, width, height) {
+  function penaliteFacade(boxes, enveloppe) {
     var parId = {};
     var rangIdeal = -1;
     boxes.forEach(function (box) {
@@ -437,7 +442,7 @@
     });
     var meilleurRang = -1;
     var enFacade = {};
-    facadeSegments(boxes, width, height).forEach(function (segment) {
+    facadeSegments(boxes, enveloppe).forEach(function (segment) {
       var box = parId[segment.room];
       if (!box) return;
       enFacade[box.id] = true;
@@ -463,8 +468,8 @@
     return score + Math.max(0, meilleurRang - Math.max(0, rangIdeal)) * 18;
   }
 
-  function scoreCandidate(boxes, edges, program, width, height) {
-    var score = penaliteFacade(boxes, width, height);
+  function scoreCandidate(boxes, edges, program, enveloppe) {
+    var score = penaliteFacade(boxes, enveloppe);
     /* La recherche vise la desserte, non le simple contact : sinon elle
        optimiserait un critère que la règle ne juge pas, et un contact de
        24 cm passerait pour un succès. La pénalité décroît avec la longueur
@@ -833,28 +838,68 @@
      est au nord et y = H au sud. Ce n'est pas une orientation réelle — le
      questionnaire ne décrit pas le terrain — mais un repère cohérent avec le
      dessin, et le seul qu'on puisse tenir honnêtement aujourd'hui. */
-  /* Accepte aussi bien les pièces découpées en parties que les rectangles
+  /* La façade n'est plus le bord d'un rectangle : avec les formes en L et en
+     U, l'encoche est extérieure elle aussi. Un segment de mur est en façade
+     lorsque, juste au-delà, il n'y a aucun volume de l'enveloppe. Le test
+     porte sur des sous-segments découpés aux abscisses et ordonnées des
+     volumes, pour qu'un mur partiellement mitoyen ne compte que pour sa part
+     libre.
+
+     Accepte aussi bien les pièces découpées en parties que les rectangles
      bruts de la boucle de recherche : la façade doit se mesurer avant la
      sélection du candidat, pas seulement sur le gagnant (D1). */
-  function facadeSegments(boxes, width, height) {
+  function dansLEnveloppe(volumes, x, y) {
+    return volumes.some(function (v) {
+      return x > v.x + CONTACT && x < v.x + v.width - CONTACT &&
+        y > v.y + CONTACT && y < v.y + v.height - CONTACT;
+    });
+  }
+
+  function coupures(a0, a1, valeurs) {
+    var points = [a0, a1];
+    valeurs.forEach(function (valeur) {
+      if (valeur > a0 + CONTACT && valeur < a1 - CONTACT) points.push(valeur);
+    });
+    points.sort(function (x, y) { return x - y; });
+    var segments = [];
+    for (var i = 1; i < points.length; i += 1) {
+      if (points[i] - points[i - 1] > MIN_OVERLAP) segments.push([points[i - 1], points[i]]);
+    }
+    return segments;
+  }
+
+  function facadeSegments(boxes, enveloppe) {
+    var volumes = enveloppe && enveloppe.volumes
+      ? enveloppe.volumes
+      : [{ x: 0, y: 0, width: enveloppe.width, height: enveloppe.height }];
+    var absc = [], ordo = [];
+    volumes.forEach(function (v) {
+      absc.push(v.x, v.x + v.width);
+      ordo.push(v.y, v.y + v.height);
+    });
     var segments = [];
     boxes.forEach(function (box) {
       (box.parts && box.parts.length ? box.parts : [box]).forEach(function (part) {
         [
-          { cote: 'nord', sur: Math.abs(part.y0) < CONTACT, longueur: part.x1 - part.x0,
-            x0: part.x0, y0: 0, x1: part.x1, y1: 0 },
-          { cote: 'sud', sur: Math.abs(part.y1 - height) < CONTACT, longueur: part.x1 - part.x0,
-            x0: part.x0, y0: height, x1: part.x1, y1: height },
-          { cote: 'ouest', sur: Math.abs(part.x0) < CONTACT, longueur: part.y1 - part.y0,
-            x0: 0, y0: part.y0, x1: 0, y1: part.y1 },
-          { cote: 'est', sur: Math.abs(part.x1 - width) < CONTACT, longueur: part.y1 - part.y0,
-            x0: width, y0: part.y0, x1: width, y1: part.y1 }
-        ].forEach(function (candidat) {
-          if (!candidat.sur || candidat.longueur <= MIN_OVERLAP) return;
-          segments.push({
-            room: box.id, cote: candidat.cote, longueur: round(candidat.longueur, 2),
-            x0: round(candidat.x0), y0: round(candidat.y0),
-            x1: round(candidat.x1), y1: round(candidat.y1)
+          { cote: 'nord', axe: 'h', ligne: part.y0, a0: part.x0, a1: part.x1, dehors: -1 },
+          { cote: 'sud', axe: 'h', ligne: part.y1, a0: part.x0, a1: part.x1, dehors: 1 },
+          { cote: 'ouest', axe: 'v', ligne: part.x0, a0: part.y0, a1: part.y1, dehors: -1 },
+          { cote: 'est', axe: 'v', ligne: part.x1, a0: part.y0, a1: part.y1, dehors: 1 }
+        ].forEach(function (cote) {
+          var horizontal = cote.axe === 'h';
+          coupures(cote.a0, cote.a1, horizontal ? absc : ordo).forEach(function (segment) {
+            var milieu = (segment[0] + segment[1]) / 2;
+            var dehors = cote.ligne + cote.dehors * 2 * CONTACT;
+            var x = horizontal ? milieu : dehors;
+            var y = horizontal ? dehors : milieu;
+            if (dansLEnveloppe(volumes, x, y)) return;
+            segments.push({
+              room: box.id, cote: cote.cote, longueur: round(segment[1] - segment[0], 2),
+              x0: round(horizontal ? segment[0] : cote.ligne),
+              y0: round(horizontal ? cote.ligne : segment[0]),
+              x1: round(horizontal ? segment[1] : cote.ligne),
+              y1: round(horizontal ? cote.ligne : segment[1])
+            });
           });
         });
       });
@@ -1141,6 +1186,241 @@
     return base * (1 + (random() - 0.5) * 0.44);
   }
 
+  /* --- Formes d'enveloppe (chantier 1) --------------------------------------
+     Une enveloppe est une liste de volumes rectangulaires jointifs qui pavent
+     exactement la surface demandée. Le carré et le rectangle en ont un ; le L
+     en a deux, le U trois. Ce choix n'est pas qu'une commodité de calcul : il
+     laisse la découpe en guillotine intacte, chaque volume étant découpé comme
+     l'était l'enveloppe entière. Le moteur gagne des formes sans changer
+     d'algorithme.
+
+     Les formes soustractives se construisent dans leur rectangle englobant —
+     on retire un quartier à un angle (L) ou au milieu d'un côté (U). Le
+     rectangle englobant est donc plus grand que la surface du projet, et
+     c'est la surface bâtie, elle, qui reste celle demandée. */
+
+  /* Deux exigences distinctes, et les confondre stérilise les formes.
+     Le corps de bâtiment doit loger la pièce la plus large du programme — le
+     séjour, presque toujours. Une aile n'a qu'à loger la moins exigeante :
+     `repartirProgramme()` y envoie les petites pièces et garde les grandes
+     dans le volume principal. Exiger partout la largeur du séjour rendait le
+     L et le U impossibles avant 130 m² (TH2D-BOUNDARY-007). */
+  function largeurCorpsMinimale(rooms) {
+    return rooms.reduce(function (max, room) { return Math.max(max, room.minSide || 0); }, MIN_CIRCULATION_WIDTH);
+  }
+
+  // Les pièces servantes ne justifient pas une aile : une aile large comme un
+  // WC est un couloir avec une fenêtre. La borne vient donc de la plus étroite
+  // des pièces qui se vivent — mesuré, la retenir évite des ailes de 1,30 m.
+  var SERVANTES = ['circulation', 'wc'];
+
+  function largeurAileMinimale(rooms) {
+    var candidates = rooms.filter(function (room) { return SERVANTES.indexOf(room.type) < 0; });
+    if (!candidates.length) return MIN_CIRCULATION_WIDTH;
+    return candidates.reduce(function (min, room) {
+      return Math.min(min, room.minSide || Infinity);
+    }, Infinity);
+  }
+
+  /* Les volumes ne sont pas arrondis : ils entrent tels quels dans la découpe,
+     et arrondir ici décalerait les pièces d'un millimètre pour rien. L'arrondi
+     appartient à la sortie, pas au calcul. */
+  function volumeRect(x, y, width, height) {
+    return { x: x, y: y, width: width, height: height };
+  }
+
+  function enveloppePrimitive(options, random, shape) {
+    var aspect = shape === 'square' ? 1 : envelopeAspect(options.priority, random);
+    var largeur = Math.sqrt(options.surface * aspect);
+    var hauteur = options.surface / largeur;
+    return {
+      width: largeur, height: hauteur, shape: shape,
+      volumes: [volumeRect(0, 0, largeur, hauteur)]
+    };
+  }
+
+  /* Une forme soustractive n'existe pas à toute surface : sous un certain
+     seuil, ses ailes deviennent plus étroites que la pièce la plus exigeante
+     du programme. Plutôt que de produire une aile inhabitable ou de ne rien
+     rendre, on tente plusieurs proportions, puis on rabat sur le rectangle en
+     le disant — `demandee` conserve le choix de l'utilisateur, `degradee` dit
+     que le moteur n'a pas pu le tenir. Un plan faux serait pire qu'un plan
+     honnête sur sa forme. */
+  var ESSAIS_FORME = 8;
+
+  function construireEnveloppe(options, rooms, random) {
+    if (options.shape === 'square' || options.shape === 'rectangle') {
+      return enveloppePrimitive(options, random, options.shape);
+    }
+    for (var essai = 0; essai < ESSAIS_FORME; essai += 1) {
+      var candidate = enveloppeSoustractive(options, rooms, random);
+      if (candidate) return candidate;
+    }
+    var repli = enveloppePrimitive(options, random, 'rectangle');
+    repli.demandee = options.shape;
+    repli.degradee = true;
+    return repli;
+  }
+
+  /* Chaque volume secondaire doit pouvoir recevoir une pièce *distincte* : une
+     aile n'est pas un espace, c'est un lieu de vie. Vérifier qu'il en existe
+     une assez étroite ne suffit pas — il en faut autant que d'ailes. Mesuré :
+     sans cet appariement, un 60 m² à deux chambres mettait sa salle d'eau
+     dans une aile et laissait l'autre vide, 28 plans sur 720.
+
+     Appariement glouton, du volume le plus étroit vers le plus large, avec la
+     plus petite pièce qui convient : sur des listes de trois éléments, il
+     donne le même résultat qu'un appariement optimal pour un coût nul. */
+  function volumesTousHabitables(volumes, rooms, principal) {
+    var candidates = rooms.filter(function (room) {
+      return room.type !== 'circulation';
+    }).sort(function (a, b) { return (a.minSide || 0) - (b.minSide || 0); });
+    var prises = {};
+    var secondaires = volumes.map(function (volume, index) { return index; })
+      .filter(function (index) { return index !== principal; })
+      .sort(function (a, b) {
+        return Math.min(volumes[a].width, volumes[a].height) - Math.min(volumes[b].width, volumes[b].height);
+      });
+    return secondaires.every(function (index) {
+      var volume = volumes[index];
+      var etroit = Math.min(volume.width, volume.height);
+      var aire = volume.width * volume.height;
+      for (var i = 0; i < candidates.length; i += 1) {
+        var room = candidates[i];
+        if (prises[room.id]) continue;
+        if ((room.minSide || 0) > etroit + 0.01) continue;
+        if (room.minArea > aire + 0.01) continue;
+        prises[room.id] = true;
+        return true;
+      }
+      return false;
+    });
+  }
+
+  function indexPrincipal(volumes) {
+    var aires = volumes.map(function (v) { return v.width * v.height; });
+    return aires.indexOf(Math.max.apply(null, aires));
+  }
+
+  function enveloppeSoustractive(options, rooms, random) {
+    // Un volume sans pièce est une part d'enveloppe sans propriétaire. Une
+    // forme ne peut donc pas avoir plus de volumes que le programme n'a de
+    // pièces : un logement de deux pièces ne se met pas en U, il se met en
+    // rectangle. Mesuré : sans ce garde-fou, 60 plans sur 720 laissaient une
+    // aile vide et déclenchaient TH2D-RESERVE-001.
+    var volumesRequis = options.shape === 'uShape' ? 3 : 2;
+    if (rooms.length < volumesRequis) return null;
+    var surface = options.surface;
+    var aile = largeurAileMinimale(rooms);
+    var corps = largeurCorpsMinimale(rooms);
+    var aspect = envelopeAspect(options.priority, random);
+
+    // Le retrait est borné : trop faible, la forme se confond avec un
+    // rectangle ; trop fort, les ailes deviennent des couloirs.
+    var retrait = 0.18 + random() * 0.16;
+    var englobante = surface / (1 - retrait);
+    var W = Math.sqrt(englobante * aspect);
+    var H = englobante / W;
+
+    if (options.shape === 'lShape') {
+      // Bande pleine en bas, aile partielle au-dessus : le quartier retiré est
+      // l'angle haut-droit du rectangle englobant.
+      var h1 = H * (0.45 + random() * 0.2);
+      var w2 = (surface - W * h1) / (H - h1);
+      if (!(w2 >= corps && W - w2 >= aile && h1 >= corps && H - h1 >= aile)) return null;
+      var volumesL = [volumeRect(0, 0, W, h1), volumeRect(0, h1, w2, H - h1)];
+      if (!volumesTousHabitables(volumesL, rooms, indexPrincipal(volumesL))) return null;
+      return { width: W, height: H, shape: 'lShape', volumes: volumesL };
+    }
+
+    // U : une bande pleine et deux ailes symétriques, l'encoche au milieu du
+    // côté opposé. Symétriques par construction — un U dissymétrique est un
+    // L avec un appendice, pas un U.
+    var base = H * (0.38 + random() * 0.18);
+    var aileLargeur = (surface - W * base) / (2 * (H - base));
+    var encoche = W - 2 * aileLargeur;
+    if (!(aileLargeur >= aile && encoche >= aile && base >= corps && H - base >= aile)) return null;
+    var volumesU = [
+      volumeRect(0, 0, W, base),
+      volumeRect(0, base, aileLargeur, H - base),
+      volumeRect(W - aileLargeur, base, aileLargeur, H - base)
+    ];
+    if (!volumesTousHabitables(volumesU, rooms, indexPrincipal(volumesU))) return null;
+    return { width: W, height: H, shape: 'uShape', volumes: volumesU };
+  }
+
+  /* Le programme se répartit entre les volumes au prorata de leur surface. La
+     circulation va dans le plus grand : c'est le volume qui touche tous les
+     autres dans un L comme dans un U, donc le seul depuis lequel le graphe de
+     desserte reste réalisable. */
+  function repartirProgramme(rooms, volumes, random) {
+    if (volumes.length === 1) return [rooms.slice()];
+    var aires = volumes.map(function (v) { return v.width * v.height; });
+    var principal = indexPrincipal(volumes);
+    var groupes = volumes.map(function () { return []; });
+    var restant = aires.slice();
+    var ordre = shuffled(rooms, random).sort(function (a, b) { return b.targetArea - a.targetArea; });
+
+    /* Chaque volume reçoit d'abord une pièce, la plus grande qui y tienne :
+       distribuer au seul prorata des surfaces laisserait parfois une aile
+       vide, donc une part d'enveloppe sans propriétaire. On sème, puis on
+       répartit. */
+    var places = {};
+    volumes.forEach(function (volume, index) {
+      if (index === principal) return;
+      var etroit = Math.min(volume.width, volume.height);
+      for (var i = 0; i < ordre.length; i += 1) {
+        var candidate = ordre[i];
+        if (places[candidate.id] || candidate.type === 'circulation') continue;
+        if ((candidate.minSide || 0) > etroit + 0.01) continue;
+        if (candidate.minArea > aires[index] + 0.01) continue;
+        places[candidate.id] = true;
+        groupes[index].push(candidate);
+        restant[index] -= candidate.targetArea;
+        break;
+      }
+    });
+
+    ordre.forEach(function (room) {
+      if (places[room.id]) return;
+      var cible = room.type === 'circulation' ? principal : -1;
+      if (cible < 0) {
+        // Le volume qui garde le plus de place, à condition d'y tenir — en
+        // surface comme en largeur. Une chambre de 2,50 m de côté minimal
+        // n'entre pas dans une aile de 1,80 m, quelle que soit sa longueur.
+        var meilleur = -1;
+        restant.forEach(function (place, index) {
+          if (place + 0.01 < room.minArea) return;
+          var volume = volumes[index];
+          if (Math.min(volume.width, volume.height) + 0.01 < (room.minSide || 0)) return;
+          if (meilleur < 0 || place > restant[meilleur]) meilleur = index;
+        });
+        cible = meilleur >= 0 ? meilleur : restant.indexOf(Math.max.apply(null, restant));
+      }
+      groupes[cible].push(room);
+      restant[cible] -= room.targetArea;
+    });
+    return groupes;
+  }
+
+  /* Chaque volume est découpé pour la surface qu'il porte réellement, qui
+     diffère de la somme des cibles de ses pièces. L'écart est réparti au
+     prorata : sans cela, la découpe déborderait ou laisserait un vide, et la
+     couverture cesserait d'être complète. */
+  function ajusterAuVolume(groupe, volume, volumes) {
+    // Enveloppe primitive : la somme des cibles vaut déjà la surface, et
+    // rééchelonner n'introduirait qu'un bruit de virgule — assez pour changer
+    // les rapports de découpe, donc les plans, sans rien corriger.
+    if (volumes.length === 1) return groupe;
+    var aire = volume.width * volume.height;
+    var somme = groupe.reduce(function (total, room) { return total + room.targetArea; }, 0);
+    if (!somme) return groupe;
+    var facteur = aire / somme;
+    return groupe.map(function (room) {
+      return Object.assign({}, room, { targetArea: round(room.targetArea * facteur) });
+    });
+  }
+
   function generatePlan(rawOptions, variant, requestedSeed) {
     var program = buildProgram(rawOptions);
     var seed = typeof requestedSeed === 'number'
@@ -1150,28 +1430,35 @@
     var best = null;
     for (var attempt = 0; attempt < budget; attempt += 1) {
       var random = randomFrom(seed + attempt * 2654435761);
-      var aspect = envelopeAspect(program.options.priority, random);
-      var width = Math.sqrt(program.options.surface * aspect);
-      var height = program.options.surface / width;
-      // Le séjour n'est plus placé en tête : il appartenait alors toujours à
-      // la première tranche de la découpe, donc au même angle, quelle que
-      // soit la variante (voir ROADMAP §3.2).
-      var order = shuffled(program.rooms, random);
-      // La découpe sépare le tableau en deux tranches contiguës : une pièce
-      // placée au milieu borde les deux moitiés. C'est la position qui donne
-      // à la circulation le plus de voisins, donc le plus de chances de
-      // desservir ce qu'elle doit desservir.
-      var hub = order.findIndex(function (room) { return room.type === 'circulation'; });
-      if (hub >= 0) {
-        var middle = Math.floor(order.length / 2) + (random() < 0.5 ? 0 : -1);
-        order.splice(middle, 0, order.splice(hub, 1)[0]);
-      }
+      var enveloppe = construireEnveloppe(program.options, program.rooms, random);
+      var width = enveloppe.width, height = enveloppe.height;
       var boxes = [];
-      layout(order, { x: 0, y: 0, width: width, height: height }, 0, program.options.priority, random, boxes);
+      repartirProgramme(program.rooms, enveloppe.volumes, random).forEach(function (groupe, index) {
+        if (!groupe.length) return;
+        var volume = enveloppe.volumes[index];
+        // Le séjour n'est plus placé en tête : il appartenait alors toujours à
+        // la première tranche de la découpe, donc au même angle, quelle que
+        // soit la variante (voir ROADMAP §3.2).
+        var order = shuffled(ajusterAuVolume(groupe, volume, enveloppe.volumes), random);
+        // La découpe sépare le tableau en deux tranches contiguës : une pièce
+        // placée au milieu borde les deux moitiés. C'est la position qui donne
+        // à la circulation le plus de voisins, donc le plus de chances de
+        // desservir ce qu'elle doit desservir.
+        var hub = order.findIndex(function (room) { return room.type === 'circulation'; });
+        if (hub >= 0) {
+          var middle = Math.floor(order.length / 2) + (random() < 0.5 ? 0 : -1);
+          order.splice(middle, 0, order.splice(hub, 1)[0]);
+        }
+        layout(order, { x: volume.x, y: volume.y, width: volume.width, height: volume.height },
+          0, program.options.priority, random, boxes);
+      });
       var edges = actualEdges(boxes);
-      var score = scoreCandidate(boxes, edges, program, width, height);
+      var score = scoreCandidate(boxes, edges, program, enveloppe);
       if (!best || score < best.score) {
-        best = { boxes: boxes, edges: edges, score: score, attempt: attempt, width: width, height: height };
+        best = {
+          boxes: boxes, edges: edges, score: score, attempt: attempt,
+          width: width, height: height, enveloppe: enveloppe
+        };
       }
       if (best.score === 0) break;
     }
@@ -1193,7 +1480,7 @@
     var finalEdges = edgesFromParts(carved);
     // La façade et l'extérieur, calculés sur la géométrie finale : le
     // décrochement d'une pièce peut lui donner ou lui retirer du bord.
-    var facades = facadeSegments(carved, best.width, best.height);
+    var facades = facadeSegments(carved, best.enveloppe);
     var exterieur = edgesToExterior(facades);
     var portes = poserPortes(carved, program.desiredEdges);
     var entree = poserEntree(carved, facades);
@@ -1204,7 +1491,19 @@
       schemaVersion: '2.3', generator: 'technohab-local-graph-2d', variant: variant || 1,
       seed: encodeSeed(seed), seedValue: seed >>> 0,
       candidate: best.attempt + 1, budget: budget, score: round(best.score, 2),
-      boundary: { width: round(best.width), height: round(best.height), area: program.options.surface },
+      boundary: {
+        width: round(best.width), height: round(best.height), area: program.options.surface,
+        // La forme et ses volumes voyagent avec le plan : le rendu, les règles
+        // d'enveloppe et le cheminement en ont tous besoin (chantier 1).
+        shape: best.enveloppe.shape,
+        // Forme demandée et forme obtenue peuvent différer : sous une certaine
+        // surface, un L ou un U n'a plus d'aile habitable.
+        demandee: best.enveloppe.demandee || best.enveloppe.shape,
+        degradee: Boolean(best.enveloppe.degradee),
+        volumes: best.enveloppe.volumes.map(function (v) {
+          return { x0: v.x, y0: v.y, x1: round(v.x + v.width), y1: round(v.y + v.height) };
+        })
+      },
       options: program.options, minimumRequiredArea: program.minimumTotal,
       minCirculationWidth: MIN_CIRCULATION_WIDTH, minDesserte: MIN_DESSERTE, maxCirculationWidth: MAX_CIRCULATION_WIDTH,
       minStorageDepth: MIN_STORAGE_DEPTH, maxStorageDepthRatio: MAX_STORAGE_DEPTH_RATIO,

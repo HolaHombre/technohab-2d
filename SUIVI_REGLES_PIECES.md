@@ -341,6 +341,79 @@ tirer au hasard que sur demande explicite. Peu de code, et il conditionne
 toute mesure d'évolution — y compris la corrélation score/jugement du
 chantier 6.
 
+## Chantier 1 — Formes d'enveloppe, premier lot livré le 18 août 2026
+
+Le questionnaire propose quatre formes : **rectangle, carré, L, U**. La forme
+« Souple » (additive, qui déborde du rectangle englobant) et le tirage
+`random` restent à faire.
+
+**Le choix de structure.** Une enveloppe est une liste de volumes
+rectangulaires jointifs qui pavent exactement la surface demandée — un pour
+le carré et le rectangle, deux pour le L, trois pour le U. La découpe en
+guillotine n'a pas été remplacée : elle travaille chaque volume comme elle
+travaillait l'enveloppe entière. Le moteur gagne des formes sans changer
+d'algorithme.
+
+**Ce qu'il a fallu généraliser** :
+
+- `facadeSegments()` ne teste plus l'appartenance aux quatre bords d'un
+  rectangle. Un mur est en façade lorsque, juste au-delà, il n'y a aucun
+  volume — sinon l'encoche d'un L ou d'un U, pourtant extérieure, ne compterait
+  pas. Mesuré : la façade moyenne passe de 42 m (rectangle) à 47 m (L) et
+  61 m (U) à surface égale ;
+- le fond du plan est un contour, plus un rectangle : peindre la boîte
+  englobante reviendrait à bâtir l'encoche. Il réutilise le `cheminContour()`
+  de D2 ;
+- `TH2D-BOUNDARY-008` (HARD) garde l'invariant qu'aucune pièce ne déborde
+  dans l'encoche — la boîte englobante, elle, la contiendrait sans rien dire.
+
+**Deux exigences de largeur, et les confondre stérilisait les formes.** Le
+corps de bâtiment doit loger la pièce la plus large du programme, le séjour
+presque toujours (3,00 m). Une aile n'a qu'à loger la plus étroite des pièces
+qui se vivent — la salle d'eau, 1,70 m ; les pièces servantes, WC et
+circulation, ne justifient pas une aile, sans quoi on obtient un couloir avec
+une fenêtre. Mesuré : exiger partout la largeur du séjour rendait le L et le U
+impossibles avant 130 m². Avec la distinction, les deux formes tiennent dès
+45 m², et l'aile la plus étroite mesure 1,85 m.
+
+**Quand la forme est intenable**, le moteur essaie huit proportions puis
+rabat sur le rectangle et le dit : `boundary.demandee` conserve le choix de
+l'utilisateur, `boundary.degradee` signale le repli. Un plan faux serait pire
+qu'un plan honnête sur sa forme.
+
+**Ce que le banc dit des trois formes** — 720 plans chacune, graine 20260818 :
+
+| règle | rectangle | L | U |
+|---|---|---|---|
+| `TH2D-PROJECT-001` (HARD, programme saturé) | 30 | 30 | 30 |
+| `TH2D-FACADE-001` (HARD) | 2 | 2 | 0 |
+| `TH2D-CIRC-001` (HARD) | 0 | 1 | 0 |
+| `TH2D-ROOM-002` (HARD) | 0 | 0 | 2 |
+| `TH2D-RESERVE-001` (HARD) | 0 | 0 | **0**, contre 60 avant l'appariement |
+| `TH2D-ROOM-001` (GUIDELINE) | 55 | 293 | 285 |
+| `TH2D-SIZING-001` (GUIDELINE) | 185 | 320 | 362 |
+| `TH2D-CIRC-004` (GUIDELINE) | 298 | 239 | 241 |
+
+Empreintes : rectangle `f3ed28a2`, L `11de3c85`, U `e21f110e`.
+
+Lecture honnête : les formes soustractives tiennent les règles bloquantes
+aussi bien que le rectangle, mais **découpent la même surface en volumes plus
+contraints** — cinq fois plus de pièces sous leur minimum indicatif, et un
+séjour plus souvent en deçà des 24 m². Ce n'est pas un défaut du code, c'est
+le prix géométrique d'une aile : à surface égale, un L ou un U répartit moins
+librement. La question ouverte est de savoir si ces seuils indicatifs, calés
+sur le rectangle, ont encore un sens sur une forme découpée.
+
+**Non-régression prouvée** : à graine égale, l'empreinte du banc en rectangle
+reste `f3ed28a2`, identique au bit près. Deux écarts d'un millimètre ont été
+traqués jusqu'à leur cause — un rééchelonnage inutile des surfaces cibles sur
+une enveloppe à volume unique, et un arrondi des dimensions d'enveloppe entré
+dans le calcul au lieu de rester en sortie.
+
+**Reste ouvert** : forme « Souple » et tirage `random` ; `TH2D-BOUNDARY-001`
+à `007`, `009` et `010`, encore non écrites ; l'orientation, qui n'est pas
+une forme mais la commande le rendu autant qu'elle.
+
 ## Journal de suivi
 
 | Date | Changement | État |
@@ -349,7 +422,9 @@ chantier 6.
 | 2026-08-18 | Localisation des défauts D1 (entrée hors scoring), D2 (parties dessinées séparément), D3 (WC et cuisine fusionnés supprimés) | fait |
 | 2026-08-18 | D1 corrigé : pénalité d'entrée dans le scoring, règle `TH2D-ENTREE-001`, `test-entree.mjs` | fait |
 | 2026-08-18 | D2 corrigé : contour unifié au dessin, rectangle utile = union quand elle pave, `test-contour.mjs` | fait |
+| 2026-08-18 | Chantier 1, premier lot : formes carré, rectangle, L et U ; `test-formes.mjs` | fait |
 | — | Solveur polygonal : une pièce en L est encore servie par sa partie principale | à faire |
+| — | Forme « Souple » (additive) et tirage `random` | à faire |
 | 2026-08-18 | D3 corrigé : fusion traitée comme composition ; `test-fusion.mjs` ajouté | fait |
 | 2026-08-18 | D4 corrigé : banc rejouable, graine en argument, empreinte des résultats | fait |
 | — | Réconciliation des documents devenus périmés après l'ajout des ouvertures et parcours | à faire |

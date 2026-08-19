@@ -22,6 +22,11 @@ const A = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets');
 for (const f of ['fit.data.js', 'generator.js', 'rules.js']) vm.runInThisContext(fs.readFileSync(join(A, f), 'utf8'));
 const G = globalThis.TechnoHabGenerator, R = globalThis.TechnoHabRules, F = globalThis.TechnoHabFit;
 
+// La forme reste le rectangle par défaut : c'est elle qui porte l'historique
+// des empreintes. `--shape=lShape` mesure une famille sans brouiller la série.
+const argShape = process.argv.find((a) => a.startsWith('--shape='));
+const forme = argShape ? argShape.slice(8) : 'rectangle';
+
 const GRAINE_PAR_DEFAUT = 20260818;
 const argSeed = process.argv.find((a) => a.startsWith('--seed='));
 const aleatoire = process.argv.includes('--random');
@@ -57,7 +62,7 @@ const ruleTotals = {}, fitFail = {};
 let rows = [];
 
 CONFIGS.forEach(([surface, bedrooms, bathrooms, sepK, wc, priority], indexConfig) => {
-  const opts = { surface, bedrooms, bathrooms, separateKitchen: sepK, includeWc: wc, priority };
+  const opts = { surface, bedrooms, bathrooms, separateKitchen: sepK, includeWc: wc, priority, shape: forme };
   const prog = G.buildProgram(opts);
   const saturation = prog.minimumTotal / surface;
   let hard = 0, sigs = new Set(), worst = 0, roomsTot = 0, fitOk = 0, nonRect = 0, ms = 0, t0 = Date.now();
@@ -84,6 +89,7 @@ CONFIGS.forEach(([surface, bedrooms, bathrooms, sepK, wc, priority], indexConfig
   });
 });
 
+console.log('forme : ' + forme);
 console.log('graine de base : ' + graineBase + (aleatoire ? ' (tirage libre, non rejouable)' : ' (rejouable)'));
 console.log('configuration                  | satur | HARD  | div   | meublable | formes L | ecart | ms');
 console.log('-'.repeat(100));

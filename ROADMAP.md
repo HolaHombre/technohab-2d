@@ -4,8 +4,8 @@ Document de pilotage de l'intégration de TechnoHab et de l'évolution du
 générateur de plans 2D.
 
 **Mise à jour : 18 août 2026**  
-**Statut : prototype local intégré, audité, moteur à consolider — trois
-défauts bloquants ouverts, chantier 5**
+**Statut : prototype local intégré et audité ; les quatre défauts du chantier
+5 sont corrigés, le chantier 1 livre ses quatre premières formes d'enveloppe**
 
 Documents liés : `SUIVI_REGLES_PIECES.md` (état consolidé pièce par pièce,
 défauts localisés), `agencement/` (valeurs d'usage sourcées par typologie),
@@ -473,6 +473,59 @@ masque raster compatible avec un moteur Graph2Plan.
 - [ ] les tests couvrent les six modes, les petites surfaces et les cas
   impossibles ;
 - [ ] aucune régression sur le chargement autonome dans Wonderland.
+
+### Premier lot livré — 18 août 2026
+
+Quatre formes au questionnaire : **rectangle, carré, L, U**. La forme
+« Souple » (additive) et le tirage `random` restent à faire.
+
+Une enveloppe est désormais une **liste de volumes rectangulaires jointifs**
+qui pavent exactement la surface demandée — un pour le carré et le rectangle,
+deux pour le L, trois pour le U. La découpe en guillotine n'a pas été
+remplacée : elle travaille chaque volume comme elle travaillait l'enveloppe
+entière. Le moteur gagne des formes sans changer d'algorithme.
+
+Trois généralisations l'ont accompagnée :
+
+- `facadeSegments()` ne teste plus l'appartenance aux quatre bords d'un
+  rectangle mais l'absence de volume au-delà du mur — sans quoi l'encoche d'un
+  L ou d'un U, pourtant extérieure, ne compterait pas. Mesuré à surface égale :
+  42 m de façade en rectangle, 47 m en L, 60 m en U ;
+- le fond du plan est un contour, non plus un rectangle : peindre la boîte
+  englobante reviendrait à bâtir l'encoche. Il réutilise le `cheminContour()`
+  de D2 ;
+- `TH2D-BOUNDARY-008` (HARD) garde l'invariant qu'aucune pièce ne déborde dans
+  l'encoche, que la boîte englobante contiendrait sans rien dire.
+
+**Deux exigences de largeur, et les confondre stérilisait les formes.** Le
+corps de bâtiment doit loger la pièce la plus large du programme — le séjour,
+3,00 m. Une aile n'a qu'à loger la plus étroite des pièces qui se vivent — la
+salle d'eau, 1,70 m ; une aile large comme un WC est un couloir avec une
+fenêtre. Exiger partout la largeur du séjour rendait le L et le U impossibles
+avant 130 m² ; avec la distinction, les deux tiennent dès 45 m².
+
+**Un volume sans pièce est une part d'enveloppe sans propriétaire.** Le banc
+l'a montré : 60 plans sur 720 déclenchaient `TH2D-RESERVE-001`. Deux
+garde-fous en sont sortis — une forme ne peut pas avoir plus de volumes que le
+programme n'a de pièces, et surtout chaque volume secondaire doit pouvoir
+recevoir une pièce **distincte**, vérifié par appariement avant de retenir la
+forme. Vérifier qu'il existe une pièce assez étroite ne suffisait pas : il en
+faut autant que d'ailes.
+
+**Quand la forme est intenable**, le moteur essaie huit proportions puis
+rabat sur le rectangle et le dit : `boundary.demandee` garde le choix de
+l'utilisateur, `boundary.degradee` signale le repli. Un plan faux serait pire
+qu'un plan honnête sur sa forme.
+
+**Non-régression prouvée au bit près** : à graine égale, l'empreinte du banc
+en rectangle est inchangée. Deux écarts d'un millimètre ont été traqués
+jusqu'à leur cause — un rééchelonnage inutile des surfaces cibles sur une
+enveloppe à volume unique, et un arrondi des dimensions d'enveloppe entré dans
+le calcul au lieu de rester en sortie.
+
+Reste ouvert : forme « Souple » et tirage `random` ; `TH2D-BOUNDARY-001` à
+`007`, `009`, `010` non écrites ; l'orientation, qui n'est pas une forme mais
+commande le rendu autant qu'elle.
 
 ## 5 bis. Chantier 2 — Diversité, graine et largeur des circulations
 
@@ -1362,12 +1415,16 @@ Deux façons de le rater, à surveiller explicitement :
 
 ### Phase 1 — Formes d'enveloppe
 
-- [ ] ajouter `shape` au questionnaire et au schéma ;
-- [ ] séparer forme, orientation et priorité ;
-- [ ] remplacer la frontière largeur / hauteur par un polygone ;
-- [ ] adapter le rendu SVG ;
-- [ ] générer et contrôler carré, rectangle et libre orthogonale ;
-- [ ] ajouter les tests et messages d'impossibilité.
+- [x] ajouter `shape` au questionnaire et au schéma *(18 août)* ;
+- [ ] séparer forme, orientation et priorité — l'orientation reste absente ;
+- [x] remplacer la frontière largeur / hauteur par une liste de volumes,
+  pavant exactement la surface *(18 août)* ;
+- [x] adapter le rendu SVG — fond en contour, façades sur polygone *(18 août)* ;
+- [x] générer et contrôler carré, rectangle, L et U *(18 août)* ;
+- [ ] forme « Souple » (additive) et tirage `random` ;
+- [x] tests (`test-formes.mjs`) et repli explicite quand la forme est
+  intenable *(18 août)* ;
+- [ ] écrire `TH2D-BOUNDARY-001` à `007`, `009` et `010` — seule `008` existe.
 
 ### Phase 2 — Questionnaire piloté par un schéma
 

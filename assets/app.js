@@ -63,7 +63,8 @@
     var data = new FormData(form);
     return root.TechnoHabGenerator.normalizeOptions({
       surface: data.get('surface'), bedrooms: data.get('bedrooms'), bathrooms: data.get('bathrooms'),
-      separateKitchen: data.get('separateKitchen') === 'on', includeWc: data.get('includeWc') === 'on', priority: data.get('priority')
+      separateKitchen: data.get('separateKitchen') === 'on', includeWc: data.get('includeWc') === 'on',
+      priority: data.get('priority'), shape: data.get('shape')
     });
   }
   function restoreForm() {
@@ -305,7 +306,17 @@
     planSvg.setAttribute('viewBox', '0 0 ' + plan.boundary.width + ' ' + plan.boundary.height);
     planSvg.setAttribute('role', 'img');
     planSvg.setAttribute('aria-label', 'Variante ' + plan.variant + ', plan de ' + plan.boundary.area + ' mètres carrés comprenant ' + plan.rooms.length + ' espaces');
-    planSvg.appendChild(svgElement('rect', { x: 0, y: 0, width: plan.boundary.width, height: plan.boundary.height, class: 'plan-background', 'aria-hidden': 'true' }));
+    /* Le fond du plan épouse l'enveloppe, pas sa boîte englobante : sur un L
+       ou un U, peindre le rectangle reviendrait à bâtir l'encoche. */
+    var volumes = plan.boundary.volumes;
+    var contourEnveloppe = root.TechnoHabGenerator && root.TechnoHabGenerator.cheminContour;
+    if (volumes && volumes.length && contourEnveloppe) {
+      planSvg.appendChild(svgElement('path', {
+        d: contourEnveloppe(volumes), class: 'plan-background', 'aria-hidden': 'true'
+      }));
+    } else {
+      planSvg.appendChild(svgElement('rect', { x: 0, y: 0, width: plan.boundary.width, height: plan.boundary.height, class: 'plan-background', 'aria-hidden': 'true' }));
+    }
     plan.rooms.forEach(function (room) {
       var group = svgElement('g', {
         class: 'room room--' + room.type,

@@ -315,6 +315,33 @@
       }
     },
     {
+      /* Chantier 1 — l'enveloppe n'est plus un rectangle : une pièce peut
+         désormais déborder dans l'encoche d'un L ou d'un U sans que rien ne
+         le signale, puisque la boîte englobante, elle, la contient. La règle
+         garde l'invariant que la découpe par volumes est censée tenir. */
+      id: 'TH2D-BOUNDARY-008', level: 'HARD', label: 'Pièces contenues dans l’enveloppe',
+      evaluate: function (plan) {
+        var volumes = plan.boundary && plan.boundary.volumes;
+        if (!volumes || !volumes.length) return [];
+        var violations = [];
+        plan.rooms.forEach(function (room) {
+          parts(room).forEach(function (part) {
+            var dedans = volumes.some(function (volume) {
+              return part.x0 >= volume.x0 - CONTACT && part.x1 <= volume.x1 + CONTACT &&
+                part.y0 >= volume.y0 - CONTACT && part.y1 <= volume.y1 + CONTACT;
+            });
+            if (!dedans) {
+              violations.push({
+                entityId: room.id,
+                message: room.label + ' déborde de l’enveloppe : une partie sort des volumes bâtis.'
+              });
+            }
+          });
+        });
+        return violations;
+      }
+    },
+    {
       /* D1 — jusqu'ici le moteur pouvait retenir un plan sans accès depuis
          l'extérieur et se contenter de le signaler dans le détail de
          l'entrée. Un logement dans lequel on n'entre pas n'est pas un
