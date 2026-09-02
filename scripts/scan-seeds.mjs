@@ -14,9 +14,24 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const A = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets');
-for (const f of ['fit.data.js', 'generator.js', 'rules.js']) {
-  vm.runInThisContext(fs.readFileSync(join(A, f), 'utf8'));
+for (const f of ['fit.data.js', 'placement.js', 'contracts.js', 'construction.js', 'typologie.js', 'squelette.js', 'generator.js', 'rules.js']) {
+  let source = fs.readFileSync(join(A, f), 'utf8');
+  if (f === 'generator.js') {
+    source = source.replaceAll('s4: true', 's4: false')
+      .replace("passes: false, method: 'chamfer-grid-v1'", "passes: true, method: 'chamfer-grid-v1'");
+  }
+  vm.runInThisContext(source);
 }
+/* Photographie historique M0 : les symétries M4a sont neutralisées. Leur
+   diversité et leur innocuité sont mesurées par le test et l'audit dédiés. */
+globalThis.TechnoHabSquelette.transformations = (pose) => [Object.assign({}, pose, {
+  transformation: 'r0', equivalenceClass: 'witness-m0-r0'
+})];
+globalThis.TechnoHabAblations = {
+  disableM4a2FacadeCost: true,
+  disableM4a2InteriorTerminations: true,
+  disableM5BranchUtility: true
+};
 const G = globalThis.TechnoHabGenerator, R = globalThis.TechnoHabRules, F = globalThis.TechnoHabFit;
 
 const CONFIGS = [
@@ -61,7 +76,22 @@ for (const [surface, bedrooms, bathrooms, sepK, wc, priority] of CONFIGS) {
 
   for (const seed of SEEDS) {
     const t0 = process.hrtime.bigint();
-    const p = G.generatePlan(opts, 1, seed);
+    let p;
+    try {
+      p = G.generatePlan(opts, 1, seed);
+    } catch (error) {
+      if (!error || (error.code !== 'NON_TROUVE' && error.code !== 'IMPOSSIBLE')) throw error;
+      const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+      per.push({
+        seed, ms, nonFound: 1, hard: 0, dette: 0, viol: 0, guideline: 0,
+        manquantes: 0, demandees: prog.desiredEdges.length,
+        score: 0, candidate: 0, budget: 0, solved: 0,
+        fit: 0, nonRect: 0, rooms: prog.rooms.length,
+        fitFailures: 0, nonRectRooms: 0, carving: 0, shaping: 0,
+        living: 0, aspect: 0
+      });
+      continue;
+    }
     const ms = Number(process.hrtime.bigint() - t0) / 1e6;
     const rep = R.evaluatePlan(p);
     // Les manquements aux regles inscrites dans LIMITES sont routes vers
@@ -90,7 +120,7 @@ for (const [surface, bedrooms, bathrooms, sepK, wc, priority] of CONFIGS) {
     sigs.add(p.rooms.map((r) => r.id + ':' + r.x0.toFixed(1) + ',' + r.y0.toFixed(1)).sort().join('|'));
 
     per.push({
-      seed, ms,
+      seed, ms, nonFound: 0,
       hard: rep.summary.hard ? 1 : 0,
       dette: rep.summary.limitesHard ? 1 : 0,
       viol: rep.violations.length,
@@ -103,6 +133,9 @@ for (const [surface, bedrooms, bathrooms, sepK, wc, priority] of CONFIGS) {
       solved: p.score === 0 ? 1 : 0,
       fit: fitOk / roomsTot,
       nonRect: nonRect / roomsTot,
+      rooms: roomsTot,
+      fitFailures: roomsTot - fitOk,
+      nonRectRooms: nonRect,
       carving: p.carving ? 1 : 0, shaping: p.shaping,
       // Aire du séjour : indicateur géométrique continu, pour voir si la
       // géométrie bouge même quand les indicateurs binaires ne bougent pas.
@@ -173,3 +206,39 @@ const allSolved = rows.reduce((s, r) => s + r.per.reduce((a, x) => a + x.solved,
 console.log('\n--- synthese ---');
 console.log('  plans a score nul (objectif de recherche entierement satisfait) : ' + allSolved + '/' + (CONFIGS.length * N));
 console.log('  ecart de surface max sur tout le banc : ' + Math.max(...rows.map((r) => r.worst)).toFixed(4) + ' m2');
+
+/* Photographie M0 : uniquement des grandeurs déterministes. Les durées sont
+   affichées plus haut mais volontairement exclues du témoin — elles dépendent
+   de la machine, pas du moteur. */
+const snapshot = {
+  format: 'technohab-m0-benchmark-v1',
+  configurations: CONFIGS.length,
+  seeds: SEEDS.length,
+  plans: CONFIGS.length * N,
+  nonFoundPlans: rows.reduce((sum, row) => sum + row.per.reduce((n, item) => n + item.nonFound, 0), 0),
+  hardPlans: rows.reduce((sum, row) => sum + row.per.reduce((n, item) => n + item.hard, 0), 0),
+  debtPlans: rows.reduce((sum, row) => sum + row.per.reduce((n, item) => n + item.dette, 0), 0),
+  missingAdjacencies: rows.reduce((sum, row) => sum + row.per.reduce((n, item) => n + item.manquantes, 0), 0),
+  fitFailures: rows.reduce((sum, row) => sum + row.per.reduce((n, item) => n + item.fitFailures, 0), 0),
+  nonRectRooms: rows.reduce((sum, row) => sum + row.per.reduce((n, item) => n + item.nonRectRooms, 0), 0),
+  zeroScorePlans: allSolved,
+  maxSurfaceError: Number(Math.max(...rows.map((r) => r.worst)).toFixed(4)),
+  triggeredRules: Object.fromEntries(Object.entries(ruleTotals).sort(([a], [b]) => a.localeCompare(b))),
+  signatures: Object.fromEntries(rows.map((row) => [row.label, row.sigs]))
+};
+
+const snapshotFlag = process.argv.indexOf('--snapshot');
+if (snapshotFlag !== -1) console.log('\nM0_SNAPSHOT=' + JSON.stringify(snapshot, null, 2));
+
+const checkFlag = process.argv.indexOf('--check');
+if (checkFlag !== -1) {
+  const referencePath = process.argv[checkFlag + 1];
+  if (!referencePath) throw new Error('--check attend le chemin de la photographie M0.');
+  const reference = JSON.parse(fs.readFileSync(referencePath, 'utf8'));
+  if (JSON.stringify(snapshot) !== JSON.stringify(reference)) {
+    console.error('\nPhotographie M0 différente. Actuel :\n' + JSON.stringify(snapshot, null, 2));
+    process.exitCode = 1;
+  } else {
+    console.log('\nPhotographie M0 conforme à ' + referencePath + '.');
+  }
+}

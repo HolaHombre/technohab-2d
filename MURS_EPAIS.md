@@ -2,7 +2,7 @@
 
 Document de cadrage du chantier « murs épais » de TechnoHab.
 
-**Statut :** planifié, non commencé  
+**Statut :** MVP M1 à M5 livré les 19–20 août 2026
 **Priorité :** après stabilisation des ouvertures, du parcours et de l'union
 géométrique des parties de pièce  
 **Principe :** livrer d'abord un MVP géométriquement vrai, sans prétendre
@@ -174,51 +174,109 @@ pour le MVP.
 
 ### M1 — Données et extraction
 
-- [ ] ajouter la configuration constructive au plan ;
-- [ ] produire des murs intérieurs et extérieurs uniques ;
-- [ ] éliminer les faux murs entre parties d'une même pièce ;
-- [ ] tester rectangles, pièces en L, angles et jonctions en T.
+- [x] ajouter la configuration constructive au plan ;
+- [x] produire des murs intérieurs et extérieurs uniques ;
+- [x] éliminer les faux murs entre parties d'une même pièce ;
+- [x] tester rectangles, pièces en L, angles et jonctions en T.
 
 **Livrable :** un tableau `walls` stable, exporté mais pas encore utilisé par
 les autres calculs.
 
+Implémentation : `assets/construction.js` dérive ce tableau après la fusion et
+la mise en forme finales des pièces. Les identifiants dépendent de la géométrie
+et des espaces séparés, pas de l'ordre des pièces. Les plages admises restent
+des conventions explicites du MVP : 0,10–1,00 m pour un mur extérieur et
+0,04–0,50 m pour une cloison intérieure.
+
 ### M2 — Surfaces utiles
 
-- [ ] produire `usablePolygon` et `usableArea` par pièce ;
-- [ ] distinguer surface habitable, surface de murs et emprise extérieure ;
-- [ ] préserver la surface habitable demandée en ajustant l'enveloppe ;
-- [ ] ajouter les invariants de couverture et de non-chevauchement.
+- [x] produire `usablePolygon` et `usableArea` par pièce ;
+- [x] distinguer surface habitable, surface de murs et emprise extérieure ;
+- [x] préserver la surface habitable demandée en ajustant l'enveloppe ;
+- [x] ajouter les invariants de couverture et de non-chevauchement.
 
 **Livrable :** des surfaces et dimensions intérieures cohérentes.
 
+Implémentation : la partition finale est agrandie par homothétie, sans changer
+sa topologie, jusqu'à ce que la somme des surfaces utiles retrouve la demande
+habitable. `room.area` et `room.usableArea` portent désormais cette surface
+utile ; `room.partitionArea` conserve la surface avant retrait des cloisons.
+`usablePolygon` suit la convention d'un Polygon GeoJSON — tableau d'anneaux —
+et `usableBounds` en donne la boîte englobante. Le plan expose séparément
+`targetHabitableArea`, `habitableArea`, `partitionArea`, `wallArea` et
+`grossFloorArea`, avec une tolérance de conservation de 0,01 m².
+
 ### M3 — Ouvertures
 
-- [ ] rattacher portes et fenêtres à un mur ;
-- [ ] réserver leur baie dans le volume du mur ;
-- [ ] refuser une ouverture qui touche une jonction ou déborde ;
-- [ ] recalculer sens, face et débattement des portes.
+- [x] rattacher portes et fenêtres à un mur ;
+- [x] réserver leur baie dans le volume du mur ;
+- [x] refuser une ouverture qui touche une jonction ou déborde ;
+- [x] recalculer sens, face et débattement des portes.
 
 **Livrable :** des murs réellement percés par les ouvertures.
 
+Implémentation : chaque mur expose ses deux faces, ses réservations et les
+segments pleins qui subsistent. Portes, entrée et fenêtres portent un
+`wallId` et un `reservationId` ; la réservation traverse l'épaisseur complète
+du mur et conserve un tableau minimal de 0,08 m aux jonctions. Le placement
+écarte les baies entre elles, tandis que la couche constructive refuse encore
+explicitement un débordement, un chevauchement ou un mur absent. Le sens et le
+débattement des portes partent désormais de la face intérieure choisie.
+`TH2D-WALL-005` contrôle ces références dans le plan exporté et
+`scripts/test-ouvertures-murs.mjs` couvre les refus ainsi que 24 configurations
+sur deux systèmes d'épaisseurs.
+
 ### M4 — Mobilier et parcours
 
-- [ ] transmettre les faces intérieures au solveur ;
-- [ ] migrer `wall`, `corner`, `same-wall` et `different-wall` ;
-- [ ] recalculer `TH2D-ROOM-002` sur la surface utile ;
-- [ ] bloquer le parcours sur les murs, sauf aux ouvertures.
+- [x] transmettre les faces intérieures au solveur ;
+- [x] migrer `wall`, `corner`, `same-wall` et `different-wall` ;
+- [x] recalculer `TH2D-ROOM-002` sur la surface utile ;
+- [x] bloquer le parcours sur les murs, sauf aux ouvertures.
 
 **Livrable :** un plan dont l'usage est validé dans l'espace réellement
 disponible.
 
+Implémentation : chaque pièce expose `wallFaces`, soit les portions de faces
+intérieures encore pleines après retrait des réservations. Le solveur balaie
+ces segments, conserve le véritable `wallId` et le `faceId`, vérifie les
+emprises et zones d'usage dans `usablePolygon`, et traite les coins depuis le
+contour utile. Les relations `same-wall`, `different-wall` et `between`
+comparent donc des murs constructifs plutôt que les quatre côtés d'une boîte.
+`TH2D-ROOM-002` prend la géométrie utile comme référence et
+`TH2D-WALL-006` contrôle chaque équipement mural effectivement posé. Enfin,
+le maillage du parcours est construit sur les surfaces utiles : les volumes
+de murs restent vides et seules les réservations M3 les rendent traversables.
+`scripts/test-mobilier-parcours.mjs` couvre 12 plans, les ancrages muraux et
+en angle, les relations, les deux règles et le franchissement d'une baie.
+
 ### M5 — Rendu, export et régression
 
-- [ ] tracer les volumes de murs et leurs réservations ;
-- [ ] afficher les deux familles de surfaces et dimensions ;
-- [ ] publier un schéma JSON versionné ;
-- [ ] comparer au moins 24 configurations avant/après ;
-- [ ] couvrir petites pièces, grandes distributions et plusieurs graines.
+- [x] tracer les volumes de murs et leurs réservations ;
+- [x] afficher les deux familles de surfaces et dimensions ;
+- [x] publier un schéma JSON versionné ;
+- [x] comparer au moins 24 configurations avant/après ;
+- [x] couvrir petites pièces, grandes distributions et plusieurs graines.
 
 **Livrable :** MVP activable dans l'interface et exportable.
+
+Implémentation : `assets/app.js` dessine chaque `solidSegment` comme une
+surface SVG, après les surfaces utiles et avant les portes et fenêtres. Les
+réservations apparaissent donc comme de véritables interruptions du volume,
+sans masque graphique. La légende distingue textuellement surface utile, mur
+extérieur, cloison et baie ; les métriques affichent séparément habitable,
+murs et emprise. Le dessin reste dans la palette fermée de Wonderland, avec
+des filets d'un pixel et sans encadré supplémentaire.
+
+Le contrat d'export passe en `3.0` et est publié dans `PLAN_SCHEMA.json`.
+`exportDocument()` produit l'enveloppe versionnée ; `readExportDocument()`
+accepte aussi l'ancienne enveloppe `{ plan, rulesReport }` et les anciens
+plans directs. Le banc `scripts/test-livraison-murs.mjs` couvre 24
+configurations, deux épaisseurs, trois formes, quatre surfaces et deux graines
+par configuration, soit 48 plans. Résultat du 20 août 2026 : 0 violation
+bloquante ; 360 pièces meublables dans l'ancien rectangle contre 353 dans la
+géométrie constructive ; 295 pièces atteintes dans les deux modèles de
+parcours. Les surfaces cumulées sont 4 955,1 m² de partition, 4 740 m²
+habitables, 1 045,3 m² de murs et 5 785,3 m² d'emprise extérieure.
 
 ## 6. Règles nouvelles
 
@@ -276,7 +334,7 @@ Ordre recommandé dans le produit :
 1. terminer les défauts géométriques bloquants actuels ;
 2. stabiliser portes, fenêtres et parcours ;
 3. réaliser M1 et M2 ;
-4. brancher M3 et M4 ;
+4. exploiter les faces et réservations dans le mobilier et le parcours ;
 5. livrer M5 avant toute extension constructive.
 
 Estimation indicative pour une personne connaissant le moteur : **10 à 18

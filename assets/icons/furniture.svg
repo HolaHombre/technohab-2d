@@ -29,6 +29,20 @@
     <path d="M68 26v63M112 26v63" />
   </symbol>
 
+  <symbol id="furn-sofa_3" viewBox="0 0 220 90" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Canapé 3 places" data-w="2.20" data-h="0.90" data-rotatable="true">
+    <path d="M1 1h218v88H1z" />
+    <path d="M24 1v88M196 1v88" />
+    <path d="M24 26h172" />
+    <path d="M81 26v63M139 26v63" />
+  </symbol>
+
+  <symbol id="furn-sofa_angle" viewBox="0 0 220 220" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Canapé d’angle" data-w="2.20" data-h="2.20" data-rotatable="true">
+    <path d="M1 1h218v88H89v130H1z" />
+    <path d="M26 1v195M196 1v88M1 26h195M1 196h88" />
+    <path d="M89 26v63H26M143 26v63M26 143h63" />
+    <path d="M26 26l63 63" />
+  </symbol>
+
   <symbol id="furn-coffee_table" viewBox="0 0 110 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Table basse" data-w="1.10" data-h="0.60" data-rotatable="true">
     <path d="M1 1h108v58H1z" />
   </symbol>
@@ -57,6 +71,26 @@
     <path d="M9 9h58v30H9zM73 9h58v30H73z" />
     <path d="M1 62h138" />
     <path d="M139 62v32l-32-32z" />
+  </symbol>
+
+  <symbol id="furn-bed_160" viewBox="0 0 160 200" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Lit queen 160" data-w="1.60" data-h="2.00" data-rotatable="true">
+    <path d="M1 1h158v198H1z" />
+    <path d="M9 9h68v30H9zM83 9h68v30H83z" />
+    <path d="M1 62h158" />
+    <path d="M159 62v34l-34-34z" />
+  </symbol>
+
+  <symbol id="furn-bed_180" viewBox="0 0 180 200" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Lit king 180" data-w="1.80" data-h="2.00" data-rotatable="true">
+    <path d="M1 1h178v198H1z" />
+    <path d="M9 9h78v30H9zM93 9h78v30H93z" />
+    <path d="M1 62h178" />
+    <path d="M179 62v36l-36-36z" />
+  </symbol>
+
+  <symbol id="furn-armchair" viewBox="0 0 90 85" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Fauteuil" data-w="0.90" data-h="0.85" data-rotatable="true">
+    <path d="M1 1h88v83H1z" />
+    <path d="M18 1v83M72 1v83" />
+    <path d="M18 24h54" />
   </symbol>
 
   <symbol id="furn-wardrobe" viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Penderie" data-w="1.20" data-h="0.60" data-stretch="x" data-rotatable="true">
@@ -196,6 +230,11 @@
   <symbol id="furn-electrical_panel" viewBox="0 0 60 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Tableau électrique" data-w="0.60" data-h="0.15" data-rotatable="true">
     <path d="M1 1h58v13H1z" />
     <path d="M9 4h8v7H9zM20 4h8v7h-8zM31 4h8v7h-8zM42 4h8v7h-8z" />
+  </symbol>
+
+  <symbol id="furn-towel_rail" viewBox="0 0 60 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Sèche-serviettes" data-w="0.60" data-h="0.15" data-rotatable="true">
+    <path d="M1 1h58v13H1z" />
+    <path d="M9 3v9M16 3v9M23 3v9M30 3v9M37 3v9M44 3v9M51 3v9" />
   </symbol>
 
   <!-- Le bleu accent marque une emprise à réserver, non bâtie — convention à

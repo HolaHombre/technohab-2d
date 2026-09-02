@@ -27,7 +27,7 @@
     if (!socleEnCours) {
       socleEnCours = loadScript('./assets/socle.data.js')
         .then(function () { return loadScript('./assets/room-model.js'); })
-        .then(function () { return loadScript('./assets/placement.js'); })
+        .then(function () { return root.TechnoHabPlacement ? null : loadScript('./assets/placement.js'); })
         .catch(function (erreur) { socleEnCours = null; throw erreur; });
     }
     return socleEnCours;

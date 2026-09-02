@@ -1,0 +1,45 @@
+{
+  "format": "technohab-o0-reference-v1",
+  "seeds": 30,
+  "rows": [
+    {
+      "surface": 45,
+      "programmedArea": 1.434,
+      "generated": 30,
+      "nonFound": 0,
+      "meanArea": 2.86,
+      "maxArea": 2.888,
+      "nonRect": 0,
+      "worstSeed": 195948557,
+      "worstUsable": [1.1, 2.8],
+      "candidates": [1, 1],
+      "retries": 0
+    },
+    {
+      "surface": 90,
+      "programmedArea": 1.5,
+      "generated": 30,
+      "nonFound": 0,
+      "meanArea": 2.909,
+      "maxArea": 3.158,
+      "nonRect": 0,
+      "worstSeed": 1432778632,
+      "worstUsable": [1.206, 2.782],
+      "candidates": [1, 1],
+      "retries": 0
+    },
+    {
+      "surface": 250,
+      "programmedArea": 1.5,
+      "generated": 30,
+      "nonFound": 0,
+      "meanArea": 3.092,
+      "maxArea": 3.319,
+      "nonRect": 0,
+      "worstSeed": 1432778632,
+      "worstUsable": [1.025, 3.454],
+      "candidates": [1, 1],
+      "retries": 0
+    }
+  ]
+}

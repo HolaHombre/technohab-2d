@@ -1,0 +1,443 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wonderland.local/technohab/plan/3.1/schema",
+  "title": "Export de plan TechnoHab",
+  "description": "Contrat d’export 3.1. Les lecteurs doivent aussi accepter un ancien document {plan, rulesReport} sans métadonnées, ou un plan direct.",
+  "type": "object",
+  "required": ["$schema", "schemaVersion", "appVersion", "exportedAt", "plan", "rulesReport", "programResolution"],
+  "properties": {
+    "$schema": { "const": "./PLAN_SCHEMA.json" },
+    "schemaVersion": { "const": "3.1" },
+    "appVersion": { "type": ["string", "null"] },
+    "exportedAt": { "type": "string", "format": "date-time" },
+    "plan": { "$ref": "#/$defs/plan" },
+    "rulesReport": { "type": ["object", "null"] },
+    "programResolution": {
+      "type": ["object", "null"],
+      "required": ["status", "level", "requestedProgram", "resolvedProgram", "changes", "attempts", "consent"],
+      "properties": {
+        "status": { "enum": ["EXACT", "RELAXED"] },
+        "level": { "enum": ["R0_EXACT", "R1_FUSION", "R2_BATHROOMS", "R3_OPTIONAL_ROOM", "R4_BEDROOM"] },
+        "requestedProgram": { "type": "object" },
+        "resolvedProgram": { "type": "object" },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["field", "from", "to", "reason", "severity"],
+            "properties": {
+              "field": { "type": "string" },
+              "from": {},
+              "to": {},
+              "reason": { "type": "string" },
+              "severity": { "enum": ["FUNCTION_PRESERVED", "FUNCTION_REDUCED", "FUNCTION_REMOVED"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "attempts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["level", "variant", "seed", "status", "failureCode"],
+            "properties": {
+              "level": { "enum": ["R0_EXACT", "R1_FUSION", "R2_BATHROOMS", "R3_OPTIONAL_ROOM", "R4_BEDROOM"] },
+              "variant": { "type": "number" },
+              "seed": { "type": ["number", "null"] },
+              "status": { "enum": ["VALID", "IMPOSSIBLE", "NON_TROUVE", "INVALIDE_DEBUG"] },
+              "failureCode": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "consent": {
+          "type": "object",
+          "required": ["required", "accepted", "method", "acceptedAt"],
+          "properties": {
+            "required": { "type": "boolean" },
+            "accepted": { "const": true },
+            "method": { "enum": ["not-required", "explicit-checkbox"] },
+            "acceptedAt": { "type": ["string", "null"], "format": "date-time" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "profile": {
+      "type": "object",
+      "required": ["id", "maturity", "version", "source"],
+      "properties": {
+        "id": { "type": "string" },
+        "maturity": { "enum": ["C0", "C1", "C2", "C3", "C4", "C5", "C6"] },
+        "version": { "type": "string" },
+        "source": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "canonicalValueRef": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^VAL-[A-Z0-9-]+$" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+      },
+      "additionalProperties": false
+    },
+    "adjacencyRequirement": {
+      "type": "object",
+      "required": ["a", "b", "kind", "nature", "degre", "contact"],
+      "properties": {
+        "a": { "type": "string" },
+        "b": { "type": "string" },
+        "kind": { "const": "opening" },
+        "nature": { "enum": ["porte", "ouverture", "ouverture_large", "separation", "interdite"] },
+        "degre": { "enum": ["obligatoire", "souhaitable", "deconseillee", "interdite"] },
+        "contact": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "rectangle": {
+      "type": "object",
+      "required": ["x0", "y0", "x1", "y1"],
+      "properties": {
+        "x0": { "type": "number" },
+        "y0": { "type": "number" },
+        "x1": { "type": "number" },
+        "y1": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "equipmentProgramItem": {
+      "type": "object",
+      "required": ["id", "sizeId", "label", "required", "program", "footprint", "activation", "minRoomArea"],
+      "properties": {
+        "id": { "type": "string" },
+        "sizeId": { "type": "string" },
+        "label": { "type": "string" },
+        "required": { "type": "boolean" },
+        "program": { "type": ["string", "null"] },
+        "footprint": {
+          "type": "object",
+          "required": ["w", "d"],
+          "properties": { "w": { "type": "number", "exclusiveMinimum": 0 }, "d": { "type": "number", "exclusiveMinimum": 0 } },
+          "additionalProperties": false
+        },
+        "activation": { "enum": ["required", "area-threshold"] },
+        "minRoomArea": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "equipmentProgram": {
+      "type": "object",
+      "required": ["version", "authority", "method", "area", "programs", "requested", "resolved", "fallback"],
+      "properties": {
+        "version": { "const": "m4c-v1" },
+        "authority": { "const": "BuiltPlan" },
+        "method": { "enum": ["m4c-canonical-v1", "minimum-v1"] },
+        "area": { "type": ["number", "null"] },
+        "programs": { "type": "array", "items": { "type": "string" } },
+        "requested": { "type": "array", "items": { "$ref": "#/$defs/equipmentProgramItem" } },
+        "resolved": { "type": "array", "items": { "$ref": "#/$defs/equipmentProgramItem" } },
+        "fallback": {
+          "type": "object",
+          "required": ["attempts", "sizeDowngraded", "optionalRemoved"],
+          "properties": {
+            "attempts": { "type": "number", "minimum": 1 },
+            "sizeDowngraded": { "type": "boolean" },
+            "optionalRemoved": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "placement": {
+      "type": "object",
+      "required": ["equipmentId", "anchor", "wallId", "faceId", "footprint", "usage", "rotation", "inward"],
+      "properties": {
+        "equipmentId": { "type": "string" },
+        "sizeId": { "type": "string" },
+        "label": { "type": "string" },
+        "required": { "type": "boolean" },
+        "program": { "type": ["string", "null"] },
+        "nominalFootprint": {
+          "type": "object",
+          "required": ["w", "d"],
+          "properties": { "w": { "type": "number", "exclusiveMinimum": 0 }, "d": { "type": "number", "exclusiveMinimum": 0 } },
+          "additionalProperties": false
+        },
+        "anchor": { "enum": ["free", "wall", "corner"] },
+        "wallId": { "type": ["string", "null"] },
+        "faceId": { "type": ["string", "null"] },
+        "footprint": { "$ref": "#/$defs/rectangle" },
+        "usage": { "type": "array", "items": { "$ref": "#/$defs/rectangle" } },
+        "rotation": { "type": "number" },
+        "inward": { "$ref": "#/$defs/point" }
+      },
+      "additionalProperties": false
+    },
+    "s4Room": {
+      "type": "object",
+      "required": ["passes", "method", "resolution", "clearance", "accessCount", "anchoredAccessCount", "requiredUsageZones", "reachableUsageZones", "disconnected", "componentCount", "accessibleArea"],
+      "properties": {
+        "passes": { "type": "boolean" },
+        "method": { "const": "chamfer-grid-v1" },
+        "resolution": { "const": 0.05 },
+        "clearance": { "type": "number", "minimum": 0.6 },
+        "accessCount": { "type": "number", "minimum": 0 },
+        "anchoredAccessCount": { "type": "number", "minimum": 0 },
+        "requiredUsageZones": { "type": "number", "minimum": 0 },
+        "reachableUsageZones": { "type": "number", "minimum": 0 },
+        "disconnected": { "type": "array", "items": { "type": "object" } },
+        "componentCount": { "type": "number", "minimum": 0 },
+        "accessibleArea": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "s4Plan": {
+      "type": "object",
+      "required": ["passes", "method", "evaluatedRooms", "failedRooms", "requiredUsageZones", "reachableUsageZones"],
+      "properties": {
+        "passes": { "type": "boolean" },
+        "method": { "const": "room-required-usage-connectivity-v1" },
+        "evaluatedRooms": { "type": "number", "minimum": 0 },
+        "failedRooms": { "type": "array", "items": { "type": "string" } },
+        "requiredUsageZones": { "type": "number", "minimum": 0 },
+        "reachableUsageZones": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "wall": {
+      "type": "object",
+      "required": ["id", "kind", "thickness", "between", "orientation", "axis", "volume", "solidSegments", "reservations"],
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "enum": ["interior", "exterior"] },
+        "thickness": { "type": "number", "exclusiveMinimum": 0 },
+        "between": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "string" } },
+        "orientation": { "enum": ["horizontal", "vertical"] },
+        "axis": { "$ref": "#/$defs/rectangle" },
+        "volume": { "$ref": "#/$defs/rectangle" },
+        "solidSegments": { "type": "array", "items": { "$ref": "#/$defs/segment" } },
+        "reservations": { "type": "array", "items": { "$ref": "#/$defs/reservation" } }
+      },
+      "additionalProperties": true
+    },
+    "segment": {
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "number" },
+        "end": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "reservation": {
+      "type": "object",
+      "required": ["id", "openingId", "wallId", "orientation", "start", "end", "bayWidth", "crossedThickness", "volume"],
+      "properties": {
+        "id": { "type": "string" },
+        "openingId": { "type": "string" },
+        "wallId": { "type": "string" },
+        "orientation": { "enum": ["horizontal", "vertical"] },
+        "start": { "type": "number" },
+        "end": { "type": "number" },
+        "bayWidth": { "type": "number", "exclusiveMinimum": 0 },
+        "crossedThickness": { "type": "number", "exclusiveMinimum": 0 },
+        "volume": { "$ref": "#/$defs/rectangle" }
+      },
+      "additionalProperties": true
+    },
+    "room": {
+      "type": "object",
+      "required": ["id", "type", "label", "area", "usableArea", "partitionArea", "usablePolygon", "usableBounds", "wallFaces", "parts", "placements", "placementGeometry"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "label": { "type": "string" },
+        "area": { "type": "number", "minimum": 0 },
+        "usableArea": { "type": "number", "minimum": 0 },
+        "partitionArea": { "type": "number", "minimum": 0 },
+        "usablePolygon": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "array", "minItems": 4, "items": { "$ref": "#/$defs/point" } }
+        },
+        "usableBounds": { "$ref": "#/$defs/rectangle" },
+        "wallFaces": { "type": "array", "items": { "type": "object" } },
+        "parts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/rectangle" } },
+        "placements": { "type": "array", "items": { "$ref": "#/$defs/placement" } },
+        "equipmentProgram": { "$ref": "#/$defs/equipmentProgram" },
+        "placementGeometry": {
+          "type": "object",
+          "required": ["kind", "method", "cacheAuthority"],
+          "properties": {
+            "kind": { "enum": ["rectangle", "polygon"] },
+            "method": { "enum": ["rectangle-v1", "orthogonal-polygon-v1"] },
+            "cacheAuthority": { "enum": ["fit.data.js", "none"] }
+          },
+          "additionalProperties": false
+        },
+        "s4": { "$ref": "#/$defs/s4Room" }
+      },
+      "additionalProperties": true
+    },
+    "parcours": {
+      "type": ["object", "null"],
+      "properties": {
+        "largeur": { "type": "number", "minimum": 0 },
+        "atteintes": { "type": "object", "additionalProperties": { "type": "boolean" } },
+        "avecMobilier": { "type": "boolean" },
+        "calque": {
+          "type": "object",
+          "required": ["method", "resolution", "reachableCells"],
+          "properties": {
+            "method": { "const": "grid-shortest-path-v1" },
+            "resolution": { "type": "number", "exclusiveMinimum": 0 },
+            "reachableCells": { "type": "number", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "longueurs": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } },
+        "desserte": {
+          "type": "object",
+          "required": ["roomCount", "mean", "max"],
+          "properties": {
+            "roomCount": { "type": "number", "minimum": 0 },
+            "mean": { "type": "number", "minimum": 0 },
+            "max": { "type": "number", "minimum": 0 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "circulationObjective": {
+      "type": "object",
+      "required": ["method", "length", "longestBranch", "scoringLength", "requestedServices", "servedServices", "metersPerRequestedService", "area", "share", "ruleStatus", "facadeMethod", "facadeLength", "entryFacadeAllowance", "facadeExcess", "facadeCost", "facadeCostValueId", "branchMethod", "armCount", "emptyArmCount", "deadLength", "deadLengthCost", "deadLengthCostValueId", "arms", "terminationMethod", "terminationCount", "terminationReceivers"],
+      "properties": {
+        "method": { "const": "branch-service-span-v2" },
+        "length": { "type": "number", "minimum": 0 },
+        "longestBranch": { "type": "number", "minimum": 0 },
+        "scoringLength": { "type": "number", "minimum": 0 },
+        "requestedServices": { "type": "number", "minimum": 0 },
+        "servedServices": { "type": "number", "minimum": 0 },
+        "metersPerRequestedService": { "type": "number", "minimum": 0 },
+        "area": { "type": "number", "minimum": 0 },
+        "share": { "type": "number", "minimum": 0 },
+        "pathMean": { "type": ["number", "null"], "minimum": 0 },
+        "pathMax": { "type": ["number", "null"], "minimum": 0 },
+        "facadeMethod": { "const": "entry-allowance-then-excess-v1" },
+        "facadeLength": { "type": "number", "minimum": 0 },
+        "entryFacadeAllowance": { "type": "number", "minimum": 0 },
+        "facadeExcess": { "type": "number", "minimum": 0 },
+        "facadeCost": { "type": "number", "minimum": 0 },
+        "facadeCostValueId": { "const": "VAL-CIRC-FACADE-EXCESS-WEIGHT-001" },
+        "branchMethod": { "const": "door-incidence-logical-arms-v1" },
+        "armCount": { "type": "number", "minimum": 0 },
+        "emptyArmCount": { "type": "number", "minimum": 0 },
+        "deadLength": { "type": "number", "minimum": 0 },
+        "deadLengthCost": { "type": "number", "minimum": 0 },
+        "deadLengthCostValueId": { "const": "VAL-CIRC-DEAD-LENGTH-WEIGHT-001" },
+        "branchSearchFallback": { "enum": ["legacy-ranking-v1"] },
+        "arms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "direction", "length", "serviceCount", "servesEntrance", "deadLength"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "direction": { "enum": ["horizontal", "vertical"] },
+              "length": { "type": "number", "minimum": 0 },
+              "serviceCount": { "type": "number", "minimum": 0 },
+              "servesEntrance": { "type": "boolean" },
+              "deadLength": { "type": "number", "minimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "terminationMethod": { "enum": ["none", "interior-room-cap-v1"] },
+        "terminationCount": { "type": "number", "minimum": 0 },
+        "terminationReceivers": { "type": "array", "items": { "type": "string" } },
+        "ruleStatus": { "const": "SUSPENDED_M3_0_AWAITING_EXTERNAL_CORPUS" }
+      },
+      "additionalProperties": false
+    },
+    "preferenceObjective": {
+      "type": "object",
+      "required": ["method", "targetRequired", "targetMet", "targetMissed", "targetCost", "targetValueId", "comfortRequired", "comfortMet", "comfortMissed", "comfortCost", "comfortValueId"],
+      "properties": {
+        "method": { "const": "declared-clearance-fixed-placement-v1" },
+        "targetRequired": { "type": "number", "minimum": 0 },
+        "targetMet": { "type": "number", "minimum": 0 },
+        "targetMissed": { "type": "number", "minimum": 0 },
+        "targetCost": { "type": "number", "minimum": 0 },
+        "targetValueId": { "const": "VAL-USAGE-TARGET-MISS-WEIGHT-001" },
+        "comfortRequired": { "type": "number", "minimum": 0 },
+        "comfortMet": { "type": "number", "minimum": 0 },
+        "comfortMissed": { "type": "number", "minimum": 0 },
+        "comfortCost": { "type": "number", "minimum": 0 },
+        "comfortValueId": { "const": "VAL-USAGE-COMFORT-MISS-WEIGHT-001" }
+      },
+      "additionalProperties": false
+    },
+    "plan": {
+      "type": "object",
+      "required": ["schemaVersion", "schema", "generator", "boundary", "constructionBounds", "construction", "rooms", "walls", "reservations", "habitableArea", "wallArea", "grossFloorArea", "portes", "fenetres", "parcours", "circulationObjective", "preferenceObjective", "scoreBreakdown", "hardCandidatesRejected", "topologyStrategy", "topologyFamily", "topologyBranches", "topologyTransform", "topologyEquivalenceClass", "topologyTransformationsAvailable", "topologyTerminationMethod", "topologyTerminations", "topologyCandidatesCompared", "topologyStrategiesCompared", "adjacencyRequirements", "s4"],
+      "properties": {
+        "schemaVersion": { "const": "3.1" },
+        "schema": { "const": "PLAN_SCHEMA.json" },
+        "generator": { "type": "string" },
+        "topologyStrategy": { "type": "string" },
+        "topologyFamily": { "type": "string" },
+        "topologyBranches": { "type": "number", "minimum": 0 },
+        "topologyTransform": { "type": "string", "enum": ["r0", "r90", "r180", "r270", "mx", "mx-r90", "mx-r180", "mx-r270"] },
+        "topologyEquivalenceClass": { "type": "string", "minLength": 1 },
+        "topologyTransformationsAvailable": { "type": "number", "minimum": 1, "maximum": 8 },
+        "topologyTerminationMethod": { "enum": ["none", "interior-room-cap-v1"] },
+        "topologyTerminations": { "type": "array", "items": { "type": "object" } },
+        "topologyCandidatesCompared": { "type": "number", "minimum": 1 },
+        "topologyStrategiesCompared": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "adjacencyRequirements": { "type": "array", "items": { "$ref": "#/$defs/adjacencyRequirement" } },
+        "contractVersion": { "type": "string" },
+        "profiles": { "type": "array", "items": { "$ref": "#/$defs/profile" } },
+        "profileMaturity": { "enum": ["C0", "C1", "C2", "C3", "C4", "C5", "C6"] },
+        "canonicalValueSchemaVersion": { "type": ["string", "null"] },
+        "canonicalValues": { "type": "array", "items": { "$ref": "#/$defs/canonicalValueRef" } },
+        "boundary": { "type": "object" },
+        "constructionBounds": { "$ref": "#/$defs/rectangle" },
+        "construction": { "type": "object" },
+        "rooms": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/room" } },
+        "walls": { "type": "array", "items": { "$ref": "#/$defs/wall" } },
+        "reservations": { "type": "array", "items": { "$ref": "#/$defs/reservation" } },
+        "habitableArea": { "type": "number", "minimum": 0 },
+        "wallArea": { "type": "number", "minimum": 0 },
+        "grossFloorArea": { "type": "number", "minimum": 0 },
+        "portes": { "type": "array", "items": { "type": "object" } },
+        "entree": { "type": ["object", "null"] },
+        "fenetres": { "type": "array", "items": { "type": "object" } },
+        "parcours": { "$ref": "#/$defs/parcours" },
+        "s4": { "$ref": "#/$defs/s4Plan" },
+        "circulationObjective": { "$ref": "#/$defs/circulationObjective" },
+        "preferenceObjective": { "$ref": "#/$defs/preferenceObjective" },
+        "hardCandidatesRejected": { "type": "number", "minimum": 0 },
+        "comparison": { "type": "object" },
+        "scoreBreakdown": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } }
+      },
+      "additionalProperties": true
+    }
+  }
+}

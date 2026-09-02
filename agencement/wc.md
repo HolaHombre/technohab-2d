@@ -1,5 +1,11 @@
 # Agencement — WC
 
+> **Superseded le 26 août 2026 par [`../profils/wc-separe.md`](../profils/wc-separe.md)**,
+> premier profil écrit au [`GABARIT_PIECE.md`](../GABARIT_PIECE.md). Cette fiche
+> reste la **source** des valeurs `[S3]` W1–W6 et de l'invalidation de §2 ; le
+> profil fait foi sur la conception, les classes, les enveloppes et les règles.
+
+
 > **Migrée le 18 août 2026 depuis le dépôt de développement `technohab`, désormais archivé.**
 > Les valeurs sourcées de cette fiche (§ « valeurs de référence » et dimensionnements
 > dérivés) restent valides. En revanche **toute confrontation au moteur qu'elle contient

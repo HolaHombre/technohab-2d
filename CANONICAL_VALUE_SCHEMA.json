@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wonderland.local/technohab/canonical-values/1.0/schema",
+  "title": "Valeurs canoniques TechnoHab",
+  "description": "Contrat consommable des valeurs utilisées par les profils et le moteur. Une valeur HARD N3 est admise uniquement comme doctrine TechnoHab explicitement justifiée et bornée.",
+  "type": "object",
+  "required": ["schemaVersion", "version", "values"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "version": { "type": "string", "format": "date" },
+    "values": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/canonicalValue" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "dimensions2d": {
+      "type": "object",
+      "required": ["width", "depth"],
+      "properties": {
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "depth": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["level", "kind", "reference"],
+      "properties": {
+        "level": { "enum": ["N1", "N2", "N3", "UNRESOLVED"] },
+        "kind": { "enum": ["regulatory", "normative", "professional", "doctrinal", "unresolved"] },
+        "reference": { "type": "string", "minLength": 1 },
+        "locator": { "type": "string" },
+        "rationale": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "required": ["roomProfiles", "jurisdiction", "buildingContext", "validFrom"],
+      "properties": {
+        "roomProfiles": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "variants": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "jurisdiction": { "type": "string", "minLength": 1 },
+        "buildingContext": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "validFrom": { "type": "string", "format": "date" },
+        "validTo": { "type": ["string", "null"], "format": "date" }
+      },
+      "additionalProperties": false
+    },
+    "canonicalValue": {
+      "type": "object",
+      "required": ["id", "version", "label", "quantity", "value", "unit", "status", "ruleLevel", "source", "scope"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^VAL-[A-Z0-9-]+$" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "label": { "type": "string", "minLength": 1 },
+        "quantity": { "enum": ["length", "area", "dimensions-2d", "ratio", "count", "score-weight"] },
+        "value": {
+          "oneOf": [
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "$ref": "#/$defs/dimensions2d" }
+          ]
+        },
+        "unit": { "enum": ["m", "m2", "ratio", "spaces", "points-per-meter", "points-per-requirement"] },
+        "status": { "enum": ["ADOPTED", "PROVISIONAL", "UNRESOLVED", "RETIRED"] },
+        "ruleLevel": { "enum": ["HARD", "GUIDELINE", "PREFERENCE"] },
+        "source": { "$ref": "#/$defs/source" },
+        "scope": { "$ref": "#/$defs/scope" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "invariants": [
+    "Les identifiants sont uniques dans un registre.",
+    "dimensions-2d emploie une valeur {width, depth} et l'unité m ; area emploie m2 ; ratio emploie ratio ; count emploie une unité dénombrable ; score-weight emploie une unité points-per-* explicitant son dénominateur.",
+    "UNRESOLVED ne peut jamais gouverner une règle HARD.",
+    "Une règle HARD N3 exige source.kind=doctrinal, une justification non vide et une portée complète.",
+    "Une source UNRESOLVED exige un statut UNRESOLVED et réciproquement."
+  ]
+}

@@ -103,6 +103,44 @@ h2 { margin-bottom: 0; font-size: 1.45rem; line-height: 1.2; }
 .plan-heading { align-items: center; }
 .status-badge { margin-left: auto; padding-bottom: 5px; border-bottom: 1px solid var(--blue); color: var(--blue); }
 .status-badge[data-state="warning"] { border-color: var(--gold); color: var(--gold); }
+.resolution-notice { margin: 0 0 24px; padding: 20px 0 22px; border-top: 1px solid var(--gold-dim); border-bottom: 1px solid var(--marble-faint); }
+.resolution-notice[hidden] { display: none; }
+.resolution-kicker, .resolution-label { margin: 0 0 8px; color: var(--gold); font: 500 10px/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+.resolution-notice h3 { margin: 0 0 18px; color: var(--marble); font: 400 1.12rem/1.4 var(--title); letter-spacing: .012em; }
+.resolution-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 0 0 18px; }
+.resolution-comparison div { min-width: 0; padding-top: 12px; border-top: 1px solid var(--marble-faint); }
+.resolution-comparison dt { margin-bottom: 7px; color: var(--marble-dim); font: 500 9px/1.4 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.resolution-comparison dd { margin: 0; color: var(--marble); font-size: .9rem; line-height: 1.55; }
+.resolution-changes { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.resolution-changes li { display: flex; gap: 10px; color: var(--marble-dim); font-size: .88rem; line-height: 1.5; }
+.resolution-changes li::before { content: ""; flex: none; width: 7px; height: 7px; margin-top: .45em; border: 1.5px solid var(--blue); border-radius: 50%; }
+.resolution-consent { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--gold-dim); }
+.resolution-consent > p { margin-bottom: 14px; color: var(--marble-dim); font-size: .88rem; line-height: 1.6; }
+.resolution-consent-choice { display: flex; align-items: flex-start; gap: 11px; min-height: 44px; color: var(--marble); font-size: .9rem; line-height: 1.5; cursor: pointer; }
+.resolution-consent-choice input { flex: none; width: 16px; height: 16px; margin-top: 2px; accent-color: var(--blue); }
+.resolution-activate { max-width: 390px; margin-top: 14px; }
+.primary-button:disabled, .secondary-button:disabled { cursor: not-allowed; opacity: .42; }
+.primary-button:disabled:hover { border-color: var(--gold-dim); background: transparent; color: var(--blue); }
+.resolution-consent-status { min-height: 1.4em; margin: 12px 0 0 !important; color: var(--blue) !important; font: 500 10px/1.4 var(--mono) !important; letter-spacing: .08em; text-transform: uppercase; }
+.plan-selection { margin: 0 0 24px; padding: 18px 0 16px; border-top: 1px solid var(--gold-dim); border-bottom: 1px solid var(--marble-faint); }
+.plan-selection[hidden] { display: none; }
+.plan-selection-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 14px; }
+.plan-selection-kicker { margin: 0 0 6px; color: var(--gold); font: 500 10px/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+.plan-selection h3 { margin: 0; color: var(--marble); font: 400 1.05rem/1.4 var(--title); letter-spacing: .012em; }
+.plan-selection-summary { margin: 0; color: var(--marble-dim); font: 500 9px/1.4 var(--mono); letter-spacing: .08em; text-align: right; text-transform: uppercase; }
+.plan-selection-summary[data-state="partial"], .plan-selection-summary[data-state="empty"] { color: var(--gold); }
+.plan-selection-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; }
+.plan-selection-tab { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; min-height: 56px; border: 0; border-top: 1px solid var(--marble-faint); background: transparent; padding: 8px 2px; color: var(--blue); text-align: left; cursor: pointer; transition: color .25s ease, border-color .25s ease; }
+.plan-selection-tab::before { content: ""; width: 9px; height: 9px; border: 1.5px solid var(--blue); border-radius: 50%; transition: background-color .25s ease, border-color .25s ease; }
+.plan-selection-tab:hover { border-color: var(--gold-dim); color: var(--gold); }
+.plan-selection-tab:hover::before { border-color: var(--gold); }
+.plan-selection-tab[aria-selected="true"] { border-color: var(--gold); color: var(--marble); }
+.plan-selection-tab[aria-selected="true"]::before { background: var(--blue); }
+.plan-selection-tab:focus-visible { outline: 1px solid var(--blue); outline-offset: 4px; }
+.plan-selection-tab strong, .plan-selection-tab span { display: block; }
+.plan-selection-tab strong { font: 500 10px/1.35 var(--mono); letter-spacing: .09em; text-transform: uppercase; }
+.plan-selection-tab span { margin-top: 3px; color: var(--marble-dim); font: 400 9px/1.35 var(--mono); letter-spacing: .04em; }
+.plan-selection-compromise { min-height: 1.5em; margin: 12px 0 0; color: var(--marble-dim); font-size: .84rem; line-height: 1.55; }
 .canvas-frame { position: relative; flex: 1; min-height: 430px; display: grid; place-items: center; overflow: hidden; background: var(--bg-2); padding: 46px; }
 .canvas-frame::before { content: ""; position: absolute; inset: 0; opacity: .34; pointer-events: none; background-image: linear-gradient(var(--marble-faint) 1px, transparent 1px), linear-gradient(90deg, var(--marble-faint) 1px, transparent 1px); background-size: 24px 24px; }
 #plan-svg { position: relative; display: block; width: 100%; height: 100%; max-height: 480px; overflow: visible; }
@@ -120,7 +158,9 @@ h2 { margin-bottom: 0; font-size: 1.45rem; line-height: 1.2; }
 .plan-legend svg { flex: none; width: 26px; height: 14px; overflow: visible; }
 .legend-room { fill: var(--gold-faint); stroke: var(--gold); stroke-width: 1; }
 .legend-storage { fill: var(--gold-faint); stroke: var(--gold); stroke-width: 1; stroke-dasharray: 3 2; opacity: .72; }
-.legend-circulation { fill: var(--marble-faint); stroke: var(--marble-dim); stroke-width: 1; }
+.legend-wall-exterior { fill: var(--gold-faint); stroke: var(--gold); stroke-width: 1; }
+.legend-wall-interior { fill: var(--marble-faint); stroke: var(--marble-dim); stroke-width: 1; }
+.legend-opening { fill: none; stroke: var(--marble); stroke-width: 1; }
 .room-info { pointer-events: none; opacity: 0; transition: opacity .25s ease; }
 .room-icon { pointer-events: none; color: var(--gold-dim); }
 .room--bedroom .room-icon, .room--bath .room-icon { color: rgba(111, 168, 220, .58); }
@@ -132,13 +172,13 @@ h2 { margin-bottom: 0; font-size: 1.45rem; line-height: 1.2; }
 .room:hover .room-info, .room:focus .room-info { opacity: 1; }
 .north-marker { position: absolute; top: 17px; right: 18px; color: var(--gold); font: 500 10px/1 var(--mono); }
 .north-marker::before { content: "↑"; display: block; margin-bottom: 4px; text-align: center; }
-.stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); margin: 22px 0 0; border-top: 1px solid var(--marble-faint); border-bottom: 1px solid var(--marble-faint); }
+.stats-strip { display: grid; grid-template-columns: repeat(6, 1fr); margin: 22px 0 0; border-top: 1px solid var(--marble-faint); border-bottom: 1px solid var(--marble-faint); }
 .stats-strip div { padding: 15px 10px; border-right: 1px solid var(--marble-faint); }
 .stats-strip div:first-child { padding-left: 0; }
 .stats-strip div:last-child { border-right: 0; }
 .stats-strip dt { margin-bottom: 6px; color: var(--marble-dim); font: 400 9px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
 .stats-strip dd { margin: 0; color: var(--marble); font: 400 1rem/1 var(--title); }
-.actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding-top: 16px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 16px; padding-top: 16px; }
 .plan-switch { margin-right: auto; font: 500 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--marble-dim); }
 /* Le mobilier est un tracé de second plan : il informe sans disputer la
    lecture des pièces, dont il partage la couleur en plus ténu. */
@@ -146,6 +186,13 @@ h2 { margin-bottom: 0; font-size: 1.45rem; line-height: 1.2; }
 .room--bedroom .room-furniture, .room--bath .room-furniture { stroke: rgba(111, 168, 220, .42); }
 .room--circulation .room-furniture, .room--wc .room-furniture { stroke: var(--marble-faint); }
 .room:hover .room-furniture, .room:focus .room-furniture { opacity: 0; }
+/* La légende du mobilier se tient en marge droite, dans le repère du plan.
+   Elle commente le dessin sans y participer : pas de fond plein, un simple
+   filet, et le même trait ténu que le mobilier qu'elle nomme. */
+.equipment-legend { pointer-events: none; }
+.legend-frame { fill: none; stroke: var(--marble-faint); stroke-width: 1px; }
+.legend-equipment-icon { fill: none; stroke: var(--gold-dim); }
+.legend-equipment-label { fill: var(--marble-dim); font: 400 .16px/1 var(--mono); letter-spacing: .02em; }
 .secondary-button { border: 0; border-bottom: 1px solid rgba(111, 168, 220, .35); background: transparent; padding: 7px 0; color: var(--blue); font: 500 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 .secondary-button:hover { border-color: var(--gold-dim); color: var(--gold); }
 
@@ -193,11 +240,17 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding-top: 
   .plan-heading { flex-wrap: wrap; }
   .status-badge { width: 100%; margin: 5px 0 0 28px; }
   .canvas-frame { min-height: 330px; padding: 36px 18px; }
+  .resolution-comparison { grid-template-columns: 1fr; gap: 14px; }
+  .plan-selection-heading { display: block; }
+  .plan-selection-summary { margin-top: 8px; text-align: left; }
+  .plan-selection-tabs { gap: 7px; }
+  .plan-selection-tab { grid-template-columns: 1fr; gap: 4px; min-height: 64px; }
+  .plan-selection-tab::before { margin-bottom: 2px; }
   .plan-legend .plan-legend-hint { width: 100%; margin-left: 0; }
   .stats-strip { grid-template-columns: 1fr 1fr; }
-  .stats-strip div:nth-child(2) { border-right: 0; }
-  .stats-strip div:nth-child(-n+2) { border-bottom: 1px solid var(--marble-faint); }
-  .stats-strip div:nth-child(3) { padding-left: 0; }
+  .stats-strip div:nth-child(even) { border-right: 0; }
+  .stats-strip div:nth-child(-n+4) { border-bottom: 1px solid var(--marble-faint); }
+  .stats-strip div:nth-child(odd) { padding-left: 0; }
   .rule-item { grid-template-columns: 1fr; gap: 6px; }
   .composer-add-row { grid-template-columns: 1fr; }
   footer { flex-direction: column; }
@@ -214,3 +267,31 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding-top: 
 .plan-window { stroke: var(--marble); stroke-width: .025px; stroke-linecap: butt; }
 .plan-swing { fill: none; stroke: var(--marble-faint); stroke-width: .02px; stroke-dasharray: .1 .08; }
 .plan-unreached { fill: var(--gold-faint); stroke: var(--gold); stroke-width: .03px; stroke-dasharray: .2 .12; }
+.plan-wall { shape-rendering: geometricPrecision; }
+.plan-wall--exterior { fill: var(--gold-faint); stroke: var(--gold); stroke-width: 1px; }
+.plan-wall--interior { fill: var(--marble-faint); stroke: var(--marble-dim); stroke-width: 1px; }
+
+/* Chantier 6 §6.4 — quiz d'évaluation. Discret par construction : il vient
+   après le plan, dans la même colonne, sans encadré appuyé ni couleur
+   d'alerte. Un dispositif qui réclame l'attention finit par être fermé sans
+   être lu, et un avis donné pour s'en débarrasser vaut moins que pas d'avis. */
+.quiz { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--marble-faint); }
+.quiz[hidden] { display: none; }
+.quiz-title { margin: 0 0 6px; color: var(--gold); font: 500 11px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; }
+.quiz-note { margin: 0 0 16px; color: var(--marble-dim); font-size: 13px; }
+.quiz-question { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.quiz-label { flex: 1 1 220px; margin: 0; font-size: 14px; }
+.quiz-choices { display: inline-flex; gap: 8px; }
+.quiz-choice { border: 1px solid var(--marble-faint); background: transparent; padding: 6px 16px; color: var(--marble-dim); font: 500 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.quiz-choice:hover { border-color: var(--gold-dim); color: var(--gold); }
+.quiz-choice[aria-pressed="true"] { border-color: var(--gold); background: var(--gold-faint); color: var(--gold); }
+.quiz-input { flex: 1 1 220px; max-width: 260px; border: 0; border-bottom: 1px solid var(--marble-faint); background: transparent; padding: 6px 2px; font-size: 14px; }
+.quiz-input:focus { border-color: var(--gold-dim); }
+.quiz-actions { display: flex; align-items: center; gap: 20px; padding-top: 10px; }
+.quiz-skip { border: 0; background: transparent; padding: 7px 0; color: var(--marble-dim); font: 500 10px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.quiz-skip:hover { color: var(--marble); }
+
+@media (max-width: 720px) {
+  .quiz-question { gap: 10px; }
+  .quiz-label { flex-basis: 100%; }
+}

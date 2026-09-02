@@ -1,7 +1,11 @@
 (function (root) {
   'use strict';
 
-  var APP_VERSION = '2.1.0-alpha.4';
+  /* Chantier 6 §6.4 — cette version est journalisée avec chaque avis. Toute
+     modification du moteur — `scoreCandidate`, la découpe, les enveloppes —
+     doit la faire monter, sans quoi le journal mélangera des jugements
+     portant sur des plans que le code ne produit plus. */
+  var APP_VERSION = '3.2.0-alpha.1';
   var STORAGE_KEY = 'technohab:mvp-2d:v2';
   var HISTORY_KEY = 'technohab:mvp-2d:history:v1';
   var HISTORY_MAX = 20;
@@ -12,7 +16,28 @@
   var rulesMeta = document.getElementById('rules-meta');
   var rulesHistory = document.getElementById('rules-history');
   var statusElement = document.getElementById('generation-status');
+  var resolutionNotice = document.getElementById('resolution-notice');
+  var resolutionRequested = document.getElementById('resolution-requested');
+  var resolutionProposed = document.getElementById('resolution-proposed');
+  var resolutionChanges = document.getElementById('resolution-changes');
+  var resolutionConsent = document.getElementById('resolution-consent');
+  var resolutionConsentCheck = document.getElementById('resolution-consent-check');
+  var resolutionActivate = document.getElementById('resolution-activate');
+  var resolutionConsentStatus = document.getElementById('resolution-consent-status');
+  var planSelection = document.getElementById('plan-selection');
+  var planSelectionTabs = document.getElementById('plan-selection-tabs');
+  var planSelectionSummary = document.getElementById('plan-selection-summary');
+  var planSelectionCompromise = document.getElementById('plan-selection-compromise');
+  var planView = document.getElementById('plan-view');
+  var jsonExportButton = document.getElementById('download-json');
+  var svgExportButton = document.getElementById('download-svg');
   var latestResult = null;
+  var pendingResolution = null;
+  var activeResolvedSelection = null;
+  var activeSelectionConsent = null;
+  var activeSelectionIndex = 0;
+  var activeSelectionVisited = {};
+  var generationRequest = 0;
   var variant = 1;
   var history = [];
   var pendingSeed;
@@ -53,7 +78,9 @@
         '<span>' + time + ' · ' + entry.evaluatedRules + ' règle(s) évaluée(s), ' +
         entry.hard + ' bloquante(s), ' + entry.guideline + ' conseil(s)' +
         (entry.limites ? ', ' + entry.limites + ' limite(s) moteur' : '') + ' · candidat ' +
-        entry.candidate + '/' + (entry.budget || '—') + (entry.repeated ? ' · disposition déjà vue' : '') + '</span>';
+        entry.candidate + '/' + (entry.budget || '—') +
+        (entry.selectionRank ? ' · plan ' + entry.selectionRank + '/' + entry.selectionSize : '') +
+        (entry.repeated ? ' · disposition déjà vue' : '') + '</span>';
       rulesHistory.appendChild(item);
     });
   }
@@ -132,6 +159,38 @@
     return Number(value).toFixed(decimals).replace(/0+$/, '').replace(/\.$/, '').replace('.', ',');
   }
 
+  function polygonPath(polygon) {
+    return (polygon || []).map(function (ring) {
+      if (!ring.length) return '';
+      return 'M' + ring.map(function (point) { return point.x + ' ' + point.y; }).join('L') + 'Z';
+    }).join(' ');
+  }
+
+  function renderWalls(plan) {
+    if (!plan.walls || !plan.walls.length) return;
+    var group = svgElement('g', { class: 'plan-walls', 'aria-hidden': 'true' });
+    plan.walls.forEach(function (wall) {
+      var caps = wall.caps || { start: 0, end: 0 };
+      var solids = wall.solidSegments || [];
+      solids.forEach(function (segment, index) {
+        // Les prolongements d'angle appartiennent aux abouts du mur : ils ne
+        // s'appliquent qu'au premier et au dernier plein, jamais de part et
+        // d'autre d'une baie.
+        var start = segment.start - (index === 0 ? caps.start : 0);
+        var end = segment.end + (index === solids.length - 1 ? caps.end : 0);
+        var rectangle = wall.orientation === 'vertical'
+          ? { x: wall.volume.x0, y: start, width: wall.volume.x1 - wall.volume.x0, height: end - start }
+          : { x: start, y: wall.volume.y0, width: end - start, height: wall.volume.y1 - wall.volume.y0 };
+        group.appendChild(svgElement('rect', {
+          x: rectangle.x, y: rectangle.y, width: rectangle.width, height: rectangle.height,
+          class: 'plan-wall plan-wall--' + wall.kind,
+          'data-wall-id': wall.id, 'vector-effect': 'non-scaling-stroke'
+        }));
+      });
+    });
+    planSvg.appendChild(group);
+  }
+
   function roomMeta(room, content) {
     var length = Math.max(content.width, content.height);
     var width = Math.min(content.width, content.height);
@@ -140,7 +199,10 @@
   }
 
   function placementContext(room, plan) {
-    var rect = room.usableRect || room;
+    if (root.TechnoHabPlacement && root.TechnoHabPlacement.roomContext) {
+      return root.TechnoHabPlacement.roomContext(room, plan).context;
+    }
+    var rect = room.usableBounds || room.usableRect || room;
     var width = rect.x1 - rect.x0, height = rect.y1 - rect.y0;
     var openings = [];
     var blocked = [];
@@ -184,7 +246,21 @@
     (plan.fenetres || []).forEach(function (windowOpening) {
       if (windowOpening.room === room.id) addOpening(windowOpening, 'window');
     });
-    return { openings: openings, blocked: blocked };
+    var usablePolygon = (room.usablePolygon || []).map(function (ring) {
+      return ring.map(function (point) { return { x: point.x - rect.x0, y: point.y - rect.y0 }; });
+    });
+    var faces = (room.wallFaces || []).map(function (face) {
+      return {
+        id: face.id, faceId: face.faceId, wallId: face.wallId,
+        orientation: face.orientation, side: face.side, length: face.length,
+        normal: { x: face.normal.x, y: face.normal.y },
+        axis: {
+          x0: face.axis.x0 - rect.x0, y0: face.axis.y0 - rect.y0,
+          x1: face.axis.x1 - rect.x0, y1: face.axis.y1 - rect.y0
+        }
+      };
+    });
+    return { openings: openings, blocked: blocked, usablePolygon: usablePolygon, faces: faces };
   }
 
   /* --- Le mobilier ---------------------------------------------------------
@@ -199,17 +275,59 @@
      Le repère du symbole suit l'emprise naturelle. Le solveur fournit la
      translation et la rotation cardinale ; le rendu conserve les dimensions
      naturelles puis tourne le symbole autour du centre de l'emprise calculée. */
-  function renderFurniture(room, group, plan) {
+  function renderFurniture(room, group, plan, equipmentList) {
+    var usingCanonical = false;
+    var designation, equipements, resultat;
+    var manifest = room.equipmentProgram;
+    var manifestEquipments = manifest && Array.isArray(manifest.resolved) ? manifest.resolved : [];
+    var manifestById = manifestEquipments.reduce(function (index, equipment) {
+      index[equipment.id] = equipment;
+      return index;
+    }, {});
+    var hasCanonicalPlacements = manifest && manifest.authority === 'BuiltPlan' &&
+      Array.isArray(room.placements);
+    if (hasCanonicalPlacements && room.placements.length === 0) return null;
+    var canonicalPlacements = hasCanonicalPlacements ? room.placements.map(function (pose) {
+      var record = manifestById[pose.equipmentId];
+      if (!record) return null;
+      return Object.assign({}, pose, {
+        equipment: {
+          id: record.id,
+          size: record.sizeId !== record.id ? record.sizeId : undefined,
+          label: record.label,
+          required: record.required,
+          program: record.program,
+          footprint: Object.assign({}, record.footprint),
+          anchor: pose.anchor
+        },
+        wall: pose.wallId || null
+      });
+    }).filter(Boolean) : [];
+    if (hasCanonicalPlacements && canonicalPlacements.length === room.placements.length) {
+      usingCanonical = true;
+      equipements = manifestEquipments;
+      designation = { programs: manifest.programs || [room.type] };
+      resultat = {
+        fits: true,
+        placements: canonicalPlacements,
+        s4: room.s4 || null,
+        optimization: room.usageValidation && room.usageValidation.optimization || null
+      };
+    }
+
+    /* Les exports antérieurs à M4c restent lisibles. Eux seuls réclament le
+       socle différé et peuvent recalculer une pose de présentation. Un plan
+       courant ne fabrique plus jamais une deuxième vérité dans l'interface. */
     var socle = root.TechnoHabSocle;
     var modele = root.TechnoHabRoomModel;
     var solveur = root.TechnoHabPlacement;
-    if (!socle || !modele || !solveur) return null;
-    var definition = socle.rooms[room.type];
-    if (!definition) return null;
-    var variante = room.type === 'bedroom' && room.id === 'bedroom_1' &&
+    if (!usingCanonical && (!socle || !modele || !solveur)) return null;
+    var definition = !usingCanonical && socle.rooms[room.type];
+    if (!usingCanonical && !definition) return null;
+    var variante = !usingCanonical && room.type === 'bedroom' && room.id === 'bedroom_1' &&
       (definition.variants || []).indexOf('parentale') !== -1
       ? 'parentale'
-      : (definition.variants || [null])[0];
+      : !usingCanonical ? (definition.variants || [null])[0] : null;
     var programmeContext = {
       area: room.area || room.targetArea,
       openKitchen: room.type === 'living' && plan.options && !plan.options.separateKitchen,
@@ -218,30 +336,43 @@
       integratedWc: room.id === 'bath_1' && plan.options && !plan.options.includeWc,
       includeOptional: true
     };
-    var designation = modele.designate(room.type, room.variant || variante, programmeContext);
-    if (!designation.valid) {
+    if (!usingCanonical) designation = modele.designate(room.type, room.variant || variante, programmeContext);
+    if (!usingCanonical && !designation.valid) {
+      room.furnishable = false;
       return { fits: false, stage: 'designation', reason: { code: 'ROOM_REQUIREMENTS_INVALID', message: 'Les exigences minimales de la pièce sont incohérentes.' } };
     }
-    var equipements = designation.equipments;
+    if (!usingCanonical) equipements = designation.equipments;
     if (!equipements || !equipements.length) return null;
 
-    var rect = room.usableRect || room;
+    var rect = room.usableBounds || room.usableRect || room;
     var largeur = rect.x1 - rect.x0, hauteur = rect.y1 - rect.y0;
-    var validation, resultat;
+    var validation;
     var contexte = placementContext(room, plan);
-    try {
+    if (!usingCanonical) try {
       validation = solveur.validate(equipements, { w: largeur, h: hauteur }, {
         relations: designation.relations, context: contexte
       });
-      if (!validation.fits && equipements.some(function (equipment) { return !equipment.required; })) {
-        programmeContext.includeOptional = false;
+      /* Deux replis, du moins destructeur au plus. Rabattre une gamme sur son
+         plancher rend à la pièce l'équipement qu'elle avait avant les gammes ;
+         retirer les non requis lui ôte du mobilier. Dans cet ordre, une montée
+         en gamme ne peut pas rendre non meublable une pièce qui l'était. */
+      var replis = [
+        { champ: 'upgradeSizes', utile: function () { return equipements.some(function (e) { return e.size; }); } },
+        { champ: 'includeOptional', utile: function () { return equipements.some(function (e) { return !e.required; }); } }
+      ];
+      replis.forEach(function (repli) {
+        if (validation.fits || !repli.utile()) return;
+        programmeContext[repli.champ] = false;
         designation = modele.designate(room.type, room.variant || variante, programmeContext);
         equipements = designation.equipments;
         validation = solveur.validate(equipements, { w: largeur, h: hauteur }, {
           relations: designation.relations, context: contexte
         });
+      });
+      if (!validation.fits) {
+        room.furnishable = false;
+        return validation;
       }
-      if (!validation.fits) return validation;
       resultat = solveur.optimize(equipements, { w: largeur, h: hauteur }, {
         relations: designation.relations,
         context: contexte,
@@ -252,16 +383,42 @@
     } catch (_) { return null; }
     // Si rien ne tient, on ne dessine rien : une pose partielle donnerait à
     // voir un agencement que le solveur n'a pas validé.
-    if (!resultat || !resultat.fits) return resultat || null;
+    if (!resultat || !resultat.fits) {
+      room.furnishable = false;
+      return resultat || null;
+    }
+    room.furnishable = true;
 
-    room.composition = {
-      programs: designation.programs,
-      equipments: equipements.map(function (equipment) { return equipment.id; }),
-      optimization: resultat.optimization || null
-    };
+    if (!usingCanonical) {
+      room.composition = {
+        programs: designation.programs,
+        equipments: equipements.map(function (equipment) { return equipment.id; }),
+        optimization: resultat.optimization || null
+      };
+      room.placements = resultat.placements.map(function (pose) {
+        return {
+          equipmentId: pose.equipment.id,
+          anchor: pose.equipment.anchor || 'free',
+          wallId: pose.wallId || pose.wall || null,
+          faceId: pose.faceId || null,
+          footprint: pose.footprint,
+          usage: pose.usage,
+          rotation: pose.rotation,
+          inward: pose.inward
+        };
+      });
+    }
     resultat.placements.forEach(function (pose) {
       var f = pose.footprint;
-      var symbole = document.getElementById('furn-' + pose.equipment.id);
+      /* Une montée en gamme garde l'identifiant de l'équipement — c'est ce qui
+         maintient ses relations. Le dessin, lui, doit suivre la taille retenue
+         quand elle a son propre symbole ; à défaut, on retombe sur celui de la
+         gamme, dont le viewBox vaut l'emprise du plancher et sera donc étiré.
+         Voir ROADMAP §8.4, limite connue de G1. */
+      var nomSymbole = 'furn-' + (pose.equipment.size || pose.equipment.id);
+      var symbole = document.getElementById(nomSymbole) ||
+        document.getElementById('furn-' + pose.equipment.id);
+      if (symbole) nomSymbole = symbole.id;
       var footprintWidth = f.x1 - f.x0, footprintHeight = f.y1 - f.y0;
       var footprintAttrs = {
         x: rect.x0 + f.x0, y: rect.y0 + f.y0,
@@ -277,7 +434,7 @@
         var centerX = rect.x0 + (f.x0 + f.x1) / 2;
         var centerY = rect.y0 + (f.y0 + f.y1) / 2;
         var attrs = Object.assign({}, footprintAttrs, {
-          href: '#furn-' + pose.equipment.id,
+          href: '#' + nomSymbole,
           x: centerX - visualWidth / 2,
           y: centerY - visualHeight / 2,
           width: visualWidth,
@@ -289,6 +446,14 @@
           attrs.transform = 'rotate(' + visualRotation + ' ' + centerX + ' ' + centerY + ')';
         }
         group.appendChild(svgElement('use', attrs));
+
+        // Collecte l'équipement pour la légende (sans doublon)
+        if (equipmentList && !equipmentList.some(function (item) { return item.symbolId === nomSymbole; })) {
+          equipmentList.push({
+            symbolId: nomSymbole,
+            label: symbole.dataset.label || pose.equipment.id
+          });
+        }
       } else {
         // Pas de dessin pour cet équipement : l'emprise nue vaut mieux que rien.
         group.appendChild(svgElement('rect', footprintAttrs));
@@ -297,15 +462,113 @@
     return resultat;
   }
 
+  /* --- La légende du mobilier ----------------------------------------------
+     Le plan montre des emprises meublées sans dire ce qu'elles sont : le
+     survol d'une pièce donne son nom, jamais celui de ses équipements. La
+     légende comble cela en marge droite du dessin, dans le repère du plan
+     (donc en mètres), pour qu'elle suive l'export SVG sans traitement à part.
+
+     Sa largeur est une constante du module, et non un nombre choisi ici : le
+     viewBox doit réserver exactement la même bande, sinon la légende se pose
+     sur le logement. */
+  var LEGEND_MARGIN = 0.35;      // distance entre le mur droit et le cadre
+  var LEGEND_WIDTH = 2.4;        // largeur utile, icône et libellé compris
+  var LEGEND_PADDING = 0.15;
+  var LEGEND_ICON = 0.4;
+  var LEGEND_GAP = 0.06;
+  // Bande totale à réserver à droite du plan, cadre et marge compris.
+  var LEGEND_BAND = LEGEND_MARGIN + LEGEND_WIDTH + LEGEND_PADDING * 2;
+
+  function renderEquipmentLegend(entrees, bounds) {
+    if (!entrees || !entrees.length) return null;
+    // Ordre alphabétique : l'ordre de pose dépend du parcours des pièces et
+    // changerait d'une variante à l'autre pour un même mobilier.
+    var equipmentList = entrees.slice().sort(function (a, b) {
+      return a.label.localeCompare(b.label, 'fr');
+    });
+
+    var planHeight = bounds.y1 - bounds.y0;
+    var iconSize = LEGEND_ICON;
+    var itemHeight = iconSize + LEGEND_GAP;
+    /* Une légende plus haute que le plan qu'elle commente sortirait du cadre :
+       on resserre les lignes plutôt que de déborder, jusqu'à la moitié de la
+       hauteur nominale — en deçà, le dessin cesse d'être lisible et il vaut
+       mieux assumer un léger dépassement. */
+    var available = planHeight - LEGEND_PADDING * 2;
+    var needed = itemHeight * equipmentList.length;
+    if (needed > available) {
+      var facteur = Math.max(0.5, available / needed);
+      itemHeight *= facteur;
+      iconSize *= facteur;
+    }
+
+    var legendHeight = itemHeight * equipmentList.length + LEGEND_PADDING * 2;
+    var legendX = bounds.x1 + LEGEND_MARGIN;
+    var legendY = bounds.y0;
+
+    var legendGroup = svgElement('g', { class: 'equipment-legend', role: 'img' });
+    var titre = svgElement('title');
+    titre.textContent = 'Légende du mobilier, ' + equipmentList.length + ' équipements';
+    legendGroup.appendChild(titre);
+
+    legendGroup.appendChild(svgElement('rect', {
+      x: legendX, y: legendY,
+      width: LEGEND_WIDTH + LEGEND_PADDING * 2, height: legendHeight,
+      class: 'legend-frame', 'vector-effect': 'non-scaling-stroke'
+    }));
+
+    var yOffset = legendY + LEGEND_PADDING;
+    equipmentList.forEach(function (item) {
+      var g = svgElement('g', { class: 'legend-item' });
+      /* Le symbole garde son rapport naturel dans une case carrée : un canapé
+         reste couché, un lit reste debout. */
+      g.appendChild(svgElement('use', {
+        href: '#' + item.symbolId,
+        x: legendX + LEGEND_PADDING, y: yOffset,
+        width: iconSize, height: iconSize,
+        class: 'legend-equipment-icon'
+      }));
+
+      var text = svgElement('text', {
+        x: legendX + LEGEND_PADDING + iconSize + LEGEND_PADDING,
+        y: yOffset + iconSize / 2,
+        class: 'legend-equipment-label',
+        'text-anchor': 'start', 'dominant-baseline': 'central'
+      });
+      text.textContent = item.label;
+      g.appendChild(text);
+
+      legendGroup.appendChild(g);
+      yOffset += itemHeight;
+    });
+
+    planSvg.appendChild(legendGroup);
+    // Un libellé trop long empiéterait sur le plan : il est resserré, comme
+    // celui d'une pièce étroite.
+    Array.prototype.forEach.call(legendGroup.querySelectorAll('.legend-equipment-label'), function (node) {
+      fitText(node, LEGEND_WIDTH - iconSize - LEGEND_PADDING);
+    });
+    return legendGroup;
+  }
+
   function renderPlan(plan) {
     planSvg.innerHTML = '';
     /* Les emprises de mobilier, collectées pendant le tracé, servent à
-       rejouer le cheminement : le générateur l'a calculé sur un logement
-       vide, ce qui ne prouve pas qu'on y circule une fois meublé. */
+       rejouer le cheminement : le générateur l’a calculé sur un logement
+       vide, ce qui ne prouve pas qu’on y circule une fois meublé. */
     var emprises = [];
-    planSvg.setAttribute('viewBox', '0 0 ' + plan.boundary.width + ' ' + plan.boundary.height);
+    var equipmentList = []; // Collecte les équipements affichés pour la légende
+    var bounds = plan.constructionBounds || { x0: 0, y0: 0, x1: plan.boundary.width, y1: plan.boundary.height };
+    var viewPadding = Math.max(0.18, (plan.construction && plan.construction.exteriorWallThickness || 0.3) * 0.55);
+    /* La bande de légende n'est réservée que lorsqu'il y a du mobilier à
+       légender : sans elle, le plan doit occuper toute la largeur. */
+    var bandeLegende = afficherMobilier ? LEGEND_BAND : 0;
+    planSvg.setAttribute('viewBox', (bounds.x0 - viewPadding) + ' ' + (bounds.y0 - viewPadding) + ' ' +
+      (bounds.x1 - bounds.x0 + viewPadding * 2 + bandeLegende) + ' ' + (bounds.y1 - bounds.y0 + viewPadding * 2));
     planSvg.setAttribute('role', 'img');
-    planSvg.setAttribute('aria-label', 'Variante ' + plan.variant + ', plan de ' + plan.boundary.area + ' mètres carrés comprenant ' + plan.rooms.length + ' espaces');
+    planSvg.setAttribute('aria-label', 'Variante ' + plan.variant + ', ' + formatMeasure(plan.habitableArea || plan.boundary.area, 1) +
+      ' mètres carrés habitables, ' + formatMeasure(plan.wallArea || 0, 1) + ' mètres carrés de murs et ' +
+      formatMeasure(plan.grossFloorArea || plan.boundary.area, 1) + ' mètres carrés d’emprise, comprenant ' + plan.rooms.length + ' espaces');
     /* Le fond du plan épouse l'enveloppe, pas sa boîte englobante : sur un L
        ou un U, peindre le rectangle reviendrait à bâtir l'encoche. */
     var volumes = plan.boundary.volumes;
@@ -322,7 +585,7 @@
         class: 'room room--' + room.type,
         tabindex: '0', focusable: 'true', role: 'group'
       });
-      var roomRect = room.usableRect || room;
+      var roomRect = room.usableBounds || room.usableRect || room;
       var roomWidth = roomRect.x1 - roomRect.x0;
       var roomHeight = roomRect.y1 - roomRect.y0;
       var title = svgElement('title');
@@ -338,7 +601,12 @@
          vocation, il ne découpe pas la pièce. */
       var parties = room.parts && room.parts.length ? room.parts : [room];
       var contour = root.TechnoHabGenerator && root.TechnoHabGenerator.cheminContour;
-      if (contour) {
+      if (room.usablePolygon && room.usablePolygon.length) {
+        group.appendChild(svgElement('path', {
+          d: polygonPath(room.usablePolygon), class: 'room-shape',
+          'fill-rule': 'evenodd', 'vector-effect': 'non-scaling-stroke'
+        }));
+      } else if (contour) {
         group.appendChild(svgElement('path', {
           d: contour(parties), class: 'room-shape', 'vector-effect': 'non-scaling-stroke'
         }));
@@ -359,9 +627,9 @@
         }));
       });
       if (afficherMobilier) {
-        var pose = renderFurniture(room, group, plan);
+        var pose = renderFurniture(room, group, plan, equipmentList);
         if (pose && pose.fits && pose.placements) pose.placements.forEach(function (item) {
-          var f = item.footprint, base = room.usableRect || room;
+          var f = item.footprint, base = room.usableBounds || room.usableRect || room;
           emprises.push({ x0: base.x0 + f.x0, y0: base.y0 + f.y0, x1: base.x0 + f.x1, y1: base.y0 + f.y1 });
         });
       }
@@ -395,11 +663,16 @@
       fitText(meta, content.width * 0.9);
     });
 
-    if (emprises.length && root.TechnoHabGenerator.cheminementAvecObstacles) {
-      try {
-        plan.parcoursMeuble = root.TechnoHabGenerator.cheminementAvecObstacles(plan, emprises);
-      } catch (_) { /* on garde alors le parcours du logement vide */ }
-    }
+    // La structure vient au-dessus des surfaces et sous ce qui la traverse :
+    // les murs restent lisibles, puis portes et fenêtres découpent leur baie.
+    renderWalls(plan);
+
+    // La légende se pose une fois le mobilier connu : elle ne liste que les
+    // équipements réellement dessinés, jamais le catalogue.
+    if (afficherMobilier && equipmentList.length) renderEquipmentLegend(equipmentList, bounds);
+
+    /* M4 : le parcours meublé appartient au BuiltPlan. Le rendu consomme les
+       poses et le verdict du moteur ; il ne fabrique plus une seconde vérité. */
 
     // Les ouvertures appartiennent au plan, pas au calque de diagnostic :
     // elles restent visibles même lorsque le cheminement est masqué.
@@ -455,7 +728,9 @@
         var parties = room.parts && room.parts.length ? room.parts : [room];
         if (contourNonAtteinte) {
           planSvg.appendChild(svgElement('path', {
-            d: contourNonAtteinte(parties), class: 'plan-unreached', 'aria-hidden': 'true'
+            d: room.usablePolygon && room.usablePolygon.length
+              ? polygonPath(room.usablePolygon) : contourNonAtteinte(parties),
+            class: 'plan-unreached', 'fill-rule': 'evenodd', 'aria-hidden': 'true'
           }));
           return;
         }
@@ -564,35 +839,272 @@
       ' · ' + report.summary.hard + ' bloquante(s), ' + report.summary.guideline + ' conseil(s)' +
       (report.summary.limites ? ' · ' + report.summary.limites + ' relevant d’une limite du moteur' : '');
   }
-  function generate() {
-    try {
-      var options = readForm();
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(options)); } catch (_) { /* facultatif */ }
-      var plan = root.TechnoHabGenerator.generatePlan(options, variant, pendingSeed);
-      pendingSeed = undefined;
-      var report = root.TechnoHabRules.evaluatePlan(plan);
-      latestResult = { plan: plan, rulesReport: report };
-      renderPlan(plan); renderRules(report); renderMeta(report);
-      setText('stat-surface', plan.boundary.area + ' m²'); setText('stat-rooms', String(plan.rooms.length));
-      setText('stat-seed', plan.seed); setText('stat-alerts', String(report.summary.hard));
-      statusElement.textContent = report.summary.hard ? report.summary.hard + ' point(s) à revoir' : 'Plan cohérent';
-      statusElement.dataset.state = report.summary.hard ? 'warning' : 'success';
-      var signature = planSignature(plan);
-      var repeated = history.some(function (entry) { return entry.signature === signature; });
-      if (repeated) {
-        var notice = document.createElement('li');
-        notice.className = 'rule-item rule-item--guideline';
-        notice.innerHTML = '<strong>Conseil · Diversité des variantes</strong>' +
-          '<span>Cette proposition reprend une disposition déjà obtenue. Régénérez pour en obtenir une autre.</span>';
-        rulesList.appendChild(notice);
-      }
-      /* Chaque échec est conservé avec sa cause, son écart et la graine qui
-         le reproduit. C'est ce qui transforme un message qui passe en une
-         donnée rejouable : on n'a plus à noter à la main ce qui s'est
-         produit, il suffit de rejouer la graine. */
+
+  function plural(value, singular, pluralForm) {
+    return value + ' ' + (value > 1 ? pluralForm : singular);
+  }
+
+  function programSummary(program) {
+    var options = program && program.options ? program.options : {};
+    var bedrooms = Number(options.bedrooms || 0);
+    return [
+      bedrooms ? plural(bedrooms, 'chambre', 'chambres') : 'studio',
+      plural(Number(options.bathrooms || 1), 'salle d’eau', 'salles d’eau'),
+      options.separateKitchen ? 'cuisine séparée' : 'cuisine ouverte',
+      options.includeWc ? 'WC indépendant' : 'WC intégré'
+    ].join(' · ');
+  }
+
+  function changeLabel(item) {
+    if (item.field === 'separateKitchen') return 'Cuisine ouverte au lieu d’une cuisine séparée.';
+    if (item.field === 'includeWc') return 'WC intégré à la pièce d’eau au lieu d’un WC indépendant.';
+    if (item.field === 'bathrooms') return plural(item.to, 'salle d’eau', 'salles d’eau') +
+      ' au lieu de ' + item.from + '.';
+    if (item.field === 'bedrooms') return plural(item.to, 'chambre', 'chambres') +
+      ' au lieu de ' + item.from + '.';
+    return 'Fonction « ' + item.field + ' » retirée du programme.';
+  }
+
+  function requiresConsent(resolution) {
+    return resolution.changes.some(function (item) { return item.severity === 'FUNCTION_REMOVED'; });
+  }
+
+  function renderResolutionNotice(resolution, consentRequired) {
+    resolutionConsentCheck.checked = false;
+    resolutionConsentCheck.disabled = false;
+    resolutionActivate.disabled = true;
+    resolutionActivate.hidden = false;
+    resolutionConsentStatus.textContent = '';
+    if (resolution.status === 'EXACT') {
+      resolutionNotice.hidden = true;
+      resolutionConsent.hidden = true;
+      return;
+    }
+    resolutionRequested.textContent = programSummary(resolution.requestedProgram);
+    resolutionProposed.textContent = programSummary(resolution.resolvedProgram);
+    resolutionChanges.innerHTML = '';
+    resolution.changes.forEach(function (item) {
+      var line = document.createElement('li');
+      line.textContent = changeLabel(item);
+      resolutionChanges.appendChild(line);
+    });
+    resolutionConsent.hidden = !consentRequired;
+    resolutionNotice.hidden = false;
+  }
+
+  function topologyLabel(value) {
+    var labels = {
+      'barre': 'Barre', 'barre-L': 'Barre avec retour', 'L': 'L',
+      'L-decroche': 'L avec décroché', 'L-interieur': 'L intérieur', 'T': 'T',
+      'desserte-integree': 'Desserte intégrée',
+      'desserte-integree-L': 'Desserte intégrée en L',
+      'desserte-integree-U': 'Desserte intégrée en U', 'bandes': 'Bandes'
+    };
+    return labels[value] || String(value || 'Organisation non renseignée').replace(/-/g, ' ');
+  }
+
+  function selectionStatusText(selection) {
+    var count = selection.results.length;
+    if (selection.status === 'COMPLETE') {
+      return plural(count, 'proposition distincte disponible', 'propositions distinctes disponibles') + '.';
+    }
+    if (selection.status === 'PARTIAL') {
+      return plural(count, 'proposition distincte', 'propositions distinctes') +
+        ' sur ' + selection.requested + ' demandées.';
+    }
+    return 'Aucune proposition distincte n’a pu être retenue.';
+  }
+
+  function compromiseText(generation) {
+    var plan = generation.builtPlan.plan;
+    var preference = plan.preferenceObjective || {};
+    var circulation = plan.circulationObjective || {};
+    var target = Number(preference.targetMissed || 0);
+    var comfort = Number(preference.comfortMissed || 0);
+    var parts = [topologyLabel(plan.topologyFamily)];
+    parts.push(target
+      ? plural(target, 'exigence cible non atteinte', 'exigences cibles non atteintes')
+      : 'toutes les exigences cibles tenues');
+    parts.push(comfort
+      ? plural(comfort, 'marge de confort non atteinte', 'marges de confort non atteintes')
+      : 'toutes les marges de confort atteintes');
+    if (Number.isFinite(circulation.share)) {
+      parts.push(formatMeasure(circulation.share * 100, 1) + ' % de circulation');
+    }
+    return parts.join(' · ') + '.';
+  }
+
+  function clearPlanSelection() {
+    activeResolvedSelection = null;
+    activeSelectionConsent = null;
+    activeSelectionIndex = 0;
+    activeSelectionVisited = {};
+    planSelectionTabs.innerHTML = '';
+    planSelectionSummary.textContent = '';
+    planSelectionCompromise.textContent = '';
+    planSelection.hidden = true;
+    planView.removeAttribute('aria-labelledby');
+  }
+
+  function updateSelectionTabs(index) {
+    Array.prototype.forEach.call(planSelectionTabs.querySelectorAll('[role="tab"]'), function (tab, tabIndex) {
+      var selected = tabIndex === index;
+      tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+      tab.tabIndex = selected ? 0 : -1;
+    });
+    var activeTab = planSelectionTabs.querySelector('[aria-selected="true"]');
+    if (activeTab) planView.setAttribute('aria-labelledby', activeTab.id);
+  }
+
+  function activateSelectionPlan(index, focusTab) {
+    if (!activeResolvedSelection || !activeResolvedSelection.selection) return;
+    var results = activeResolvedSelection.selection.results;
+    if (index < 0 || index >= results.length) return;
+    activeSelectionIndex = index;
+    updateSelectionTabs(index);
+    planSelectionCompromise.textContent = 'Plan ' + (index + 1) + ' · ' + compromiseText(results[index]);
+    var firstVisit = !activeSelectionVisited[index];
+    activeSelectionVisited[index] = true;
+    activateResolution(activeResolvedSelection.resolution, activeSelectionConsent,
+      results[index], activeResolvedSelection, index, firstVisit);
+    if (focusTab) {
+      var tab = planSelectionTabs.querySelector('[aria-selected="true"]');
+      if (tab) tab.focus();
+    }
+  }
+
+  function renderSelectionNavigation(resolvedSelection) {
+    var selection = resolvedSelection.selection;
+    planSelectionTabs.innerHTML = '';
+    planSelectionSummary.textContent = selectionStatusText(selection);
+    planSelectionSummary.dataset.state = selection.status.toLowerCase();
+    selection.results.forEach(function (generation, index) {
+      var plan = generation.builtPlan.plan;
+      var tab = document.createElement('button');
+      var title = document.createElement('strong');
+      var meta = document.createElement('span');
+      tab.type = 'button';
+      tab.id = 'plan-selection-tab-' + (index + 1);
+      tab.className = 'plan-selection-tab';
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-controls', 'plan-view');
+      tab.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+      tab.tabIndex = index === 0 ? 0 : -1;
+      tab.dataset.index = String(index);
+      title.textContent = 'Plan ' + (index + 1);
+      meta.textContent = topologyLabel(plan.topologyFamily) + ' · ' + plan.seed;
+      tab.appendChild(title);
+      tab.appendChild(meta);
+      planSelectionTabs.appendChild(tab);
+    });
+    planSelection.hidden = false;
+  }
+
+  function activateResolvedSelection(resolvedSelection, consent) {
+    if (!resolvedSelection.selection || !resolvedSelection.selection.results.length) {
+      throw new Error('La résolution a abouti, mais aucune proposition distincte n’est disponible.');
+    }
+    activeResolvedSelection = resolvedSelection;
+    activeSelectionConsent = consent;
+    activeSelectionVisited = {};
+    renderSelectionNavigation(resolvedSelection);
+    activateSelectionPlan(0, false);
+  }
+
+  function renderEmptySelection(resolvedSelection) {
+    var selection = resolvedSelection && resolvedSelection.selection;
+    if (!selection) return;
+    planSelectionTabs.innerHTML = '';
+    planSelectionSummary.textContent = selectionStatusText(selection);
+    planSelectionSummary.dataset.state = 'empty';
+    planSelectionCompromise.textContent =
+      'Modifiez le programme ou générez une autre variante pour relancer la comparaison.';
+    planSelection.hidden = false;
+  }
+
+  function setPlanAvailable(available) {
+    jsonExportButton.disabled = !available;
+    svgExportButton.disabled = !available;
+  }
+
+  function clearActivePlan(message) {
+    latestResult = null;
+    clearPlanSelection();
+    while (planSvg.firstChild) planSvg.removeChild(planSvg.firstChild);
+    planSvg.removeAttribute('aria-label');
+    ['stat-habitable', 'stat-walls', 'stat-gross', 'stat-rooms', 'stat-seed', 'stat-alerts']
+      .forEach(function (id) { setText(id, '—'); });
+    rulesList.innerHTML = '';
+    rulesMeta.textContent = message || '';
+    setPlanAvailable(false);
+  }
+
+  function resolutionExportTrace(resolution, consent) {
+    if (!resolution) return null;
+    return {
+      status: resolution.status,
+      level: resolution.level,
+      requestedProgram: resolution.requestedProgram,
+      resolvedProgram: resolution.resolvedProgram,
+      changes: resolution.changes,
+      attempts: resolution.attempts,
+      consent: consent
+    };
+  }
+
+  function activateResolution(resolution, consent, generation, resolvedSelection, selectionIndex, recordHistory) {
+    generation = generation || resolution.result;
+    var plan = generation.builtPlan.plan;
+    var report = generation.verdict && generation.verdict.report
+      ? generation.verdict.report
+      : root.TechnoHabRules.evaluatePlan(plan);
+    latestResult = {
+      plan: plan,
+      rulesReport: report,
+      generationResult: generation,
+      programResolution: resolution,
+      resolvedSelection: resolvedSelection || null,
+      selectionIndex: Number.isFinite(selectionIndex) ? selectionIndex : 0,
+      consent: consent
+    };
+    renderPlan(plan);
+    renderRules(report); renderMeta(report);
+    setText('stat-habitable', formatMeasure(plan.habitableArea, 1) + ' m²');
+    setText('stat-walls', formatMeasure(plan.wallArea, 1) + ' m²');
+    setText('stat-gross', formatMeasure(plan.grossFloorArea, 1) + ' m²');
+    setText('stat-rooms', String(plan.rooms.length));
+    setText('stat-seed', plan.seed); setText('stat-alerts', String(report.summary.hard));
+    var position = resolvedSelection && resolvedSelection.selection
+      ? ' · plan ' + (selectionIndex + 1) + '/' + resolvedSelection.selection.results.length : '';
+    var partialSelection = resolvedSelection && resolvedSelection.selection &&
+      resolvedSelection.selection.status === 'PARTIAL';
+    statusElement.textContent = (resolution.status === 'RELAXED'
+      ? 'Proposition de repli' : 'Plan cohérent') + position +
+      (partialSelection ? ' · comparaison partielle' : '');
+    statusElement.dataset.state = resolution.status === 'RELAXED' || partialSelection ? 'warning' : 'success';
+    setPlanAvailable(true);
+    var signature = planSignature(plan);
+    var repeated = history.some(function (entry) { return entry.signature === signature; });
+    if (repeated) {
+      var notice = document.createElement('li');
+      notice.className = 'rule-item rule-item--guideline';
+      notice.innerHTML = '<strong>Conseil · Diversité des variantes</strong>' +
+        '<span>Cette proposition reprend une disposition déjà obtenue. Régénérez pour en obtenir une autre.</span>';
+      rulesList.appendChild(notice);
+    }
+    if (recordHistory !== false) {
       history.unshift({
         timestamp: Date.now(), variant: plan.variant, candidate: plan.candidate,
         seed: plan.seed, budget: plan.budget, signature: signature, repeated: repeated,
+        generationStatus: generation.status,
+        resolutionStatus: resolution.status,
+        resolutionLevel: resolution.level,
+        resolutionChanges: resolution.changes,
+        selectionStatus: resolvedSelection && resolvedSelection.selection
+          ? resolvedSelection.selection.status : null,
+        selectionRank: Number.isFinite(selectionIndex) ? selectionIndex + 1 : null,
+        selectionSize: resolvedSelection && resolvedSelection.selection
+          ? resolvedSelection.selection.results.length : null,
         options: plan.options,
         evaluatedRules: report.evaluatedRules, hard: report.summary.hard,
         guideline: report.summary.guideline, limites: report.summary.limites,
@@ -604,10 +1116,77 @@
       });
       history = history.slice(0, HISTORY_MAX);
       saveHistory(); renderHistory();
+    }
+    if (root.TechnoHabEvaluation) root.TechnoHabEvaluation.contexte(plan, report, APP_VERSION);
+  }
+
+  function queueGeneration() {
+    var request = ++generationRequest;
+    pendingResolution = null;
+    setPlanAvailable(false);
+    statusElement.textContent = 'Exploration des propositions…';
+    statusElement.dataset.state = 'warning';
+    setTimeout(function () {
+      if (request === generationRequest) generate();
+    }, 0);
+  }
+
+  function generate() {
+    try {
+      var options = readForm();
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(options)); } catch (_) { /* facultatif */ }
+      pendingResolution = null;
+      var resolvedSelection = root.TechnoHabGenerator.resolveSelection(options, variant, pendingSeed, 3);
+      var resolution = resolvedSelection.resolution;
+      pendingSeed = undefined;
+      if (resolution.status === 'UNRESOLVED' || !resolution.result || !resolution.result.builtPlan) {
+        var resolutionError = new Error('Aucune proposition valide n’a été construite après les replis autorisés.');
+        resolutionError.programResolution = resolution;
+        resolutionError.resolvedSelection = resolvedSelection;
+        throw resolutionError;
+      }
+      if (!resolvedSelection.selection || resolvedSelection.selection.status === 'EMPTY' ||
+          !resolvedSelection.selection.results.length) {
+        var selectionError = new Error('Le programme a été résolu, mais aucune organisation distincte n’a pu être retenue.');
+        selectionError.programResolution = resolution;
+        selectionError.resolvedSelection = resolvedSelection;
+        selectionError.selectionStatus = 'EMPTY';
+        throw selectionError;
+      }
+      var consentRequired = requiresConsent(resolution);
+      renderResolutionNotice(resolution, consentRequired);
+      if (consentRequired) {
+        pendingResolution = resolvedSelection;
+        clearActivePlan('La proposition attend votre accord avant affichage et export.');
+        statusElement.textContent = 'Proposition à confirmer';
+        statusElement.dataset.state = 'warning';
+        resolutionConsentCheck.focus();
+        return;
+      }
+      activateResolvedSelection(resolvedSelection, {
+        required: false,
+        accepted: true,
+        method: 'not-required',
+        acceptedAt: null
+      });
     } catch (error) {
-      statusElement.textContent = 'Échec de la génération';
+      var failedSelection = error && error.resolvedSelection;
+      var failedResolution = error && error.programResolution || failedSelection && failedSelection.resolution;
+      var lastAttempt = failedResolution && failedResolution.attempts.length
+        ? failedResolution.attempts[failedResolution.attempts.length - 1] : null;
+      pendingResolution = null;
+      resolutionNotice.hidden = true;
+      clearActivePlan('Une erreur a interrompu la résolution : ' +
+        (error && error.message ? error.message : String(error)));
+      if (error && error.selectionStatus === 'EMPTY') renderEmptySelection(failedSelection);
+      statusElement.textContent = error && error.selectionStatus === 'EMPTY'
+        ? 'Aucune comparaison disponible'
+        : lastAttempt && lastAttempt.status === 'IMPOSSIBLE'
+        ? 'Programme sans solution après replis'
+        : lastAttempt && lastAttempt.status === 'NON_TROUVE'
+          ? 'Aucune disposition trouvée'
+          : 'Échec de la génération';
       statusElement.dataset.state = 'warning';
-      rulesMeta.textContent = 'Une erreur a interrompu la génération : ' + (error && error.message ? error.message : String(error));
     }
   }
   function download(filename, content, type) {
@@ -620,22 +1199,87 @@
     event.preventDefault();
     variant += 1;
     pendingSeed = (Math.random() * 4294967296) >>> 0;
-    generate();
+    queueGeneration();
   });
-  form.addEventListener('change', function () { variant = 1; pendingSeed = undefined; generate(); });
+  form.addEventListener('change', function () { variant = 1; pendingSeed = undefined; queueGeneration(); });
+  resolutionConsentCheck.addEventListener('change', function () {
+    resolutionActivate.disabled = !resolutionConsentCheck.checked;
+    resolutionConsentStatus.textContent = resolutionConsentCheck.checked
+      ? 'Accord prêt à être confirmé.' : '';
+  });
+  resolutionActivate.addEventListener('click', function () {
+    if (!pendingResolution || !resolutionConsentCheck.checked) return;
+    var accepted = pendingResolution;
+    pendingResolution = null;
+    activateResolvedSelection(accepted, {
+      required: true,
+      accepted: true,
+      method: 'explicit-checkbox',
+      acceptedAt: new Date().toISOString()
+    });
+    resolutionConsentCheck.disabled = true;
+    resolutionActivate.hidden = true;
+    resolutionConsentStatus.textContent = 'Proposition acceptée pour cet affichage et cet export.';
+  });
+  planSelectionTabs.addEventListener('click', function (event) {
+    var tab = event.target.closest('[role="tab"]');
+    if (!tab) return;
+    activateSelectionPlan(Number(tab.dataset.index), false);
+  });
+  planSelectionTabs.addEventListener('keydown', function (event) {
+    var tab = event.target.closest('[role="tab"]');
+    if (!tab || !activeResolvedSelection || !activeResolvedSelection.selection) return;
+    var count = activeResolvedSelection.selection.results.length;
+    var index = Number(tab.dataset.index);
+    var next = null;
+    if (event.key === 'ArrowRight') next = (index + 1) % count;
+    else if (event.key === 'ArrowLeft') next = (index - 1 + count) % count;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = count - 1;
+    if (next === null) return;
+    event.preventDefault();
+    activateSelectionPlan(next, true);
+  });
   rulesHistory.addEventListener('click', function (event) {
     var item = event.target.closest('.history-item');
     if (!item || !item.dataset.seed) return;
     pendingSeed = root.TechnoHabGenerator.decodeSeed(item.dataset.seed);
-    if (pendingSeed !== null) generate();
+    if (pendingSeed !== null) queueGeneration();
   });
-  document.getElementById('download-json').addEventListener('click', function () {
-    if (latestResult) download('technohab-plan-v' + variant + '.json', JSON.stringify(latestResult, null, 2), 'application/json');
+  jsonExportButton.addEventListener('click', function () {
+    if (!latestResult) return;
+    var exported = root.TechnoHabGenerator.exportDocument(
+      latestResult.plan, latestResult.rulesReport, APP_VERSION,
+      resolutionExportTrace(latestResult.programResolution, latestResult.consent)
+    );
+    download('technohab-plan-v' + variant + '-p' + (latestResult.selectionIndex + 1) + '.json',
+      JSON.stringify(exported, null, 2), 'application/json');
   });
-  document.getElementById('download-svg').addEventListener('click', function () {
+  svgExportButton.addEventListener('click', function () {
     if (!latestResult) return;
     var clone = planSvg.cloneNode(true); clone.setAttribute('xmlns', SVG_NS);
-    download('technohab-plan-v' + variant + '.svg', new XMLSerializer().serializeToString(clone), 'image/svg+xml');
+    var metadata = document.createElementNS(SVG_NS, 'metadata');
+    metadata.setAttribute('data-technohab', 'program-resolution');
+    metadata.textContent = JSON.stringify(
+      resolutionExportTrace(latestResult.programResolution, latestResult.consent)
+    );
+    clone.insertBefore(metadata, clone.firstChild);
+    if (latestResult.resolvedSelection && latestResult.resolvedSelection.selection) {
+      var selectionMetadata = document.createElementNS(SVG_NS, 'metadata');
+      selectionMetadata.setAttribute('data-technohab', 'plan-selection');
+      selectionMetadata.textContent = JSON.stringify({
+        status: latestResult.resolvedSelection.selection.status,
+        requested: latestResult.resolvedSelection.selection.requested,
+        activeRank: latestResult.selectionIndex + 1,
+        available: latestResult.resolvedSelection.selection.results.length,
+        seed: latestResult.plan.seed,
+        comparison: latestResult.plan.comparison || null,
+        verdict: latestResult.rulesReport.summary
+      });
+      clone.insertBefore(selectionMetadata, clone.firstChild);
+    }
+    download('technohab-plan-v' + variant + '-p' + (latestResult.selectionIndex + 1) + '.svg',
+      new XMLSerializer().serializeToString(clone), 'image/svg+xml');
   });
   /* Le journal complet, échecs compris, pour analyse hors ligne. Chaque
      entrée porte sa graine : n'importe quel échec de la liste se rejoue
@@ -651,26 +1295,60 @@
       }, null, 2), 'application/json');
     });
   }
+  /* Chantier 6 §6.4 — les avis s'exportent à part du journal des
+     générations : ils n'ont ni le même rythme, ni le même usage, ni la même
+     durée de vie. Le fichier est ignoré par git (`*.eval.json`). */
+  var quizRacine = document.getElementById('quiz-eval');
+  if (root.TechnoHabEvaluation && quizRacine) root.TechnoHabEvaluation.monter(quizRacine);
+  var evalButton = document.getElementById('download-eval');
+  if (evalButton && root.TechnoHabEvaluation) {
+    evalButton.addEventListener('click', function () {
+      var contenu = root.TechnoHabEvaluation.exporter();
+      if (!contenu.entrees.length) {
+        rulesMeta.textContent = 'Aucun avis enregistré pour l’instant : le journal d’évaluation est vide.';
+        return;
+      }
+      download('technohab-avis.eval.json', JSON.stringify(contenu, null, 2), 'application/json');
+    });
+  }
+
   /* Le mobilier ne change pas le plan, seulement ce qu'on en voit : on
      redessine sans régénérer, donc sans changer de graine.
 
      Le socle n'est pas chargé avec la page — il ne pèse que sur les visites
      qui s'en servent. La bascule le réclame donc au chargeur partagé avant de
      redessiner, et l'attente est dite plutôt que subie. */
+  function planHasCanonicalFurniture(plan) {
+    return Boolean(plan && Array.isArray(plan.rooms) && plan.rooms.every(function (room) {
+      return room.equipmentProgram && room.equipmentProgram.authority === 'BuiltPlan' &&
+        Array.isArray(room.placements);
+    }));
+  }
+
   function montrerMobilier(actif) {
     afficherMobilier = actif;
     try { localStorage.setItem(FURNITURE_KEY, actif ? '1' : '0'); } catch (_) { /* facultatif */ }
-    if (!actif) { if (latestResult) renderPlan(latestResult.plan); return; }
+    function redrawAndEvaluate() {
+      if (!latestResult) return;
+      renderPlan(latestResult.plan);
+      latestResult.rulesReport = root.TechnoHabRules.evaluatePlan(latestResult.plan);
+      renderRules(latestResult.rulesReport); renderMeta(latestResult.rulesReport);
+    }
+    if (!actif) {
+      redrawAndEvaluate();
+      return;
+    }
 
     var chargeur = root.TechnoHabSocleLoader;
     if (!chargeur) return;
-    if (root.TechnoHabSocle && root.TechnoHabRoomModel && root.TechnoHabPlacement) {
-      if (latestResult) renderPlan(latestResult.plan);
+    if (planHasCanonicalFurniture(latestResult && latestResult.plan) ||
+        (root.TechnoHabSocle && root.TechnoHabRoomModel && root.TechnoHabPlacement)) {
+      redrawAndEvaluate();
       return;
     }
     if (furnitureToggle) furnitureToggle.disabled = true;
     chargeur.charger().then(function () {
-      if (latestResult) renderPlan(latestResult.plan);
+      redrawAndEvaluate();
     }).catch(function () {
       afficherMobilier = false;
       if (furnitureToggle) furnitureToggle.checked = false;
@@ -693,7 +1371,7 @@
     furnitureToggle.addEventListener('change', function () { montrerMobilier(furnitureToggle.checked); });
   }
 
-  loadHistory(); restoreForm(); generate();
+  loadHistory(); restoreForm(); queueGeneration();
 
   /* Le chargeur est défini par un script qui suit celui-ci : on attend la fin
      de l'analyse du document pour honorer un choix retenu d'une visite

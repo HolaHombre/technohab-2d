@@ -166,18 +166,17 @@ Par ordre de dépendance. Les deux premiers conditionnent tout le reste.
 | 1 | **Segments de façade** portés par l'enveloppe | contact façade, orientation, baies | absent |
 | 2 | **Nœud extérieur** et porte d'entrée | gradient d'intimité, cheminement | absent |
 | 3 | **Nord réel**, issu du questionnaire | orientation | absent, repère décoratif |
-| 4 | **Relations typées** au lieu d'`opening` | natures et degrés | absent |
+| 4 | **Relations typées** au lieu d'`opening` | natures et degrés | **livré M3 / O4** |
 | 5 | Cheminement à largeur | gradient mesuré sur un vrai trajet | spécifié, non fait |
 
 Les points 1 et 2 sont ceux que `OUVERTURES_ET_PARCOURS.md` §2 pose déjà
 comme prérequis des ouvertures. Ils reviennent ici par une autre porte : ce
 n'est pas une coïncidence, c'est le même manque qui bloque deux chantiers.
 
-**Le point 4 est le moins coûteux et le plus rentable.** Typer les relations
-ne demande ni façade, ni nord, ni cheminement — seulement de remplacer une
-chaîne par un objet dans `buildProgram`, et de faire lire la nature par
-`TH2D-GRAPH-001`. Il débloque immédiatement les adjacences interdites et les
-degrés, soit la moitié du §1.
+**Le point 4 est livré par M3 / O4.** `buildProgram()` publie des objets portant
+`nature`, `degre` et `contact`; `TH2D-ADJ-001` à `004` les jugent, et le score
+ne distribue aucune prime : il pénalise le souhait manqué, l'adjacence
+déconseillée réalisée et, plus fortement, l'adjacence interdite réalisée.
 
 ---
 
@@ -187,7 +186,7 @@ degrés, soit la moitié du §1.
 |---|---|---|
 | `TH2D-ADJ-001` | Toute relation obligatoire est réalisée à sa nature et son contact | bloquant |
 | `TH2D-ADJ-002` | Aucune relation interdite n'est réalisée | bloquant |
-| `TH2D-ADJ-003` | Les relations souhaitables réalisées sont comptées au score | préférence |
+| `TH2D-ADJ-003` | Les relations souhaitables manquantes sont pénalisées au score | préférence |
 | `TH2D-ADJ-004` | Les relations déconseillées réalisées sont signalées | conseil |
 | `TH2D-FACADE-001` | Toute pièce principale touche la façade | bloquant |
 | `TH2D-FACADE-002` | Les pièces de service partagent une gaine technique | préférence |

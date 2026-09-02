@@ -1,0 +1,60 @@
+{
+  "measuredAt": "2026-08-28",
+  "method": {
+    "selection": "48 fixed plans, 4 surfaces × 12 seeds",
+    "note": "Photographie moteur ; les cinq producteurs sont testés isolément par test-m3-topologies.mjs."
+  },
+  "totals": {
+    "plans": 48,
+    "hardPlans": 0,
+    "mandatoryMisses": 0,
+    "tFamilyOnLargePrograms": 14,
+    "selectedStrategies": [
+      "barre",
+      "hall",
+      "jour-nuit"
+    ]
+  },
+  "rows": [
+    {
+      "surface": 90,
+      "plans": 12,
+      "strategies": { "jour-nuit": 12 },
+      "families": { "T": 12 },
+      "hardPlans": 0,
+      "mandatoryMisses": 0,
+      "branchMean": 2,
+      "candidatesComparedMean": 2.92
+    },
+    {
+      "surface": 130,
+      "plans": 12,
+      "strategies": { "jour-nuit": 10, "barre": 2 },
+      "families": { "T": 10, "barre": 2 },
+      "hardPlans": 0,
+      "mandatoryMisses": 0,
+      "branchMean": 1.83,
+      "candidatesComparedMean": 4.25
+    },
+    {
+      "surface": 180,
+      "plans": 12,
+      "strategies": { "jour-nuit": 11, "barre": 1 },
+      "families": { "T": 11, "barre": 1 },
+      "hardPlans": 0,
+      "mandatoryMisses": 0,
+      "branchMean": 1.92,
+      "candidatesComparedMean": 4.42
+    },
+    {
+      "surface": 250,
+      "plans": 12,
+      "strategies": { "jour-nuit": 2, "barre": 9, "hall": 1 },
+      "families": { "T": 3, "barre": 9 },
+      "hardPlans": 0,
+      "mandatoryMisses": 0,
+      "branchMean": 1.25,
+      "candidatesComparedMean": 4.83
+    }
+  ]
+}

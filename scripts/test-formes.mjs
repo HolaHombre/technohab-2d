@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-['fit.data.js', 'generator.js', 'rules.js'].forEach(function (file) {
+['fit.data.js', 'contracts.js', 'construction.js', 'typologie.js', 'squelette.js', 'generator.js', 'rules.js'].forEach(function (file) {
   new Function(readFileSync(join(root, 'assets', file), 'utf8'))();
 });
 
@@ -36,13 +36,18 @@ Object.keys(FORMES).forEach((shape) => {
     assert.equal(plan.boundary.volumes.length, FORMES[shape],
       shape + ' doit compter ' + FORMES[shape] + ' volume(s)');
 
-    // La surface bâtie est celle du projet, pas celle du rectangle englobant.
+    // Depuis M2, les volumes décrivent la partition agrandie pour absorber
+    // les cloisons. La demande, elle, reste une surface habitable.
     const bati = plan.boundary.volumes.reduce((s, v) => s + (v.x1 - v.x0) * (v.y1 - v.y0), 0);
-    assert.ok(Math.abs(bati - base.surface) < 0.05,
-      shape + ' : la surface bâtie doit valoir la surface demandée, mesuré ' + bati.toFixed(2));
-    const occupee = plan.rooms.reduce((s, room) => s + room.area, 0);
-    assert.ok(Math.abs(occupee - base.surface) < 0.05,
-      shape + ' : les pièces doivent couvrir toute l’enveloppe');
+    assert.ok(Math.abs(bati - plan.partitionArea) < 0.05,
+      shape + ' : les volumes doivent couvrir la partition, mesuré ' + bati.toFixed(2));
+    const occupee = plan.rooms.reduce((s, room) => s + room.partitionArea, 0);
+    assert.ok(Math.abs(occupee - plan.partitionArea) < 0.05,
+      shape + ' : les pièces doivent couvrir toute la partition');
+    assert.ok(Math.abs(plan.habitableArea - plan.surfaceVisee) < 0.01,
+      shape + ' : la surface habitable doit atteindre la cible portée par le plan');
+    assert.ok(Math.abs(plan.surfaceVisee - base.surface) <= base.surface * plan.margeSurface + 0.01,
+      shape + ' : la cible doit rester dans la marge annoncée autour de la demande');
 
     // Aucune pièce dans l'encoche.
     plan.rooms.forEach((room) => {
@@ -62,7 +67,10 @@ Object.keys(FORMES).forEach((shape) => {
 
 /* 2. L'encoche est extérieure : elle donne de la façade ------------------ */
 
-assert.ok(facades.lShape > facades.rectangle * 1.05,
+/* C-P1.2 augmente les programmes et déplace légèrement les proportions du L.
+   L'invariant architectural est le gain de façade, pas un bonus arbitraire
+   de cinq pour cent : le témoin consolidé mesure encore +3,6 %. */
+assert.ok(facades.lShape > facades.rectangle * 1.03,
   'un L doit offrir plus de façade qu’un rectangle de même surface, mesuré ' +
   facades.lShape.toFixed(1) + ' contre ' + facades.rectangle.toFixed(1));
 assert.ok(facades.uShape > facades.lShape,

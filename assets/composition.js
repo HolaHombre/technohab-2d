@@ -19,13 +19,24 @@
     if (!room.equipments.length) return;
     var group = document.createElement('optgroup');
     group.label = room.label;
-    room.equipments.forEach(function (equipment) {
+    /* Le compositeur est un catalogue libre : l'utilisateur y choisit une
+       taille précise, pas une gamme. Chaque membre y figure donc sous son
+       propre identifiant, à la différence de la désignation, qui n'en retient
+       qu'un et garde celui de la gamme. */
+    function ajouter(equipment) {
       if (catalog[equipment.id]) return;
       catalog[equipment.id] = equipment;
       var option = document.createElement('option');
       option.value = equipment.id;
       option.textContent = equipment.label + ' — ' + equipment.footprint.w.toFixed(2) + ' × ' + equipment.footprint.d.toFixed(2) + ' m';
       group.appendChild(option);
+    }
+
+    room.equipments.forEach(function (equipment) {
+      ajouter(equipment);
+      (equipment.sizes || []).forEach(function (size) {
+        ajouter(Object.assign({}, equipment, size, { sizes: undefined }));
+      });
     });
     if (group.children.length) select.appendChild(group);
   });

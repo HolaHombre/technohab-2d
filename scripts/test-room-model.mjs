@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const technohabRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-['fit.data.js', 'generator.js', 'socle.data.js', 'room-model.js', 'placement.js'].forEach(function (file) {
+['fit.data.js', 'contracts.js', 'construction.js', 'typologie.js', 'squelette.js', 'generator.js', 'socle.data.js', 'room-model.js', 'placement.js'].forEach(function (file) {
   new Function(readFileSync(join(technohabRoot, 'assets', file), 'utf8'))();
 });
 

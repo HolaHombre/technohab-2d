@@ -1,6 +1,6 @@
 # Suivi du développement des règles par pièce
 
-État consolidé du moteur Wonderland au **18 août 2026**. Ce document distingue
+État consolidé du moteur Wonderland au **1er septembre 2026**. Ce document distingue
 quatre niveaux qui ne doivent plus être confondus : fiche documentaire,
 équipements du socle, génération effective et règle évaluée en production.
 
@@ -17,25 +17,33 @@ quatre niveaux qui ne doivent plus être confondus : fiche documentaire,
 - **6 types générés** : séjour, chambre, salle d'eau, WC, cuisine, circulation.
 - **13 types décrits dans le socle** : les 6 précédents, plus salle à manger,
   entrée, bureau, buanderie, cellier, local technique et garage.
-- **6 fiches de pièce** : salon, cuisine, chambre, salle de bain, WC, bureau.
+- **7 fiches de pièce ou fonction** : salon, cuisine, chambre, salle de bain,
+  WC, bureau et seuil d'entrée.
 - **2 fiches transverses** : circulation et rangements.
-- **16 règles de plan actives** dans `assets/rules.js`.
+- **32 règles de plan actives** dans `assets/rules.js`.
 - **6 règles génériques de placement** (`S1` à `S6`) dans
   `assets/socle.data.js`.
+- **13 pièces déclarant rôle, agrément, planchers, plafond et critère
+  d'existence** — table unifiée dans `assets/socle.data.js` depuis le 20 août,
+  compilée dans `assets/fit.data.js`. Voir
+  [`MODELE_EXIGENCES.md` §1 bis](MODELE_EXIGENCES.md). Le `trigger` est
+  déclaré partout où il est connu mais **lu par personne** : son interpréteur
+  est le lot L1 du chantier 7.
 
 ## Matrice de couverture
 
 | Pièce / fonction | Fiche | Socle | Générée | Contrôle actif | État et manque principal |
 |---|---:|---:|---:|---:|---|
-| Séjour / salon | oui | oui | oui | générique | **Partiel** — mobilier et relation focale présents ; règles dédiées d'occupation, de multifonction et de proportion à formaliser |
-| Cuisine | oui | oui | oui | générique | **Partiel** — séquence évier/plan/plaque active dans la pose ; règles dédiées de largeur, linéaire, réseaux et triangle d'activité à exposer dans le rapport |
-| Chambre | oui | oui | oui | générique | **Partiel** — lit et rangement présents ; passage au pied, type d'ouvrant et profil accessible à compléter |
-| Salle d'eau / bain | oui | oui | oui | générique | **Partiel** — sanitaires et préférences de murs présents ; accessibilité, réseaux et ventilation non contrôlés |
-| WC | oui | oui | oui | générique | **Partiel** — meublabilité contrôlée ; transfert latéral, lave-mains conditionnel et interdictions d'adjacence restent à implémenter |
-| Circulation | transverse | oui | oui | dédié | **Couvert partiellement** — quatre règles actives et parcours calculé ; seuils contextuels et accessibilité restent à consolider |
+| Séjour / salon | oui | oui | oui | générique + traversée/occupation | **Couvert en isolation · C4** — groupe canapé-table requis, média/fauteuil optionnels, focalité, conversation, occupation et traversée multi-accès à 0,70 m prouvés ; zones repas/bureau et preuve C5 restent différées |
+| Cuisine | oui | oui | oui | générique + relations | **Couvert en isolation · C4** — quatre pôles requis, séquence HARD, passage face-à-face 1,20 m, triangle GUIDELINE ≤ 6,50 m, ventilation et lave-vaisselle optionnel prouvés en cuisine séparée et ouverte ; linéaire résultant, four lié, accessibilité et preuve C5 restent différés |
+| Chambre | oui | oui | oui | générique | **Couvert en isolation · C4** — variantes enfant/parentale, pied et côtés, penderie coulissante, porte/fenêtre/S4 prouvés ; accessibilité, chevet lié et preuve C5 restent différés |
+| Salle d'eau / bain | oui | oui | oui | générique | **Partiel · C2** — sanitaires et préférences de murs présents ; accessibilité, réseaux et ventilation non contrôlés |
+| WC | oui | oui | oui | générique + plafond dédié | **Partiel · C4 confirmé par C-P0.2** — BuiltPlan prouvé ; cinq blocages C5 restent attribués dans l'audit d'intégration |
+| Salle d'eau avec WC | oui | composition `bath + wc` | oui | générique | **Partiel · C4 confirmé par C-P0.2** — composition minimale prouvée ; sept blocages C5, dont variante bain et dépendance à `BATHROOM` C2 |
+| Circulation | transverse | oui | oui | dédié | **Couvert en isolation · C4** — largeur 0,90/1,20 m conditionnée à la desserte, mesure par branche, formes et battants S3 prouvés ; manœuvres accessibles et seuil externe de longueur restent différés |
 | Salle à manger | incluse dans salon | oui | non | non | **Socle seul** — décider pièce autonome ou zone du séjour, puis définir programme et déclencheurs |
-| Entrée | incluse dans circulation | oui | non | partiel | **Socle seul** — une porte d'entrée est posée, mais aucun espace `entree` n'est généré |
-| Bureau | oui | oui | non | non | **Socle seul** — fiche et mobilier prêts ; manque l'activation dans le programme et le générateur |
+| Entrée | profil `ENTRY_THRESHOLD` | fonction hébergée | oui, sans pièce autonome | `ENTREE-001/002` | **Couvert en isolation · C4** — hôte circulation/séjour, porte extérieure et zone d'arrivée 1,20 × 1,20 m libres participent au verdict ; hall autonome et manœuvres accessibles restent différés |
+| Bureau | oui | oui | non | non | **Socle seul · C2** — fiche et mobilier prêts ; manque l'activation dans le programme et le générateur |
 | Buanderie | non | oui | non | non | **Socle seul** — créer fiche, règles de réseaux, dégagement de machine et relation avec cellier/local technique |
 | Cellier | rangement transverse | oui | non | non | **Socle seul** — créer fiche et règles d'adjacence cuisine, stockage et circulation |
 | Local technique | non | oui | non | non | **Socle seul** — créer fiche, accès de maintenance, réseaux et séparation des pièces sensibles |
@@ -50,10 +58,13 @@ quatre niveaux qui ne doivent plus être confondus : fiche documentaire,
 Le rapport de plan évalue actuellement :
 
 - projet et surfaces : `TH2D-PROJECT-001`, `TH2D-ROOM-001`,
-  `TH2D-ROOM-002`, `TH2D-SIZING-001` ;
+  `TH2D-ROOM-002`, `TH2D-ROOM-003`, `TH2D-SIZING-001` ;
 - graphe et façade : `TH2D-GRAPH-001`, `TH2D-GRAPH-002`,
   `TH2D-FACADE-001` ;
 - circulation : `TH2D-CIRC-001` à `TH2D-CIRC-004` ;
+- entrée : `TH2D-ENTREE-001` et `TH2D-ENTREE-002` ;
+- parcours meublé : `TH2D-PATH-004` (`HARD`), alimentée par la preuve `S4`
+  conservée dans le BuiltPlan ;
 - rangement : `TH2D-RANGEMENT-001` à `TH2D-RANGEMENT-003` ;
 - forme et réserve : `TH2D-FORME-001`, `TH2D-RESERVE-001`.
 
@@ -62,6 +73,12 @@ des requis (`S1`), protection des zones d'usage (`S2`), débattements (`S3`),
 chemin d'accès aux usages (`S4`), ancrages (`S5`) et rectangle libre résiduel
 (`S6`). Ces résultats doivent à terme remonter sous des identifiants stables
 dans le rapport général, pièce par pièce.
+
+Depuis M4c limité, le séjour et la chambre exportent aussi leur programme
+canonique résolu : gammes demandées, repli de taille ou d'optionnels, poses et
+emprises nominales. Le `BuiltPlan` est l'autorité de l'affichage ; la cuisine
+C4 reste sur le programme minimal du générateur jusqu'à une extension nommée
+de M4c.
 
 ## Manques transverses prioritaires
 
@@ -110,27 +127,32 @@ Aucun lot ne démarre avant la correction de D1, D2, D3 et la première mesure
 - relations d'adjacence typées : obligatoire, interdite, souhaitable,
   déconseillée ;
 - nord et orientation réels ;
-- murs et épaisseurs ;
+- rattachement des ouvertures, du mobilier et du parcours aux faces des murs ;
 - programmes composés : suite parentale, cuisine ouverte, séjour avec repas
   ou bureau.
 
 ## Backlog par pièce couverte
 
-- **Séjour** : arbitrer les seuils 20/24/30 m² ; ajouter occupation mobilier,
-  effet couloir et zones repas/bureau conditionnelles.
-- **Cuisine** : ajouter largeur/linéaire, triangle d'activité, réseaux et
-  extraction ; distinguer cuisine ouverte et fermée.
-- **Chambre** : contrôler passage au pied et sur les côtés selon lit simple ou
-  double ; formaliser chambre parentale et rangement obligatoire.
+- **Séjour** : C4 livré ; 20 m² est le minimum, 24 m² la cible nommée et 30 m²
+  reste un seuil de zonage à instruire. Poursuivre par `ZONE` repas/bureau,
+  l'effet couloir, les grandes surfaces et la preuve C5 en plan.
+- **Cuisine** : C4 livré ; poursuivre par le linéaire dont la longueur résulte
+  de la pose, l'ouvrant lié du four, l'accessibilité, les relations de réseaux
+  au plan complet et la preuve C5. L'enrôlement de ses optionnels dans M4c est
+  un lot moteur distinct.
+- **Chambre** : C4 livré ; poursuivre par l'équipement lié (chevets), la
+  variante de penderie battante, le profil accessible et la preuve C5 en plan.
 - **Salle d'eau** : expliciter douche ou baignoire, accès aux équipements,
   profil accessible et ventilation.
 - **WC** : ajouter dégagements latéraux, transfert accessible et interdiction
   de communication directe avec cuisine ou espace repas selon le profil
   réglementaire retenu.
-- **Circulation / entrée** : rendre la largeur dépendante de la desserte,
-  valider les manœuvres de porte et faire de l'entrée une pièce optionnelle.
-- **Rangements** : ajouter `ouvrant`, profondeur par usage et rattachement à
-  la pièce servie.
+- **Circulation** : C4 livré ; poursuivre par les manœuvres de porte
+  accessibles, le seuil externe de longueur par desserte et la lumière en bout.
+- **Entrée** : C4 hébergé livré ; poursuivre seulement si le programme exige
+  une pièce autonome, un placard ou un sas, sans les confondre avec le seuil.
+- **Rangements** : C4 limité livré pour penderie de chambre et `STORAGE_BAY` ;
+  poursuivre par placard d'entrée, unités de service, dressing et émergence F2/L1.
 
 ## Définition de « terminé » pour une pièce
 
@@ -427,9 +449,175 @@ une forme mais la commande le rendu autant qu'elle.
 | — | Forme « Souple » (additive) et tirage `random` | à faire |
 | 2026-08-18 | D3 corrigé : fusion traitée comme composition ; `test-fusion.mjs` ajouté | fait |
 | 2026-08-18 | D4 corrigé : banc rejouable, graine en argument, empreinte des résultats | fait |
+| 2026-08-19 | Chantier 6 : test de l'instrument ; il invalide la peine de proportion sur la circulation | fait |
+| 2026-08-19 | Exemption de la circulation : écrite, mesurée (4 → 12 pièces non meublables), **retirée** | arbitré |
+| — | Rendre la cession de circulation visible à `scoreCandidate()`, puis reprendre l'exemption | à faire |
+| 2026-08-19 | Chantier 6 : quiz deux questions, journal `localStorage`, export JSON, outil de corrélation | fait |
+| 2026-08-19 | Chantier 6 : `PROTOCOLE_MESURES.md`, quatre mesures pré-enregistrées | fait |
+| 2026-08-19 | Circulation : dossier d'arbitrage instruit et mesuré — [`DOCTRINE_CIRCULATION.md`](DOCTRINE_CIRCULATION.md) | fait |
+| 2026-08-20 | `TH2D-CIRC-004` réécrite : plafond relatif au besoin (k = 1,6, gelé) et inscrite au score | fait |
+| 2026-08-20 | Circulations multiples : deux tentatives mesurées puis **retirées** — voir `DOCTRINE_CIRCULATION.md` §5 ter | classé |
+| 2026-08-20 | Cause racine identifiée : la découpe ne consulte pas le graphe. 13,1 % des pièces sans contact avec une circulation, 19,4 % sans porte | mesuré |
+| 2026-08-21 | Découpe et graphe : dossier d'instruction — [`DECOUPE_ET_GRAPHE.md`](DECOUPE_ET_GRAPHE.md) | fait |
+| 2026-08-21 | Mesuré : le graphe demandé est une étoile sur **840 plans sur 840** ; l'échec est heuristique (98,2 % des plans avaient la capacité) ; le peigne **coûte** 2,1 points quand `hubSplit()` en rend 3,7 | mesuré |
+| 2026-08-21 | **Peigne retiré** de `layout()` — aucune règle HARD dégradée, `TH2D-ROOM-002` 49→45, `TH2D-FACADE-001` 1→0, `TH2D-CIRC-004` 50→74. Empreinte **`520b8ebb` → `5bd33591`** | fait |
+| 2026-08-27 | **M3.0 livré** — score de longueur par desserte, calque synthétisé au plan, part de circulation au banc ; `TH2D-CIRC-004` suspendue explicitement faute de seuil externe | fait |
+| 2026-08-21 | Circulations multiples : arbitrages rendus — isolées, typologie autoportante, mono et bi mesurés en parallèle | arbitré |
+| — | Prototype typologie mono + bi-couloir, protocole `APPROCHES_GENERATION.md` §8 | à faire |
+| — | Chantier 1 (formes d'enveloppe) **suspendu** le temps de l'essai typologie — `test-formes.mjs` garde l'existant | suspendu |
+| — | **Piloter la découpe par le graphe** — verrou des circulations multiples et de la desserte réelle | à faire |
+| — | Essai typologie, protocole `APPROCHES_GENERATION.md` §8, ventilé par forme et par taille | à faire |
+| 2026-08-20 | Définition des pièces unifiée dans `socle.data.js` : `role`, `agrement`, `minProgramArea`/`minProgramSide`, `maxRatio`, `trigger` ; compilée dans `fit.data.js` par `fit:build` | fait |
+| 2026-08-20 | `generator.js::DEFINITIONS` et `AGREMENT` supprimés — planchers dérivés par `fit.floorOf`, empreinte `520b8ebb` inchangée | fait |
+| 2026-08-20 | `TH2D-FACADE-001` interroge le rôle au lieu d'une liste de types en dur | fait |
+| 2026-08-20 | `test-definition-pieces.mjs` : énuméré, synchronisation socle/compilé, invariance des planchers (`npm run fit:check`) | fait |
+| 2026-08-27 | M2/O2 : programmes minimaux compilés dans `fit.data.js`, coût gradué de `placement.validate()` dans le classement | fait |
+| 2026-08-27 | M2/O3 : porte objet, ouverture résolue sans décret par type, passage face-à-face et `TH2D-DOOR-004` (`S3`) | fait |
+| 2026-08-27 | M2 rend visibles 34 invalidations tardives de meublabilité sur 360 plans, concentrées sur les programmes comprimés ; entrée de M4, non dette à masquer | mesuré |
+| — | Écrire l'interpréteur de `trigger` — c'est la mécanique d'activation du lot L1 | à faire |
+| — | Calibrer `maxRatio` hors circulation, à partir de la mesure du chantier 6 | à faire |
+| — | Découpe : savoir tenir une adjacence demandée entre deux pièces — verrou des circulations multiples | à faire |
+| — | Première mesure de discrimination à l'aveugle — bloque la phase 12 b | à faire |
 | — | Réconciliation des documents devenus périmés après l'ajout des ouvertures et parcours | à faire |
 | — | Activation du bureau dans le programme | à faire |
 | — | Première remontée des verdicts de placement par pièce | à faire |
+
+## Chantier 6 — mesure de la qualité perçue (19 août 2026)
+
+### Le test de l'instrument a immédiatement invalidé un critère
+
+Avant de mesurer quoi que ce soit avec le banc, on a mesuré le banc.
+`scripts/plan-reference.data.mjs` porte un T3 de 75 m² **dessiné à la main**
+selon les règles de l'art — zone jour à l'ouest, zone nuit à l'est,
+dégagement court entre les deux, pièces humides adossées à une même gaine,
+placard toute largeur dans chaque chambre. Aucune cote n'a été retouchée
+après un passage dans le banc : un plan ajusté jusqu'à ce qu'il passe ne
+mesure plus les critères, il mesure la patience de qui l'a dessiné.
+
+`assemblerPlan()` lui fait subir exactement ce que subit un plan généré —
+mêmes façades, mêmes portes, même cheminement, donc même rapport de règles.
+Seules la cession de circulation et les décrochements sont sautés : le plan
+est déjà dessiné, les lui appliquer reviendrait à mesurer le moteur.
+
+**Résultat du premier passage** :
+
+| | plan dessiné à la main | 30 plans générés, même programme |
+|---|---|---|
+| violations bloquantes | 0 | 0 |
+| violations totales | **0** | 0 |
+| score interne | **15,05** | 0,00 pour les trente |
+
+Zéro violation, et pourtant le moteur le classe **strictement derrière chacun
+de ses propres plans**. Les 15,05 points sont entièrement imputables à un
+seul poste, et le script le décompose : la peine de proportion
+(`ratio < 0,32`) frappait le dégagement de 1,30 × 5,50 m. Un couloir est
+allongé par définition ; le sanctionner à ce titre revient à lui reprocher
+d'être un couloir.
+
+Le raisonnement du §6.3 est à sens unique : c'est le critère qu'il faut
+corriger, jamais le plan. **La correction évidente a donc été écrite,
+mesurée — puis retirée**, parce que la mesure a dit qu'elle coûtait plus
+qu'elle ne rapportait.
+
+### La correction évidente a été écrite, mesurée, retirée
+
+Exempter la circulation de la peine de proportion. Le plan de référence
+repasse alors devant les plans générés, et le test de l'instrument est vert.
+Mais le banc et le solveur disent autre chose.
+
+**Meublabilité, solveur complet, accès compris — 120 plans, 600 pièces
+meublées, protocole de `test-composition-model.mjs` :**
+
+| | sans exemption | avec exemption |
+|---|---|---|
+| pièces que le solveur ne sait pas meubler | **4** | **12** |
+
+Presque toutes des salles d'eau composées. `test-composition-model.mjs`
+échoue d'ailleurs sur la graine `00013CV`, ce qui a servi d'alerte avant
+même la mesure d'ensemble.
+
+**Banc complet, 720 plans par forme, graine 20260818 :**
+
+| règle | rectangle | | L | | U | |
+|---|---|---|---|---|---|---|
+| | sans | avec | sans | avec | sans | avec |
+| `TH2D-CIRC-004` (GUIDELINE) | 298 | 449 | 239 | 296 | 241 | 266 |
+| `TH2D-ROOM-001` (GUIDELINE) | 55 | 17 | 293 | 284 | 285 | 273 |
+| `TH2D-SIZING-001` (GUIDELINE) | 185 | 191 | 320 | 325 | 362 | 393 |
+| `TH2D-FACADE-001` (HARD) | 2 | 3 | 2 | 3 | 0 | 0 |
+| `TH2D-PROJECT-001` (HARD) | 30 | 30 | 30 | 30 | 30 | 30 |
+
+Une guideline gagne (`ROOM-001`), deux se dégradent, une règle bloquante
+recule d'un point dans deux formes sur trois — et surtout, huit pièces de plus
+deviennent réellement inhabitables. **Le critère est faux, mais le corriger
+ainsi dégrade les plans.** On ne livre pas ça.
+
+### Le mécanisme, et pourquoi la correction n'est pas à cet endroit
+
+Un couloir libéré de la peine de proportion s'allonge. Il longe alors plus de
+pièces, `carveCirculation()` leur cède plus de bandes, et le solveur — encore
+rectangulaire — sert une pièce en L par sa seule partie principale. C'est la
+limite laissée ouverte par D2, et l'exemption la met sous tension.
+
+**La cause profonde n'est pas dans la ligne de score** :
+`scoreCandidate()` s'exécute **avant** la cession de circulation — un choix
+de coût assumé et commenté dans le code, la cession n'étant appliquée qu'au
+candidat retenu. La recherche ne peut donc pas arbitrer sur les conséquences
+d'une opération qu'elle ne voit pas. Tant que c'est vrai, toute correction du
+critère de proportion déplacera le problème au lieu de le résoudre.
+
+### Décision, et ce qui reste dû
+
+La peine de proportion **reste en place, en sachant qu'elle est fausse**. Le
+code le dit à l'endroit exact, avec la mesure qui a fait renoncer.
+`scripts/test-instrument.mjs` porte l'écart de **15,05 comme limite
+consignée** : il échoue si l'écart s'aggrave, pas s'il persiste — un test qui
+échouerait en permanence finirait par être ignoré, et une dette qu'on cesse
+de mesurer cesse d'être une dette.
+
+C'est la doctrine déjà retenue dans `rules.js` pour les limites du moteur :
+l'exigence reste réelle, son manquement est nommé une dette d'implémentation
+plutôt qu'une violation ordinaire.
+
+**Dû, dans cet ordre** : rendre la cession visible à la recherche, ou la
+sortir de l'aval ; puis reprendre l'exemption et la mesurer à nouveau.
+
+**Empreintes du banc : inchangées.** `f3ed28a2` en rectangle, `11de3c85` en
+L, `e21f110e` en U. La refactorisation qui expose `assemblerPlan()` —
+extraction de `finaliserPlan()` — a été mesurée seule sur les trois formes :
+elle rend les trois empreintes historiques **au bit près**. Le chantier 6
+n'a donc modifié aucun plan produit.
+
+### Le score interne ne discrimine pas partout
+
+Mesuré sur les 24 configurations, 720 plans : la recherche s'arrête au
+premier candidat de score nul (`if (best.score === 0) break`). Sur les
+programmes peu contraints, **tous les plans retenus valent donc 0**, et le
+score ne distingue plus rien parmi eux.
+
+Conséquence directe pour le §6.4 : la corrélation entre `scoreCandidate()` et
+la note d'habitabilité **est impossible à calculer sur ces programmes** — une
+constante ne corrèle avec rien. Ce n'est pas un résultat faible, c'est une
+mesure impossible. `scripts/correlation-avis.mjs` le dit explicitement au lieu
+d'afficher un zéro qui aurait l'air d'une réponse.
+
+### Livré
+
+- `scripts/plan-reference.data.mjs` — le plan de référence, cotes datées du
+  dessin ;
+- `scripts/test-instrument.mjs` — test permanent, deux critères d'échec
+  pré-enregistrés ;
+- `assets/evaluation.js` — quiz deux questions, journal `localStorage`,
+  export JSON ; graine, forme, options, version du moteur et métriques dans
+  chaque entrée ;
+- `scripts/correlation-avis.mjs` — corrélation score interne / habitabilité,
+  refuse de conclure sous 50 avis ;
+- `PROTOCOLE_MESURES.md` — les quatre mesures du §6.2, pré-enregistrées.
+
+**Non fait, et bloquant pour la phase 12 b** : la première mesure de
+discrimination à l'aveugle. Elle demande cinq juges humains et dix plans
+dessinés par des personnes ; le protocole est écrit, le recrutement ne l'est
+pas.
 
 ## Fichiers faisant autorité pour ce suivi
 
@@ -439,4 +627,11 @@ une forme mais la commande le rendu autant qu'elle.
 - `assets/placement.js` : validation et optimisation des poses ;
 - `assets/rules.js` : règles effectivement évaluées au niveau du plan ;
 - `agencement/` et `VEILLE_NORMATIVE.md` : sources et règles candidates ;
-- `scripts/test-*.mjs` : preuve de comportement et non-régression.
+- `scripts/test-*.mjs` : preuve de comportement et non-régression ;
+- `scripts/test-instrument.mjs` et `scripts/plan-reference.data.mjs` : le
+  contrôle des critères eux-mêmes, à ne pas confondre avec les précédents —
+  ils vérifient le moteur, celui-ci vérifie ce avec quoi on juge le moteur ;
+- `PROTOCOLE_MESURES.md` : les mesures de qualité perçue, pré-enregistrées ;
+- `DOCTRINE_CIRCULATION.md` : le dossier du seuil de circulation, mesuré et
+  non tranché — il fait autorité sur l'état de cet arbitrage, pas sur la règle
+  en production, qui reste celle de `rules.js`.

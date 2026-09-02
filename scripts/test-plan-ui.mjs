@@ -28,6 +28,12 @@ assert.match(stylesSource, /\.room:hover \.room-furniture, \.room:focus \.room-f
   'le survol doit masquer uniquement le mobilier de la pièce');
 assert.match(indexSource, /Survol : nom · L × l · surface/,
   'la légende doit annoncer l’interaction contextuelle');
+assert.match(indexSource, /contracts\.js[\s\S]*generator\.js/,
+  'les contrats M1 doivent être chargés avant le générateur');
+assert.match(appSource, /TechnoHabGenerator\.resolveSelection\(options, variant, pendingSeed, 3\)/,
+  'l’interface doit consommer la résolution graduée et sa sélection comparative');
+assert.match(appSource, /resolution\.status === 'UNRESOLVED'/,
+  'une résolution sans résultat ne doit pas être présentée comme une proposition');
 
 const renderPlanSource = appSource.slice(appSource.indexOf('function renderPlan'), appSource.indexOf('function fitText'));
 assert.ok(renderPlanSource.indexOf("class: part.role === 'storage'") < renderPlanSource.indexOf('var pose = renderFurniture'),

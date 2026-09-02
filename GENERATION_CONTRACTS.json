@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wonderland.local/technohab/generation/1.1/schema",
+  "title": "Contrats du moteur TechnoHab",
+  "description": "Frontières M1 du pipeline. PLAN_SCHEMA.json reste le contrat détaillé du plan construit.",
+  "contractVersion": "1.1",
+  "statuses": ["VALID", "IMPOSSIBLE", "NON_TROUVE", "INVALIDE_DEBUG"],
+  "resolutionStatuses": ["EXACT", "RELAXED", "UNRESOLVED"],
+  "resolutionLevels": ["R0_EXACT", "R1_FUSION", "R2_BATHROOMS", "R3_OPTIONAL_ROOM", "R4_BEDROOM"],
+  "changeSeverities": ["FUNCTION_PRESERVED", "FUNCTION_REDUCED", "FUNCTION_REMOVED"],
+  "contracts": {
+    "Intent": {
+      "required": ["kind", "contractVersion", "options", "variant", "seed"]
+    },
+    "Program": {
+      "required": ["kind", "contractVersion", "options", "construction", "rooms", "requiredAdjacencies", "adjacencyRequirements", "minimumArea", "profiles", "maturity", "canonicalValueSchemaVersion", "canonicalValues"]
+    },
+    "TopologyCandidate": {
+      "required": ["kind", "contractVersion", "strategy", "family", "branches", "transform", "equivalenceClass", "transformationsAvailable", "terminationMethod", "terminations", "candidatesCompared", "strategiesCompared", "attempt", "score", "boundary", "rooms", "adjacencies"]
+    },
+    "BuiltPlan": {
+      "required": ["kind", "contractVersion", "plan", "profiles", "maturity", "canonicalValueSchemaVersion", "canonicalValues"],
+      "planSchema": "./PLAN_SCHEMA.json#/$defs/plan"
+    },
+    "Verdict": {
+      "required": ["kind", "contractVersion", "evaluated", "valid", "hard", "guideline", "violations", "limits", "report"]
+    },
+    "GenerationResult": {
+      "required": ["kind", "contractVersion", "status", "intent", "program", "topologyCandidate", "builtPlan", "verdict", "failure"]
+    },
+    "PlanSelection": {
+      "required": ["kind", "contractVersion", "status", "requested", "complete", "method", "attempts", "results", "rejected", "diversity"]
+    },
+    "ProgramResolution": {
+      "required": ["kind", "contractVersion", "status", "requestedIntent", "requestedProgram", "resolvedIntent", "resolvedProgram", "level", "changes", "attempts", "result"]
+    },
+    "ResolvedSelection": {
+      "required": ["kind", "contractVersion", "resolution", "selection", "reusedResult", "generatedAttempts"]
+    }
+  },
+  "invariants": [
+    "VALID exige BuiltPlan et Verdict.valid=true",
+    "IMPOSSIBLE signifie qu'une contrainte prouvée interdit le programme avant la recherche",
+    "NON_TROUVE signifie que le programme reste possible mais que les stratégies disponibles sont épuisées",
+    "INVALIDE_DEBUG conserve les éléments construits disponibles et interdit leur présentation comme plan valide",
+    "Une référence canonique transporte toujours id et version ; son contenu est résolu par CANONICAL_VALUE_SCHEMA.json",
+    "PlanSelection ne transporte que des GenerationResult VALID et déduplique les classes D4",
+    "EXACT sert sans concession l'Intent et le Program demandés à R0_EXACT",
+    "RELAXED sert un GenerationResult VALID et expose chaque concession structurée",
+    "UNRESOLVED ne transporte aucun résultat présentable",
+    "ResolvedSelection réemploie le premier GenerationResult VALID et ne sélectionne que le Program résolu"
+  ]
+}

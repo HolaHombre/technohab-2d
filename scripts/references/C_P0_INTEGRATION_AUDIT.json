@@ -1,0 +1,86 @@
+{
+  "measuredAt": "2026-08-31",
+  "method": "C-P0.2 — trajet Program → BuiltPlan → Verdict sur WC séparé et salle d’eau avec WC intégré",
+  "profiles": {
+    "TOILET_SEPARATE": {
+      "currentMaturity": "C4",
+      "targetMaturity": "C5",
+      "decision": "REMAIN_C4",
+      "proven": [
+        "PROFILE_AND_CANON_IN_MANIFEST",
+        "REQUIRED_EQUIPMENT_PLACED",
+        "DOOR_S3_PASSED",
+        "USAGE_S4_PASSED",
+        "ANCHORS_ATTACHED_TO_INTERIOR_FACES",
+        "ZERO_HARD_ON_PUBLISHED_PLAN"
+      ],
+      "blockers": [
+        "C5-P0-01",
+        "C5-P0-03",
+        "C5-P0-04",
+        "C5-P0-05",
+        "C5-P0-07"
+      ]
+    },
+    "BATHROOM_WITH_TOILET": {
+      "currentMaturity": "C4",
+      "targetMaturity": "C5",
+      "decision": "REMAIN_C4",
+      "proven": [
+        "PROFILE_AND_CANON_IN_MANIFEST",
+        "COMPOSITION_PRESERVES_WC_FUNCTION",
+        "REQUIRED_EQUIPMENT_PLACED",
+        "DOOR_S3_PASSED",
+        "USAGE_S4_PASSED",
+        "ANCHORS_ATTACHED_TO_INTERIOR_FACES",
+        "ZERO_HARD_ON_PUBLISHED_PLAN"
+      ],
+      "blockers": [
+        "C5-P0-01",
+        "C5-P0-02",
+        "C5-P0-03",
+        "C5-P0-04",
+        "C5-P0-05",
+        "C5-P0-06",
+        "C5-P0-07"
+      ]
+    }
+  },
+  "blockers": {
+    "C5-P0-01": {
+      "label": "Équipements optionnels actifs absents du programme compilé",
+      "owner": "C-P1 / moteur de programme",
+      "exit": "Le BuiltPlan juge et transporte les équipements activés par minRoomArea, ou publie explicitement le repli qui les retire."
+    },
+    "C5-P0-02": {
+      "label": "Variante bain inaccessible en génération",
+      "owner": "C-P3 / sélection de variante",
+      "exit": "Une intention ou une règle déclarative peut produire eau et bain ; les deux variantes passent le plan complet."
+    },
+    "C5-P0-03": {
+      "label": "Résultats S1, S2, S5 et S6 non transportés sous identifiants stables",
+      "owner": "moteur de verdict",
+      "exit": "Chaque pièce publie S1 à S6 comme PASS, FAIL ou NOT_EVALUATED ; S6 possède une mesure réelle."
+    },
+    "C5-P0-04": {
+      "label": "Services requis non transportés ni vérifiés dans le BuiltPlan",
+      "owner": "C-P3 / réseaux",
+      "exit": "Ventilation, eau et évacuation apparaissent dans le programme construit et reçoivent un verdict ou une limite explicite."
+    },
+    "C5-P0-05": {
+      "label": "Relations de profil incomplètes dans le verdict général",
+      "owner": "C-P2 / C-P3",
+      "exit": "Les relations interdites ou préférées du profil sont traduites en exigences typées et attribuées à leur identifiant canonique."
+    },
+    "C5-P0-06": {
+      "label": "La composition dépend encore du profil BATHROOM C2",
+      "owner": "C-P3",
+      "exit": "BATHROOM atteint au moins C4 et le manifeste de la composition ne masque aucune maturité plus faible."
+    },
+    "C5-P0-07": {
+      "label": "Le trigger déclaré n’est pas l’autorité de l’activation ou de l’absorption",
+      "owner": "F2 / L1",
+      "exit": "includeWc est résolu par l’interpréteur générique de trigger, sans second chemin impératif."
+    }
+  }
+}

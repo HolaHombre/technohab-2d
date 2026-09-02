@@ -343,3 +343,18 @@ relevés.
 Les conditions d'existence du dual rectangulaire sont énoncées de mémoire et
 demandent vérification avant tout engagement : elles décident de ce que le
 moteur pourra accepter comme graphe.
+
+> **Réserve instruite le 21 août 2026** —
+> [`DECOUPE_ET_GRAPHE.md`](DECOUPE_ET_GRAPHE.md) §3. Ces conditions ne sont
+> pas fausses, elles sont **hors sujet** : elles valent pour une partition
+> dont le graphe d'adjacence égale le graphe demandé, alors que ce moteur
+> n'exige qu'un **sur-graphe** — toute arête demandée réalisée, les autres
+> tolérées. L'égalité serait d'ailleurs impossible ici, deux chambres
+> voisines partageant forcément un mur.
+>
+> Trois faits mesurés depuis, qui portent sur ce document : le graphe demandé
+> est une étoile sur **840 plans sur 840** (le §4 le supposait) ; l'échec de
+> desserte est **heuristique**, 98,2 % des plans ayant la capacité requise ;
+> et l'essai typologie du §8 doit être ventilé **par forme d'enveloppe et par
+> taille de programme**, faute de quoi une moyenne masquerait l'endroit
+> précis où l'existant se casse.

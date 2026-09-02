@@ -340,8 +340,10 @@ Nombre d'échanges tentés : `max(2, pièces / 1,6)`.
 
 ## 11. Solveur de pose
 
-`placement.js`. Prend une liste d'équipements et un rectangle, rend un
-verdict et les poses.
+`placement.js`. Prend une liste d'équipements, la boîte de calcul d'une pièce,
+son polygone utile et ses faces intérieures disponibles, puis rend un verdict
+et les poses. Le rectangle seul reste accepté pour le compositeur autonome et
+la lecture des anciens plans.
 
 | Constante | Valeur | Rôle |
 |---|---|---|
@@ -351,10 +353,13 @@ verdict et les poses.
 
 Les équipements sont posés du plus grand au plus petit, avec retour arrière.
 Chaque équipement est essayé dans les **quatre rotations cardinales**. Les
-ancrages `wall` et `corner` restreignent les poses aux bords.
+ancrages `wall` et `corner` restreignent les poses aux segments de faces
+encore pleins : une baie ne peut donc plus recevoir un meuble. Toutes les
+emprises et zones d'usage sont contenues dans `usablePolygon`.
 
-Chaque pose renvoie son emprise, ses zones d'usage, sa `rotation`, le `wall`
-qui la porte et la direction `inward`. C'est ce contrat qui permet au rendu
+Chaque pose renvoie son emprise, ses zones d'usage, sa `rotation`, le `wallId`
+et le `faceId` qui la portent, ainsi que la direction `inward`. C'est ce
+contrat qui permet au rendu
 de **tourner** le symbole au lieu de l'étirer : les deux moitiés partagent
 enfin la même orientation.
 
@@ -434,6 +439,7 @@ Une pièce peut être meublable et mal meublée.
 | `same-wall` | deux équipements forment un linéaire continu |
 | `different-wall` | deux équipements ne partagent pas le même mur |
 | `near` | distance maximale entre deux équipements |
+| `perimeter-max` | le périmètre passant par trois équipements reste sous un maximum |
 
 Relations déclarées :
 
@@ -443,6 +449,7 @@ Relations déclarées :
 | `KITCHEN-ALIGN-001` | cuisine | évier et préparation en linéaire | conseil | 1,5 |
 | `KITCHEN-ALIGN-002` | cuisine | plaque et préparation en linéaire | conseil | 1,5 |
 | `KITCHEN-COLD-001` | cuisine | réfrigérateur à moins de 2,40 m de la préparation | conseil | 1 |
+| `KITCHEN-TRIANGLE-001` | cuisine | périmètre évier–plaque–froid au plus égal à 6,50 m | conseil | 1,4 |
 | `BED-STORAGE-001` | chambre | le rangement libère le mur de tête du lit | conseil | 1,4 |
 | `BATH-USE-001` | salle d'eau | le lavabo n'est pas sur le mur de l'équipement humide | conseil | 1 |
 
@@ -475,6 +482,26 @@ questionnaire sont identiques.
 Le décalage par le nombre d'or pour les décrochements évite qu'ils soient
 corrélés aux tirages de découpe.
 
+### Contrat d'export
+
+Le plan courant porte `schemaVersion: "3.0"` et référence
+`PLAN_SCHEMA.json`. L'enveloppe téléchargée ajoute la version de l'application,
+la date d'export et le rapport de règles. Les surfaces `habitableArea`,
+`wallArea`, `grossFloorArea`, les `walls`, leurs `solidSegments`, les
+`reservations` et `constructionBounds` restent des champs distincts : le
+rendu ne doit jamais avoir à reconstituer la matière depuis un simple trait.
+
+Depuis M4c, les pièces enrôlées portent aussi `equipmentProgram` : version et
+autorité, programme demandé, programme effectivement résolu, méthode de repli
+et emprises nominales. Les poses exportent `sizeId`, libellé, caractère requis
+ou optionnel et emprise réelle. L'interface consomme ces champs du `BuiltPlan`
+sans relancer une désignation indépendante.
+
+Le lecteur accepte également les deux formes historiques — enveloppe
+`{ plan, rulesReport }` sans version et plan direct. Le rendu conserve ses
+replis vers `parts` et `usableRect` lorsqu'un ancien document ne possède ni
+murs, ni polygone utile.
+
 ---
 
 ## 14. Règles évaluées
@@ -494,7 +521,7 @@ violations réelles plutôt que de les déclasser.
 | `TH2D-CIRC-001` | bloquant | couloir ≥ 1,20 m | convention |
 | `TH2D-CIRC-002` | bloquant | couloir desservant ≥ 2 espaces | convention |
 | `TH2D-CIRC-003` | bloquant | couloir ≤ 1,80 m | convention, *limitée* |
-| `TH2D-CIRC-004` | conseil | circulation ≤ 10 % du plan | référentiel d'origine |
+| `TH2D-CIRC-004` | conseil suspendu M3.0 | longueur par desserte publiée, seuil absent | ancien seuil interne rejeté ; attend corpus externe M6 |
 | `TH2D-RANGEMENT-001` | bloquant | 0,45 m ≤ profondeur ≤ 0,6 × longueur | convention |
 | `TH2D-RANGEMENT-002` | bloquant | rangement attenant à sa pièce | — |
 | `TH2D-RANGEMENT-003` | conseil | chaque chambre a un rangement | convention, *limitée* |
@@ -523,13 +550,18 @@ Une seule a un seuil calculé.
 
 À énoncer, sinon les absences passent pour des choix.
 
-- **Ni murs, ni épaisseurs.** Les pièces sont jointives ; aucune surface
-  n'est perdue en cloisons, ce qui surestime la surface utile.
-- **Ni portes, ni fenêtres.** Les façades existent désormais — segments
-  orientés et nœud `exterior` dans le graphe — mais aucune ouverture n'y est
-  encore posée, donc la règle d'entrée reste hors de portée.
-- **Aucun cheminement.** L'accessibilité est jugée sur le graphe de contact,
-  pas sur un passage de largeur donnée à travers le mobilier.
+- **Murs dimensionnés, percés et utilisés par les usages 2D.** Les axes,
+  épaisseurs, surfaces utiles, faces, réservations et emprise brute sont
+  calculés. Portes, fenêtres et équipements muraux référencent leur mur ; le
+  parcours ne traverse les volumes construits que par une réservation.
+- **Ouvertures limitées au plan 2D.** Portes, entrée et fenêtres traversent le
+  volume de leur mur avec une largeur de baie et, pour les portes, un passage
+  libre et un débattement depuis la face intérieure. Linteaux, allèges,
+  hauteurs et détails constructifs restent hors du modèle.
+- **Cheminement limité au plan.** Un maillage érodé à la largeur de passage
+  contrôle les surfaces utiles, les murs, les baies et les emprises de
+  mobilier connues par l'interface. Il ne modélise ni pente, ni hauteur, ni
+  effort d'ouverture.
 - **Aucune hauteur.** Le volume habitable de `VAL-DEC-003` est hors de
   portée ; seule la branche en surface de la règle de décence s'applique.
 - **Aucune orientation réelle.** Les côtés de façade portent un nom — nord,

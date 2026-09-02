@@ -1,0 +1,168 @@
+{
+  "format": "technohab-m5.2-resolution-v1",
+  "configurations": 10,
+  "compressedConfigurations": 8,
+  "exactControls": 2,
+  "seeds": 3,
+  "requests": 30,
+  "statusCounts": {
+    "RELAXED": 24,
+    "EXACT": 6
+  },
+  "levelCounts": {
+    "R2_BATHROOMS": 11,
+    "R4_BEDROOM": 9,
+    "R1_FUSION": 4,
+    "R0_EXACT": 6
+  },
+  "coveragePercent": 100,
+  "relaxedCoveragePercent": 80,
+  "changeFields": {
+    "separateKitchen": 24,
+    "includeWc": 24,
+    "bathrooms": 20,
+    "bedrooms": 9
+  },
+  "changeSeverities": {
+    "FUNCTION_PRESERVED": 48,
+    "FUNCTION_REDUCED": 20,
+    "FUNCTION_REMOVED": 9
+  },
+  "resolutionAttempts": {
+    "mean": 4.23,
+    "p90": 7,
+    "max": 8
+  },
+  "relaxedNonFoundAttempts": 64,
+  "unresolvedAfterRelaxation": 0,
+  "hardViolations": 0,
+  "selection": {
+    "measuredRequests": 4,
+    "statuses": {
+      "COMPLETE": 4
+    },
+    "meanPlans": 3,
+    "meanSignatures": 3,
+    "meanFamilies": 1.75,
+    "meanStrategies": 1.75,
+    "additionalCalls": {
+      "mean": 11,
+      "p90": 11,
+      "max": 11
+    },
+    "combinedCalls": {
+      "mean": 14.25,
+      "p90": 17,
+      "max": 17
+    }
+  },
+  "byConfiguration": {
+    "C35-1-2": {
+      "group": "compressed",
+      "statuses": { "RELAXED": 3 },
+      "levels": { "R2_BATHROOMS": 3 },
+      "attempts": [3, 3, 3],
+      "changeFields": {
+        "separateKitchen": 3,
+        "includeWc": 3,
+        "bathrooms": 3
+      }
+    },
+    "C40-1-2": {
+      "group": "compressed",
+      "statuses": { "RELAXED": 3 },
+      "levels": { "R2_BATHROOMS": 3 },
+      "attempts": [5, 5, 5],
+      "changeFields": {
+        "separateKitchen": 3,
+        "includeWc": 3,
+        "bathrooms": 3
+      }
+    },
+    "C45-2-2": {
+      "group": "compressed",
+      "statuses": { "RELAXED": 3 },
+      "levels": { "R4_BEDROOM": 3 },
+      "attempts": [6, 6, 6],
+      "changeFields": {
+        "separateKitchen": 3,
+        "includeWc": 3,
+        "bathrooms": 3,
+        "bedrooms": 3
+      }
+    },
+    "C50-2-2": {
+      "group": "compressed",
+      "statuses": { "RELAXED": 3 },
+      "levels": { "R4_BEDROOM": 3 },
+      "attempts": [8, 8, 8],
+      "changeFields": {
+        "separateKitchen": 3,
+        "includeWc": 3,
+        "bathrooms": 3,
+        "bedrooms": 3
+      }
+    },
+    "C55-3-2": {
+      "group": "compressed",
+      "statuses": { "RELAXED": 3 },
+      "levels": { "R4_BEDROOM": 3 },
+      "attempts": [6, 7, 6],
+      "changeFields": {
+        "separateKitchen": 3,
+        "includeWc": 3,
+        "bathrooms": 3,
+        "bedrooms": 3
+      }
+    },
+    "C60-3-2": {
+      "group": "compressed",
+      "statuses": { "RELAXED": 3 },
+      "levels": { "R2_BATHROOMS": 3 },
+      "attempts": [5, 5, 5],
+      "changeFields": {
+        "separateKitchen": 3,
+        "includeWc": 3,
+        "bathrooms": 3
+      }
+    },
+    "C70-4-2": {
+      "group": "compressed",
+      "statuses": { "RELAXED": 3 },
+      "levels": {
+        "R2_BATHROOMS": 2,
+        "R1_FUSION": 1
+      },
+      "attempts": [5, 2, 5],
+      "changeFields": {
+        "separateKitchen": 3,
+        "includeWc": 3,
+        "bathrooms": 2
+      }
+    },
+    "C85-5-2": {
+      "group": "compressed",
+      "statuses": { "RELAXED": 3 },
+      "levels": { "R1_FUSION": 3 },
+      "attempts": [3, 2, 4],
+      "changeFields": {
+        "separateKitchen": 3,
+        "includeWc": 3
+      }
+    },
+    "E75-2-1": {
+      "group": "exact-control",
+      "statuses": { "EXACT": 3 },
+      "levels": { "R0_EXACT": 3 },
+      "attempts": [1, 1, 1],
+      "changeFields": {}
+    },
+    "E90-3-1": {
+      "group": "exact-control",
+      "statuses": { "EXACT": 3 },
+      "levels": { "R0_EXACT": 3 },
+      "attempts": [1, 1, 1],
+      "changeFields": {}
+    }
+  }
+}

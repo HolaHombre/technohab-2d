@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-['fit.data.js', 'generator.js', 'socle.data.js', 'room-model.js', 'placement.js', 'rules.js'].forEach(function (file) {
+['fit.data.js', 'contracts.js', 'construction.js', 'typologie.js', 'squelette.js', 'generator.js', 'socle.data.js', 'room-model.js', 'placement.js', 'rules.js'].forEach(function (file) {
   new Function(readFileSync(join(root, 'assets', file), 'utf8'))();
 });
 
@@ -48,10 +48,8 @@ const sejourSeul = separe.rooms.find((room) => room.id === 'living');
 const salleDEauSeule = separe.rooms.find((room) => room.id === 'bath_1');
 assert.equal(sejour.minArea, sejourSeul.minArea,
   'le séjour est déjà assez grand : son plancher ne bouge pas');
-assert.ok(salleDEau.minArea > salleDEauSeule.minArea,
-  'la salle d’eau avec WC exige davantage que la salle d’eau seule');
-assert.ok(salleDEau.minArea < salleDEauSeule.minArea + 1.5,
-  'sans pour autant additionner les deux minima décrétés');
+assert.equal(salleDEau.minArea, salleDEauSeule.minArea,
+  'après absorption, le plancher de 3 m² couvre encore la composition compacte');
 
 /* 3. Les équipements suivent la composition ------------------------------ */
 
@@ -59,6 +57,12 @@ const avecWc = model.designate('bath', 'eau', { area: 5, integratedWc: true, inc
 assert.ok(avecWc.programs.includes('wc'), 'la salle d’eau composée porte le programme WC');
 assert.ok(avecWc.equipments.some((equipment) => equipment.id === 'wc_pan'),
   'la cuvette figure parmi les équipements de la salle d’eau composée');
+assert.ok(!avecWc.equipments.some((equipment) => equipment.id === 'handbasin'),
+  'le lavabo de la salle d’eau absorbe le lave-mains du programme WC');
+assert.deepEqual(avecWc.absorptions, [{ guest: 'handbasin', by: 'washbasin' }],
+  'l’absorption reste explicable dans la désignation');
+assert.ok(avecWc.relations.some((relation) => relation.code === 'BATH-WC-WET-001'),
+  'la composition peut déclarer une relation entre ses deux programmes');
 
 const sansWc = model.designate('bath', 'eau', { area: 5, includeOptional: true });
 assert.ok(!sansWc.equipments.some((equipment) => equipment.id === 'wc_pan'),

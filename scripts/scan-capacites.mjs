@@ -19,8 +19,30 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const A = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets');
-for (const f of ['fit.data.js', 'generator.js', 'rules.js']) vm.runInThisContext(fs.readFileSync(join(A, f), 'utf8'));
+
+/* `--sans-peigne` neutralise le peigne de `layout()` avant chargement, pour
+   mesurer son effet propre sur le banc complet — règles bloquantes comprises,
+   ce que `ablation-peigne.mjs` ne fait pas.
+
+   Le banc lui-même n'est pas modifié : sans le drapeau, la source est chargée
+   telle quelle et l'empreinte reste comparable à toute la série antérieure.
+   Voir DECOUPE_ET_GRAPHE.md §4. */
+const sansPeigne = process.argv.includes('--sans-peigne');
+const ANCRE_PEIGNE = 'var comb = !hasHub && parentVertical !== undefined';
+
+for (const f of ['fit.data.js', 'contracts.js', 'construction.js', 'typologie.js', 'squelette.js', 'generator.js', 'rules.js']) {
+  let source = fs.readFileSync(join(A, f), 'utf8');
+  if (sansPeigne && f === 'generator.js') {
+    if (!source.includes(ANCRE_PEIGNE)) {
+      console.error('Ancre du peigne introuvable : --sans-peigne ne mesurerait rien.');
+      process.exit(1);
+    }
+    source = source.replace(ANCRE_PEIGNE, 'var comb = false && parentVertical !== undefined');
+  }
+  vm.runInThisContext(source);
+}
 const G = globalThis.TechnoHabGenerator, R = globalThis.TechnoHabRules, F = globalThis.TechnoHabFit;
+if (sansPeigne) console.log('*** PEIGNE NEUTRALISÉ — mesure d’ablation, non comparable à la série ***\n');
 
 // La forme reste le rectangle par défaut : c'est elle qui porte l'historique
 // des empreintes. `--shape=lShape` mesure une famille sans brouiller la série.

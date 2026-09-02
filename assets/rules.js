@@ -2,10 +2,17 @@
   'use strict';
 
   var EPSILON = 0.03;
-  var MIN_CIRCULATION_WIDTH = 1.2;
-  var MAX_CIRCULATION_WIDTH = 1.8;
-  var MIN_STORAGE_DEPTH = 0.45;
-  var MAX_STORAGE_DEPTH_RATIO = 0.6;
+  function canonicalNumber(id, fallback) {
+    var registry = root.TechnoHabCanonicalValues;
+    var value = registry && registry.get ? registry.get(id) : null;
+    return value && Number.isFinite(value.value) ? value.value : fallback;
+  }
+  var MIN_CIRCULATION_WIDTH = canonicalNumber('VAL-CIRC-CLEAR-WIDTH-SIMPLE-MIN-001', 0.9);
+  var CROSSING_CIRCULATION_WIDTH = canonicalNumber('VAL-CIRC-CLEAR-WIDTH-CROSSING-MIN-001', 1.2);
+  var CIRCULATION_CROSSING_SERVICES = canonicalNumber('VAL-CIRC-CROSSING-SERVICE-COUNT-001', 3);
+  var MAX_CIRCULATION_WIDTH = canonicalNumber('VAL-CIRC-CLEAR-WIDTH-MAX-001', 1.8);
+  var MIN_STORAGE_DEPTH = canonicalNumber('VAL-STORAGE-BAY-DEPTH-MIN-001', 0.45);
+  var MAX_STORAGE_DEPTH_RATIO = canonicalNumber('VAL-STORAGE-BAY-DEPTH-LENGTH-RATIO-MAX-001', 0.6);
   var CONTACT = 0.02;
 
   // Une pièce peut être un rectangle ou une forme en L : sa surface est celle
@@ -31,9 +38,52 @@
   function edgeCount(room) {
     return typeof room.edgeCount === 'number' ? room.edgeCount : 4 + 2 * (parts(room).length - 1);
   }
-  function narrowestSide(room) {
-    var rect = usable(room);
+  /* --- Largeur d'une circulation ---------------------------------------------
+
+     Une circulation n'est pas forcément une barre. Dès qu'elle se coude — un L,
+     un T, une barre à extension — sa largeur ne se lit plus sur sa boîte
+     englobante mais sur chacune de ses BRANCHES.
+
+     La mesure précédente — `narrowestSide()`, retirée avec cette correction —
+     prenait le rectangle utile, donc la boîte. Sur un L de
+     1,20 m de large et d'emprise 6 × 5, elle répond « 5 m ». Deux règles dures
+     s'en trouvaient faussées, et dans les deux sens : `TH2D-CIRC-001` cessait
+     de voir un couloir trop étroit, `TH2D-CIRC-003` refusait tout couloir
+     coudé. Le défaut était latent — aucune circulation n'a plusieurs parties
+     aujourd'hui — et se serait déclaré au premier L produit.
+
+     Les parties d'une pièce sont déjà exprimées en cotes utiles — vérifié :
+     sur un couloir droit, l'emprise et le rectangle utile coïncident au
+     millimètre. Elles se lisent donc telles quelles.
+
+     Un premier jet retranchait de chaque branche l'écart entre la boîte
+     englobante et `usableRect`, croyant y voir l'épaisseur des cloisons. Sur
+     une barre l'écart est nul et rien ne se voyait ; sur un L, dont la boîte
+     englobante couvre tout le plan, il rabotait les branches jusqu'à les faire
+     passer sous 1,20 m — la correction fabriquait le défaut qu'elle devait
+     détecter. */
+  function branchesUtiles(room) {
+    var liste = parts(room);
+    return liste.length < 2 ? [usable(room)] : liste;
+  }
+
+  // Largeur d'une branche : son petit côté. C'est ce qu'on y traverse.
+  function largeurBranche(rect) {
     return Math.min(Math.abs(rect.x1 - rect.x0), Math.abs(rect.y1 - rect.y0));
+  }
+
+  /** La branche la plus étroite — celle qui décide si l'on passe. */
+  function largeurCirculationMin(room) {
+    return branchesUtiles(room).reduce(function (min, rect) {
+      return Math.min(min, largeurBranche(rect));
+    }, Infinity);
+  }
+
+  /** La branche la plus large — celle qui décide si c'est encore un couloir. */
+  function largeurCirculationMax(room) {
+    return branchesUtiles(room).reduce(function (max, rect) {
+      return Math.max(max, largeurBranche(rect));
+    }, 0);
   }
   function touches(a, b) {
     var overlapX = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
@@ -41,6 +91,10 @@
     var contactX = Math.abs(a.x1 - b.x0) < CONTACT || Math.abs(b.x1 - a.x0) < CONTACT;
     var contactY = Math.abs(a.y1 - b.y0) < CONTACT || Math.abs(b.y1 - a.y0) < CONTACT;
     return (contactX && overlapY > 0) || (contactY && overlapX > 0);
+  }
+  function rectanglesOverlap(a, b) {
+    return Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) > 0.005 &&
+      Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0) > 0.005;
   }
   /* Depuis D2, le rectangle utile d'une pièce dont les parties pavent leur
      boîte englobante est cette boîte : la bande de rangement s'y trouve alors
@@ -80,6 +134,26 @@
     var contact = typeof found.contact === 'number' ? found.contact : minimum;
     return { exists: contact + 0.005 >= minimum, contact: contact };
   }
+  function adjacencyRequirements(plan) {
+    return plan.adjacencyRequirements || plan.requestedEdges || [];
+  }
+  function adjacencyRealized(plan, requested) {
+    /* Une porte interdite est une communication interdite, pas l'interdiction
+       de partager un mur. O4 donne enfin assez d'information pour distinguer
+       les deux ; le candidat nu conserve le contact comme proxy de score,
+       tandis que le verdict construit lit l'ouverture réellement posée. */
+    if (requested.degre === 'interdite' && requested.nature === 'porte' && Array.isArray(plan.portes)) {
+      return plan.portes.some(function (porte) {
+        var entre = porte.entre || [];
+        return entre.indexOf(requested.a) >= 0 && entre.indexOf(requested.b) >= 0;
+      });
+    }
+    return plan.edges.some(function (edge) {
+      var same = (edge.a === requested.a && edge.b === requested.b) ||
+        (edge.a === requested.b && edge.b === requested.a);
+      return same && (edge.contact || 0) > CONTACT;
+    });
+  }
   function reachable(plan) {
     if (!plan.rooms.some(function (room) { return room.id === 'living'; })) {
       return {};
@@ -111,6 +185,194 @@
       }
     },
     {
+      id: 'TH2D-WALL-001', level: 'HARD', label: 'Référentiel de murs sans doublon',
+      evaluate: function (plan) {
+        if (!plan.walls) return [];
+        var seen = {};
+        var violations = [];
+        plan.walls.forEach(function (wall) {
+          if (seen[wall.id]) violations.push({ entityId: wall.id, message: 'Le mur ' + wall.id + ' est exporté plusieurs fois.' });
+          seen[wall.id] = true;
+          if (wall.between && wall.between[0] === wall.between[1]) {
+            violations.push({ entityId: wall.id, message: 'Le mur ' + wall.id + ' sépare une pièce d’elle-même.' });
+          }
+        });
+        (plan.wallDiagnostics && plan.wallDiagnostics.overlaps || []).forEach(function (pair) {
+          violations.push({ entityId: pair, message: 'Les pièces ' + pair + ' se chevauchent : leur frontière ne peut pas devenir un mur unique.' });
+        });
+        return violations;
+      }
+    },
+    {
+      id: 'TH2D-WALL-002', level: 'HARD', label: 'Épaisseurs constructives admises',
+      evaluate: function (plan) {
+        if (!plan.construction) return [];
+        var limits = root.TechnoHabConstruction && root.TechnoHabConstruction.limits;
+        if (!limits) return [];
+        var violations = [];
+        ['exteriorWallThickness', 'interiorWallThickness'].forEach(function (key) {
+          var value = plan.construction[key];
+          var range = limits[key];
+          if (value < range.min - EPSILON || value > range.max + EPSILON) {
+            violations.push({
+              entityId: 'construction', mesure: value, seuil: range.min + '–' + range.max,
+              message: key + ' vaut ' + value + ' m, hors de la plage ' + range.min + '–' + range.max + ' m.'
+            });
+          }
+        });
+        return violations;
+      }
+    },
+    {
+      id: 'TH2D-WALL-003', level: 'HARD', label: 'Murs hors des surfaces utiles',
+      evaluate: function (plan) {
+        if (!plan.wallDiagnostics) return [];
+        var overlap = plan.wallDiagnostics.usableWallOverlapArea || 0;
+        var roomOverlaps = plan.wallDiagnostics.usableOverlaps || [];
+        var violations = roomOverlaps.map(function (pair) {
+          return { entityId: pair, message: 'Les surfaces utiles de ' + pair + ' se chevauchent.' };
+        });
+        if (overlap > 0.005) {
+          violations.push({
+            entityId: 'construction', mesure: overlap, seuil: 0.005,
+            message: overlap.toFixed(3) + ' m² de mur chevauchent encore une surface utile.'
+          });
+        }
+        return violations;
+      }
+    },
+    {
+      id: 'TH2D-WALL-004', level: 'HARD', label: 'Conservation des surfaces constructives',
+      evaluate: function (plan) {
+        if (typeof plan.grossFloorArea !== 'number') return [];
+        var conservation = Math.abs(plan.surfaceConservationError || 0);
+        var target = Math.abs(plan.habitableTargetError || 0);
+        var coverage = Math.abs(plan.surfaceCoverageError || 0);
+        var violations = [];
+        if (conservation > 0.01) {
+          violations.push({
+            entityId: 'construction', mesure: conservation, seuil: 0.01,
+            message: 'L’emprise brute diffère de la somme surface habitable + murs de ' + conservation.toFixed(3) + ' m².'
+          });
+        }
+        if (target > 0.01) {
+          violations.push({
+            entityId: 'project', mesure: target, seuil: 0.01,
+            message: 'La surface habitable obtenue s’écarte de la demande de ' + target.toFixed(3) + ' m².'
+          });
+        }
+        if (coverage > 0.01) {
+          violations.push({ entityId: 'construction', message: 'La partition n’est pas entièrement couverte par les surfaces utiles et les cloisons.' });
+        }
+        return violations;
+      }
+    },
+    {
+      id: 'TH2D-WALL-005', level: 'HARD', label: 'Ouvertures contenues dans leurs murs',
+      evaluate: function (plan) {
+        if (!plan.walls) return [];
+        var clearance = root.TechnoHabConstruction && root.TechnoHabConstruction.openingJunctionClearance || 0.08;
+        var walls = {};
+        plan.walls.forEach(function (wall) { walls[wall.id] = wall; });
+        var reservations = {};
+        (plan.reservations || []).forEach(function (reservation) { reservations[reservation.id] = reservation; });
+        var openings = (plan.portes || []).concat(plan.entree ? [plan.entree] : [], plan.fenetres || []);
+        var violations = [];
+        openings.forEach(function (opening) {
+          var wall = walls[opening.wallId];
+          var reservation = reservations[opening.reservationId];
+          if (!wall || !reservation) {
+            violations.push({ entityId: opening.id, message: 'L’ouverture ' + opening.id + ' ne référence pas un mur et une réservation valides.' });
+            return;
+          }
+          if (reservation.wallId !== wall.id || reservation.openingId !== opening.id) {
+            violations.push({ entityId: opening.id, message: 'La réservation ' + reservation.id + ' ne correspond pas à son ouverture et à son mur.' });
+            return;
+          }
+          var start = wall.orientation === 'vertical' ? wall.axis.y0 : wall.axis.x0;
+          var end = wall.orientation === 'vertical' ? wall.axis.y1 : wall.axis.x1;
+          var measured = Math.min(reservation.start - start, end - reservation.end);
+          if (measured < clearance - 0.001) {
+            violations.push({
+              entityId: opening.id, mesure: measured, seuil: clearance,
+              message: 'L’ouverture ' + opening.id + ' ne conserve que ' + measured.toFixed(2) + ' m avant une jonction.'
+            });
+          }
+          if (wall.openings.indexOf(opening.id) < 0) {
+            violations.push({ entityId: opening.id, message: 'Le mur ' + wall.id + ' ne référence pas l’ouverture ' + opening.id + '.' });
+          }
+          if (!wall.reservations.some(function (wallReservation) { return wallReservation.id === reservation.id; })) {
+            violations.push({ entityId: opening.id, message: 'Le mur ' + wall.id + ' ne référence pas la réservation ' + reservation.id + '.' });
+          }
+        });
+        (plan.wallDiagnostics && plan.wallDiagnostics.rejectedOpenings || []).forEach(function (rejected) {
+          violations.push({
+            entityId: rejected.openingId,
+            message: 'La réservation de ' + rejected.openingId + ' a été refusée (' + rejected.reason + ').'
+          });
+        });
+        return violations;
+      }
+    },
+    {
+      id: 'TH2D-WALL-006', level: 'HARD', label: 'Équipements ancrés sur une face intérieure',
+      evaluate: function (plan) {
+        var violations = [];
+        (plan.rooms || []).forEach(function (room) {
+          if (!Array.isArray(room.placements)) return;
+          var faces = {};
+          (room.wallFaces || []).forEach(function (face) { faces[face.id] = face; });
+          room.placements.forEach(function (placement) {
+            if (placement.anchor === 'free') return;
+            var face = faces[placement.faceId];
+            if (!face || face.wallId !== placement.wallId) {
+              violations.push({
+                entityId: room.id + ':' + placement.equipmentId,
+                message: placement.equipmentId + ' n’est pas ancré sur une face intérieure disponible de ' + room.label + '.'
+              });
+            }
+          });
+        });
+        return violations;
+      }
+    },
+    {
+      id: 'TH2D-DOOR-004', level: 'HARD', label: 'Débattement libre des équipements et zones d’usage',
+      evaluate: function (plan) {
+        return (plan.portes || []).concat(plan.entree ? [plan.entree] : []).filter(function (door) {
+          return door.s3Passed === false;
+        }).map(function (door) {
+          return {
+            entityId: door.id,
+            message: 'Le débattement de ' + door.id + ' recouvre une emprise ou une zone d’usage requise.'
+          };
+        });
+      }
+    },
+    {
+      id: 'TH2D-PATH-004', level: 'HARD', label: 'Zones d’usage reliées à une porte',
+      evaluate: function (plan) {
+        if (!plan.s4) return [];
+        var failedRooms = (plan.rooms || []).filter(function (room) {
+          return room.s4 && room.s4.passes === false;
+        });
+        if (!failedRooms.length && plan.s4.passes === false) {
+          return [{ entityId: 'plan', message: 'Le verdict S4 du plan est négatif sans pièce fautive identifiée.' }];
+        }
+        return failedRooms.map(function (room) {
+          var missing = Math.max(0, room.s4.requiredUsageZones - room.s4.reachableUsageZones);
+          return {
+            entityId: room.id,
+            mesure: room.s4.reachableUsageZones,
+            seuil: room.s4.requiredUsageZones,
+            message: missing + ' zone(s) d’usage requise(s) de ' + room.label +
+              ' ne rejoignent aucune porte par un passage libre de ' +
+              (room.s4.clearance || 0.60).toFixed(2).replace('.', ',') + ' m.'
+          };
+        });
+      }
+    },
+    {
       /* La surface minimale n'est plus un verdict. Surface et meublabilité
          sont la même question posée à deux moments : la première est un
          filtre bon marché, la seconde tranche. Une pièce sous son minimum
@@ -131,11 +393,39 @@
       }
     },
     {
-      id: 'TH2D-GRAPH-001', level: 'HARD', label: 'Adjacences desservies',
+      id: 'TH2D-ROOM-003', level: 'HARD', label: 'Surface contenue dans l’enveloppe du profil',
+      canonicalValueId: 'VAL-WC-PROGRAM-AREA-MAX-RATIO-001',
       evaluate: function (plan) {
-        var minimum = plan.minDesserte || 1.0;
+        var fit = root.TechnoHabFit;
+        if (!fit || !fit.maxRatioOf || !fit.smallest) return [];
+        return plan.rooms.reduce(function (violations, room) {
+          var ratio = fit.maxRatioOf(room.type);
+          var besoin = fit.smallest(room.type);
+          // Une composition suit l'enveloppe de son hôte : le plafond du WC
+          // séparé ne s'applique pas à une salle d'eau qui l'absorbe.
+          if (!Number.isFinite(ratio) || !besoin || fit.agrementOf(room.type) !== 0 ||
+              (room.composedWith || []).length) return violations;
+          var plafond = besoin.w * besoin.h * ratio;
+          var mesure = roomArea(room);
+          if (mesure > plafond + 0.05) {
+            violations.push({
+              entityId: room.id, mesure: mesure, seuil: plafond,
+              message: room.label + ' mesure ' + mesure.toFixed(2) + ' m² pour une enveloppe maximale de ' +
+                plafond.toFixed(2) + ' m².'
+            });
+          }
+          return violations;
+        }, []);
+      }
+    },
+    {
+      id: 'TH2D-ADJ-001', level: 'HARD', label: 'Adjacences obligatoires desservies',
+      evaluate: function (plan) {
         var violations = [];
-        plan.requestedEdges.forEach(function (requested) {
+        adjacencyRequirements(plan).filter(function (requested) {
+          return !requested.degre || requested.degre === 'obligatoire';
+        }).forEach(function (requested) {
+          var minimum = Number.isFinite(requested.contact) ? requested.contact : (plan.minDesserte || 1.0);
           var lien = edgeServing(plan.edges, requested, minimum);
           if (lien.exists) return;
           violations.push({
@@ -151,6 +441,48 @@
       }
     },
     {
+      id: 'TH2D-ADJ-002', level: 'HARD', label: 'Adjacences interdites absentes',
+      evaluate: function (plan) {
+        return adjacencyRequirements(plan).filter(function (requested) {
+          return requested.degre === 'interdite' && adjacencyRealized(plan, requested);
+        }).map(function (requested) {
+          return {
+            entityId: requested.a + ':' + requested.b,
+            mesure: 1, seuil: 0,
+            message: 'L’adjacence interdite ' + requested.a + ' ↔ ' + requested.b + ' est réalisée.'
+          };
+        });
+      }
+    },
+    {
+      id: 'TH2D-ADJ-003', level: 'GUIDELINE', label: 'Adjacences souhaitables',
+      evaluate: function (plan) {
+        return adjacencyRequirements(plan).filter(function (requested) {
+          return requested.degre === 'souhaitable' && !adjacencyRealized(plan, requested);
+        }).map(function (requested) {
+          return {
+            entityId: requested.a + ':' + requested.b,
+            mesure: 0, seuil: 1,
+            message: 'L’adjacence souhaitable ' + requested.a + ' ↔ ' + requested.b + ' n’est pas réalisée.'
+          };
+        });
+      }
+    },
+    {
+      id: 'TH2D-ADJ-004', level: 'GUIDELINE', label: 'Adjacences déconseillées',
+      evaluate: function (plan) {
+        return adjacencyRequirements(plan).filter(function (requested) {
+          return requested.degre === 'deconseillee' && adjacencyRealized(plan, requested);
+        }).map(function (requested) {
+          return {
+            entityId: requested.a + ':' + requested.b,
+            mesure: 1, seuil: 0,
+            message: 'L’adjacence déconseillée ' + requested.a + ' ↔ ' + requested.b + ' est réalisée.'
+          };
+        });
+      }
+    },
+    {
       /* La contrainte de placement la plus structurante, et la dernière à
          avoir été absente. Elle ne vient pas d'un goût mais de l'aération :
          les entrées d'air se font dans toutes les pièces principales, par la
@@ -159,13 +491,19 @@
 
          Son absence expliquait qu'une chambre puisse se retrouver sans aucun
          mur extérieur — donc sans fenêtre, sans air, et sans que rien ne le
-         signale. */
+         signale.
+
+         La règle interroge le RÔLE de la pièce, plus la liste de ses types.
+         Elle portait « living, bedroom, kitchen, dining, bureau » en dur, et
+         il fallait l'allonger à la main à chaque pièce ajoutée — un oubli s'y
+         serait lu comme une règle qui passe. Une pièce nouvelle y entre
+         désormais en déclarant `role: 'principale'` dans le socle. */
       id: 'TH2D-FACADE-001', level: 'HARD', label: 'Pièce principale en façade',
       evaluate: function (plan) {
-        var PRINCIPALES = ['living', 'bedroom', 'kitchen', 'dining', 'bureau'];
-        if (!plan.facades) return [];
+        var fit = root.TechnoHabFit;
+        if (!plan.facades || !fit || !fit.roleOf) return [];
         return plan.rooms.filter(function (room) {
-          if (PRINCIPALES.indexOf(room.type) < 0) return false;
+          if (fit.roleOf(room.type) !== 'principale') return false;
           return !plan.edges.some(function (edge) {
             return edge.b === 'exterior' && edge.a === room.id;
           });
@@ -188,23 +526,60 @@
     },
     {
       id: 'TH2D-SIZING-001', level: 'GUIDELINE', label: 'Séjour confortable',
+      canonicalValueId: 'VAL-LIVING-PROGRAM-AREA-TARGET-001',
       evaluate: function (plan) {
-        return plan.rooms.filter(function (room) { return room.type === 'living' && roomArea(room) < 24; }).map(function (room) {
-          return { entityId: room.id, mesure: roomArea(room), seuil: 24, message: 'Le séjour gagnerait à atteindre 24 m².' };
+        var canonical = root.TechnoHabCanonicalValues && root.TechnoHabCanonicalValues.get('VAL-LIVING-PROGRAM-AREA-TARGET-001');
+        var fitEntry = root.TechnoHabFit && root.TechnoHabFit.envelopes && root.TechnoHabFit.envelopes.living;
+        var target = canonical && Number.isFinite(canonical.value) ? canonical.value
+          : fitEntry && Number.isFinite(fitEntry.targetProgramArea) ? fitEntry.targetProgramArea : null;
+        if (!Number.isFinite(target)) return [];
+        return plan.rooms.filter(function (room) { return room.type === 'living' && roomArea(room) < target; }).map(function (room) {
+          return { entityId: room.id, mesure: roomArea(room), seuil: target, message: 'Le séjour gagnerait à atteindre ' + target + ' m².' };
+        });
+      }
+    },
+    {
+      id: 'TH2D-LIVING-001', level: 'GUIDELINE', label: 'Vide utile du séjour',
+      canonicalValueId: 'VAL-LIVING-FURNITURE-RATIO-MAX-001',
+      evaluate: function (plan) {
+        return plan.rooms.filter(function (room) {
+          return room.type === 'living' && room.furnitureOccupancy &&
+            Number.isFinite(room.furnitureOccupancy.maximum) && !room.furnitureOccupancy.passes;
+        }).map(function (room) {
+          return {
+            entityId: room.id,
+            mesure: room.furnitureOccupancy.ratio,
+            seuil: room.furnitureOccupancy.maximum,
+            message: 'Le mobilier occupe ' + Math.round(room.furnitureOccupancy.ratio * 100) +
+              ' % du séjour, au-delà de la cible de ' +
+              Math.round(room.furnitureOccupancy.maximum * 100) + ' %.'
+          };
         });
       }
     },
     {
       id: 'TH2D-CIRC-001', level: 'HARD', label: 'Largeur de circulation praticable',
+      canonicalValueIds: ['VAL-CIRC-CLEAR-WIDTH-SIMPLE-MIN-001',
+        'VAL-CIRC-CLEAR-WIDTH-CROSSING-MIN-001', 'VAL-CIRC-CROSSING-SERVICE-COUNT-001'],
       evaluate: function (plan) {
-        var minimum = plan.minCirculationWidth || MIN_CIRCULATION_WIDTH;
         return plan.rooms.filter(function (room) {
-          return room.type === 'circulation' && narrowestSide(room) + 0.005 < minimum;
+          var services = degree(plan, room.id);
+          var threshold = plan.circulationCrossingServices || CIRCULATION_CROSSING_SERVICES;
+          var minimum = services >= threshold
+            ? (plan.crossingCirculationWidth || CROSSING_CIRCULATION_WIDTH)
+            : (plan.minCirculationWidth || MIN_CIRCULATION_WIDTH);
+          return room.type === 'circulation' && largeurCirculationMin(room) + 0.005 < minimum;
         }).map(function (room) {
+          var services = degree(plan, room.id);
+          var threshold = plan.circulationCrossingServices || CIRCULATION_CROSSING_SERVICES;
+          var minimum = services >= threshold
+            ? (plan.crossingCirculationWidth || CROSSING_CIRCULATION_WIDTH)
+            : (plan.minCirculationWidth || MIN_CIRCULATION_WIDTH);
           return {
-            entityId: room.id, mesure: narrowestSide(room), seuil: minimum,
-            message: room.label + ' ne fait que ' + narrowestSide(room).toFixed(2) +
-              ' m de large, pour un minimum de ' + minimum.toFixed(2) + ' m.'
+            entityId: room.id, mesure: largeurCirculationMin(room), seuil: minimum,
+            message: room.label + ' ne fait que ' + largeurCirculationMin(room).toFixed(2) +
+              ' m de large, pour un minimum de ' + minimum.toFixed(2) + ' m avec ' +
+              services + ' espace(s) desservi(s).'
           };
         });
       }
@@ -221,34 +596,44 @@
     },
     {
       id: 'TH2D-CIRC-003', level: 'HARD', label: 'Largeur de circulation contenue',
+      canonicalValueId: 'VAL-CIRC-CLEAR-WIDTH-MAX-001',
       evaluate: function (plan) {
         var maximum = plan.maxCirculationWidth || MAX_CIRCULATION_WIDTH;
         return plan.rooms.filter(function (room) {
-          return room.type === 'circulation' && narrowestSide(room) > maximum + 0.005;
+          return room.type === 'circulation' && largeurCirculationMax(room) > maximum + 0.005;
         }).map(function (room) {
           return {
-            entityId: room.id, mesure: narrowestSide(room), seuil: maximum,
-            message: room.label + ' fait ' + narrowestSide(room).toFixed(2) +
+            entityId: room.id, mesure: largeurCirculationMax(room), seuil: maximum,
+            message: room.label + ' fait ' + largeurCirculationMax(room).toFixed(2) +
               ' m de large : au-delà de ' + maximum.toFixed(2) + ' m, ce n’est plus un couloir mais une pièce.'
           };
         });
       }
     },
     {
-      id: 'TH2D-CIRC-004', level: 'GUIDELINE', label: 'Part de circulation raisonnable',
+      /* M3.0 — règle explicitement suspendue le 27 août 2026.
+
+         Son seuil 1,6 venait du 90e centile des plans du moteur : l'employer
+         comme norme entérinait le défaut qu'elle devait détecter. La nouvelle
+         grandeur (`plan.circulationObjective`) mesure la longueur par service
+         et la part de circulation, mais aucun corpus externe ne donne encore
+         de seuil de conformité. Le rapport remonte donc une LIMITATION, pas
+         une violation de l'utilisateur. Le score peut minimiser une grandeur
+         continue sans prétendre qu'un nombre interne est une règle. */
+      id: 'TH2D-CIRC-004', level: 'GUIDELINE', label: 'Circulation contenue au regard de sa desserte',
       evaluate: function (plan) {
-        var total = plan.rooms.filter(function (room) { return room.type === 'circulation'; })
-          .reduce(function (sum, room) { return sum + roomArea(room); }, 0);
-        if (!total || total <= plan.boundary.area * 0.10 + EPSILON) return [];
+        var metric = plan.circulationObjective;
+        if (!metric || !(metric.length > 0)) return [];
         return [{
-          entityId: 'project', mesure: total, seuil: plan.boundary.area * 0.10,
-          message: 'La circulation occupe ' + (total / plan.boundary.area * 100).toFixed(1) +
-            ' % du plan, au-delà des 10 % visés.'
+          entityId: 'project', mesure: metric.metersPerRequestedService,
+          message: 'La circulation mesure ' + metric.length.toFixed(1) + ' m de branches, soit ' +
+            metric.metersPerRequestedService.toFixed(2) + ' m par desserte demandée ; aucun seuil externe ne permet encore d’en faire une conformité.'
         }];
       }
     },
     {
-      id: 'TH2D-RANGEMENT-001', level: 'HARD', label: 'Proportions du rangement',
+      id: 'TH2D-RANGEMENT-001', level: 'HARD', label: 'Proportions de la zone de rangement',
+      canonicalValueIds: ['VAL-STORAGE-BAY-DEPTH-MIN-001', 'VAL-STORAGE-BAY-DEPTH-LENGTH-RATIO-MAX-001'],
       evaluate: function (plan) {
         var minimum = plan.minStorageDepth || MIN_STORAGE_DEPTH;
         var ratio = plan.maxStorageDepthRatio || MAX_STORAGE_DEPTH_RATIO;
@@ -260,9 +645,9 @@
             var depth = Math.min(width, height);
             var length = Math.max(width, height);
             if (depth + 0.005 < minimum) {
-              violations.push({ entityId: room.id, message: 'Le rangement de ' + room.label + ' n’a que ' + depth.toFixed(2) + ' m de profondeur.' });
+              violations.push({ entityId: room.id, mesure: depth, seuil: minimum, message: 'La zone de rangement de ' + room.label + ' n’a que ' + depth.toFixed(2) + ' m de profondeur.' });
             } else if (depth > ratio * length + 0.005) {
-              violations.push({ entityId: room.id, message: 'Le rangement de ' + room.label + ' est trop profond pour sa longueur : ce n’est plus une bande.' });
+              violations.push({ entityId: room.id, mesure: depth / length, seuil: ratio, message: 'La zone de rangement de ' + room.label + ' est trop profonde pour sa longueur : ce n’est plus une bande.' });
             }
           });
         });
@@ -270,14 +655,14 @@
       }
     },
     {
-      id: 'TH2D-RANGEMENT-002', level: 'HARD', label: 'Rangement rattaché à sa pièce',
+      id: 'TH2D-RANGEMENT-002', level: 'HARD', label: 'Zone de rangement rattachée à sa pièce',
       evaluate: function (plan) {
         var violations = [];
         plan.rooms.forEach(function (room) {
           var main = usable(room);
           storageParts(room).forEach(function (part) {
             if (!rattache(main, part)) {
-              violations.push({ entityId: room.id, message: 'Le rangement de ' + room.label + ' n’est pas attenant à la pièce.' });
+              violations.push({ entityId: room.id, message: 'La zone de rangement de ' + room.label + ' n’est pas attenante à la pièce.' });
             }
           });
         });
@@ -285,16 +670,21 @@
       }
     },
     {
-      id: 'TH2D-RANGEMENT-003', level: 'GUIDELINE', label: 'Rangement en chambre',
+      id: 'TH2D-RANGEMENT-003', level: 'GUIDELINE', label: 'Équipement de rangement en chambre',
       evaluate: function (plan) {
         var bedrooms = plan.rooms.filter(function (room) { return room.type === 'bedroom'; });
-        var without = bedrooms.filter(function (room) { return !storageParts(room).length; });
+        var without = bedrooms.filter(function (room) {
+          return !(room.placements || []).some(function (placement) {
+            return placement.equipmentId === 'wardrobe';
+          });
+        });
         if (!without.length) return [];
         // Un message unique plutôt qu'un par chambre : la même remarque
         // répétée quatre fois noie le reste du rapport.
         return [{
           entityId: 'project',
-          message: without.length + ' chambre(s) sur ' + bedrooms.length + ' sans rangement.'
+          mesure: bedrooms.length - without.length, seuil: bedrooms.length,
+          message: without.length + ' chambre(s) sur ' + bedrooms.length + ' sans penderie réellement posée.'
         }];
       }
     },
@@ -348,6 +738,8 @@
          logement : le verdict est bloquant. La pièce d'accueil doit exister,
          être éligible, et offrir de quoi poser un vantail de 0,90 m. */
       id: 'TH2D-ENTREE-001', level: 'HARD', label: 'Entrée depuis l’extérieur',
+      canonicalValueIds: ['VAL-ENTRY-DOOR-BAY-WIDTH-001',
+        'VAL-ENTRY-DOOR-LEAF-WIDTH-001', 'VAL-ENTRY-CLEAR-WIDTH-001'],
       evaluate: function (plan) {
         if (!plan.entree) {
           return [{ entityId: 'plan', message: 'Aucune pièce en façade ne peut recevoir l’entrée : le logement n’a pas d’accès depuis l’extérieur.' }];
@@ -367,12 +759,55 @@
       }
     },
     {
+      id: 'TH2D-ENTREE-002', level: 'HARD', label: 'Zone d’arrivée intérieure libre',
+      canonicalValueIds: ['VAL-ENTRY-ARRIVAL-WIDTH-MIN-001', 'VAL-ENTRY-ARRIVAL-DEPTH-MIN-001'],
+      evaluate: function (plan) {
+        if (!plan.entree) return [];
+        var zone = plan.entree.arrivalZone;
+        var minimumWidth = canonicalNumber('VAL-ENTRY-ARRIVAL-WIDTH-MIN-001', 1.2);
+        var minimumDepth = canonicalNumber('VAL-ENTRY-ARRIVAL-DEPTH-MIN-001', 1.2);
+        var roomId = (plan.entree.entre || []).find(function (id) { return id !== 'exterior'; });
+        var room = plan.rooms.find(function (candidate) { return candidate.id === roomId; });
+        if (!zone || !room) {
+          return [{
+            entityId: roomId || 'plan', mesure: 0, seuil: minimumWidth * minimumDepth,
+            message: 'Le seuil d’entrée ne réserve aucune zone d’arrivée intérieure.'
+          }];
+        }
+        var width = Math.abs(zone.x1 - zone.x0);
+        var depth = Math.abs(zone.y1 - zone.y0);
+        if (Math.min(width, depth) + 0.005 < Math.min(minimumWidth, minimumDepth) ||
+            Math.max(width, depth) + 0.005 < Math.max(minimumWidth, minimumDepth)) {
+          return [{
+            entityId: room.id, mesure: Math.min(width, depth),
+            seuil: Math.min(minimumWidth, minimumDepth),
+            message: 'La zone d’arrivée de ' + room.label + ' ne mesure que ' +
+              width.toFixed(2) + ' × ' + depth.toFixed(2) + ' m.'
+          }];
+        }
+        var origin = room.usableBounds || room.usableRect || usable(room);
+        var conflicts = (room.placements || []).filter(function (placement) {
+          var footprint = placement.footprint;
+          if (!footprint) return false;
+          return rectanglesOverlap(zone, {
+            x0: origin.x0 + footprint.x0, y0: origin.y0 + footprint.y0,
+            x1: origin.x0 + footprint.x1, y1: origin.y0 + footprint.y1
+          });
+        });
+        return conflicts.length ? [{
+          entityId: room.id, mesure: conflicts.length, seuil: 0,
+          message: 'La zone d’arrivée intérieure est occupée par ' +
+            conflicts.map(function (placement) { return placement.label || placement.equipmentId; }).join(', ') + '.'
+        }] : [];
+      }
+    },
+    {
       id: 'TH2D-ROOM-002', level: 'HARD', label: 'Pièce meublable',
       evaluate: function (plan) {
-        // Le verdict vient du socle d'agencement, via le solveur hors ligne :
-        // le rectangle utile doit pouvoir recevoir les équipements requis.
-        // Aucune convention de largeur ici — une valeur inventée serait soit
-        // plus sévère que le socle, soit plus laxiste, jamais juste.
+        // Quand le solveur à la demande a travaillé sur le polygone utile et
+        // les faces M4, son verdict est l'autorité. Avant son chargement, le
+        // cache reste un repli rapide mais mesure désormais la boîte utile,
+        // et non plus le rectangle de partition antérieur aux cloisons.
         var fit = root.TechnoHabFit;
         if (!fit || !fit.fits) return [];
         // Une pièce composée doit loger les deux programmes. Le cache ne
@@ -392,10 +827,19 @@
           });
         }
         return plan.rooms.filter(function (room) {
-          var main = usable(room);
+          if (typeof room.furnishable === 'boolean') return !room.furnishable;
+          // Hors rectangle, `fit.data.js` n'est qu'un index de présélection.
+          // Sans verdict polygonal publié, la règle s'abstient plutôt que de
+          // fabriquer un vrai ou un faux positif sur la boîte englobante.
+          if (room.usablePolygon && room.usablePolygon.length) {
+            var placement = root.TechnoHabPlacement;
+            if (!placement || !placement.polygonIsRectangle ||
+                !placement.polygonIsRectangle(room.usablePolygon)) return false;
+          }
+          var main = room.usableBounds || usable(room);
           return !loge(room, main.x1 - main.x0, main.y1 - main.y0);
         }).map(function (room) {
-          var main = usable(room);
+          var main = room.usableBounds || usable(room);
           var need = fit.smallest(room.type);
           return {
             entityId: room.id,
@@ -468,23 +912,17 @@
      `mesure` cite le relevé de scripts/scan-capacites.mjs qui a établi la
      limite. Une limite sans mesure n'a pas à figurer ici. */
   var LIMITES = {
-    'TH2D-GRAPH-001': {
-      depuis: '2026-08-15',
-      cause: 'La découpe ne consulte pas le graphe : les adjacences sont favorisées par le score, jamais garanties par construction.',
-      mesure: '206 manquements sur 360 plans, 24 configurations — scripts/scan-seeds.mjs, 2026-08-17. Le relevé précédent (264 sur 720) précédait la correction du champ `contact` dans actualEdges() : la pénalité de desserte était alors constante et la recherche n’arbitrait rien. Le reliquat se concentre sur les grands programmes, 5 chambres et plus.',
-      suite: 'Découpe pilotée par le graphe, ou typologies — voir APPROCHES_GENERATION.md'
+    'TH2D-CIRC-004': {
+      depuis: '2026-08-27',
+      cause: 'L’ancien seuil 1,6 était le 90e centile du moteur lui-même et entérinait ses couloirs trop longs.',
+      mesure: 'Longueur, mètres par desserte et part de circulation publiés par scripts/measure-m3-circulation.mjs ; seuil volontairement absent.',
+      suite: 'Calibrer un seuil sur le corpus externe de M6, puis réactiver la règle sans recalcul autoréférentiel.'
     },
     'TH2D-CIRC-003': {
       depuis: '2026-08-15',
       cause: 'La cession du surplus de couloir échoue lorsqu’un de ses côtés n’est pas entièrement bordé : elle est alors refusée pour ne pas laisser de surface sans propriétaire.',
       mesure: '70 manquements sur 360 plans, 24 configurations — scripts/scan-seeds.mjs, 2026-08-17',
       suite: 'Autoriser une cession partielle, ce qui suppose un couloir non rectangulaire'
-    },
-    'TH2D-RANGEMENT-003': {
-      depuis: '2026-08-15',
-      cause: 'Le rangement produit aujourd’hui est une bande cédée par le couloir ; seules les chambres qui le bordent peuvent en recevoir une. La penderie relève de la couche mobilier, non encore posée.',
-      mesure: '320 signalements sur 360 plans — la règle mesure une absence attendue (scripts/scan-seeds.mjs, 2026-08-17)',
-      suite: 'Poser les équipements dans la pièce, socle §5.3'
     }
   };
 

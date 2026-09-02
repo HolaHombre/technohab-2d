@@ -3,7 +3,16 @@
 Comment le moteur vérifie qu'une pièce est meublable, sans payer ce contrôle
 à chaque candidat.
 
-Documents liés : [`SOCLE_AGENCEMENT.md`](SOCLE_AGENCEMENT.md) — les
+**Place dans la doctrine globale.** [`DOCTRINE.md`](DOCTRINE.md) fait foi sur
+l’unité de conception (la fonction) et sur la chaîne cible. Le présent
+document reste l’autorité sur le **pré-calcul des gabarits** tant que le
+programme d’équipements d’une résolution est fixé. Dès qu’une fonction
+admet plusieurs résolutions (`BED` ∨ `SOFA_BED`), le cache compile une
+frontière **par résolution** — pas un rectangle moyen
+([`DOCTRINE.md`](DOCTRINE.md) §8).
+
+Documents liés : [`DOCTRINE.md`](DOCTRINE.md) — doctrine globale ;
+[`SOCLE_AGENCEMENT.md`](SOCLE_AGENCEMENT.md) — les
 équipements et leurs dégagements, qui font foi ;
 [`DA_CHEMINEMENT_PLAN.md`](DA_CHEMINEMENT_PLAN.md) — le parcours, dont la
 règle `S4` du socle est la version à l'échelle de la pièce.
@@ -30,17 +39,18 @@ Trois temps distincts :
 | Temps | Ce qui se passe | Coût |
 |---|---|---|
 | **Hors ligne**, à la construction | Pour chaque type de pièce et chaque variante, on cherche exhaustivement les plus petits rectangles capables de recevoir le mobilier obligatoire, dégagements compris. Résultat : une frontière de quelques couples. | quelques secondes, payées une fois |
-| **Dans la boucle**, à chaque candidat | `fits(type, largeur, hauteur)` compare le rectangle de la pièce aux couples de la table. Quelques comparaisons. | négligeable |
-| **Une seule fois**, sur le plan retenu | `room-model.js` désigne les exigences ; `validate()` confirme leur faisabilité ; `optimize()` explore des poses ensemencées et classe les relations de préférence. | une fois par plan affiché |
+| **Dans la boucle**, sur les deux meilleurs candidats géométriques | `fits()` filtre, puis le programme minimal compilé appelle `placement.validate()` ; `assess()` rend une peine graduée de qualité d’usage. | borné et mémoïsé par classe de proportion |
+| **Une seule fois**, sur le plan retenu | `validate()` rejoue le polygone utile exact avec les faces, les portes et leurs débattements ; `optimize()` cherche une autre pose si `S4` refuse la première. | une fois par plan construit |
 
-Le placement n'est donc jamais calculé pour un candidat rejeté.
+Le placement coûteux n'est calculé que pour les meilleurs candidats issus du
+filtre géométrique, jamais pour toute la population explorée.
 
 La graine ne participe jamais au verdict de faisabilité. Elle ne change que
 l'ordre d'exploration du second temps, après validation exhaustive. Le hasard
 ne peut donc ni rendre possible une pièce impossible, ni contourner une
 relation de niveau `HARD`.
 
-## 3. Pourquoi le pré-calcul supprime le faux négatif
+## 3. Pourquoi le pré-calcul supprime le faux négatif sur un rectangle
 
 C'est la conséquence la plus importante, et elle n'était pas acquise
 d'avance.
@@ -59,20 +69,23 @@ Le pré-calcul lève l'objection pour deux raisons :
    place. La frontière des plus petits rectangles admissibles décrit donc
    exactement le domaine, sans approximation.
 
-La table n'est pas une heuristique : sur un rectangle, elle est exacte.
+La table n'est pas une heuristique : **sur un rectangle**, elle est exacte.
+M4b borne explicitement cette affirmation. Une pièce en L/U n'est pas
+ré-indexée par sa boîte : `fit.data.js` peut la présélectionner, mais seul le
+solveur sur `usablePolygon` porte son verdict.
 
 ### Les trois limites, à connaître
 
-- **Les pièces en L** sont testées sur leur rectangle utile (`usableRect`),
-  jamais sur leur boîte englobante. C'est conservateur : une forme en L peut
-  accueillir un aménagement sans contenir le rectangle testé. Faux négatif
-  possible ici, et seulement ici.
-- **Le passage entre linéaires opposés de cuisine** (1,20 m, socle §5.4)
-  n'est pas encore pris en compte par le solveur : une cuisine étroite à deux
-  linéaires face à face peut passer la table alors qu'elle est impraticable.
-- **Les portes n'existent pas encore.** Les règles `S3` et `S4` du socle —
-  débattement et desserte interne — ne sont donc pas évaluables. La table dit
-  « le mobilier tient », pas « le mobilier tient une fois la porte posée ».
+- **Les pièces en L/U** sont résolues sur leur polygone utile entier. Chaque
+  emprise et chaque zone d'usage est contenue dans le contour ; une encoche
+  traversante est un obstacle, même si les coins et le centre du rectangle
+  testé restent dans la pièce. Le cache publie `geometryScope:
+  'rectangle-only'` et n'est jamais l'autorité de `TH2D-ROOM-002` hors de ce
+  domaine.
+- **Le passage entre linéaires opposés de cuisine** est désormais vérifié par
+  le solveur à 1,20 m dès que deux équipements muraux se font face.
+- **Les portes existent et `S3` est évaluée.** `S4` relie désormais chaque
+  porte à chaque zone d'usage requise avant publication du plan.
 
 ## 4. Niveaux de règles
 
@@ -80,10 +93,11 @@ La doctrine du projet est arrêtée : **mieux vaut afficher un plan médiocre
 qu'en refuser un valide.**
 
 - `TH2D-FURN-001` — le mobilier obligatoire du socle tient dans la pièce.
-  **Bloquant sur les pièces rectangulaires**, où la table est exacte ;
-  **conseil sur les pièces en L**, où elle est conservatrice.
-- Le niveau bloquant est légitime ici précisément parce que le §3 établit
-  l'absence de faux négatif. Il ne l'aurait pas été avec un solveur en ligne.
+  **Bloquant** : la table est exacte sur un rectangle et le solveur exact fait
+  foi sur un polygone. Sans verdict polygonal publié, la règle s'abstient au
+  lieu d'interroger la boîte englobante.
+- Le niveau bloquant est légitime parce que chaque géométrie possède une
+  autorité explicite. Le cache seul ne suffirait pas hors rectangle.
 
 ## 5. Mesures du 15 août — un pronostic démenti
 
@@ -139,7 +153,7 @@ minimal annoncé passe à 1,50. À trancher dans le socle, qui fait foi.
 | `assets/socle.data.js` | transcription exécutable du §5 | source, à garder aligné |
 | `assets/placement.js` | algorithmique unique de placement et API navigateur `solve` | **autorité exécutable** |
 | `scripts/technohab-fit/build-envelopes.mjs` | runner hors ligne, oracle de test et générateur du cache | outil |
-| `assets/fit.data.js` | cache chaud des préréglages, API `fits` et `smallest` | **généré**, ne pas éditer |
+| `assets/fit.data.js` | cache chaud, programmes minimaux compilés, API `fits`, `smallest`, `programOf` | **généré**, ne pas éditer |
 | `scripts/test-placement.mjs` | comparaison du solveur en ligne aux treize préréglages | test |
 | `assets/icons/furniture.svg` | 28 équipements dessinés, `viewBox` en centimètres | source |
 | `assets/icons/preview.html` | planche de contrôle à échelle commune | outil |
@@ -152,10 +166,11 @@ npm run fit:test
 À relancer après toute modification de `socle.data.js` — sans quoi la table
 et le socle divergent en silence.
 
-## 8. Ce qui reste
+## 8. Ce qui reste après M4b
 
-1. Faire consommer les compositions libres par le programme de génération,
-   sans contourner le cache chaud des préréglages.
-2. Étendre les relations de préférence à mesure que leurs justifications sont
+1. Étendre les relations de préférence à mesure que leurs justifications sont
    documentées, sans transformer une convention d'usage en règle bloquante.
-3. Reprendre `S3` et `S4` quand les portes existeront.
+2. Mesurer le coût des résolutions polygonales à mesure que M4a.2 augmente le
+   nombre de terminaisons intérieures, sans réintroduire une autorité de boîte.
+3. Reprendre dans M5 la fragmentation résiduelle du sol et les fenêtres hors
+   composant principal, propriétés distinctes du minimum `S4`.

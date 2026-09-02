@@ -6,7 +6,8 @@
 
   var ANCHORS = ['wall', 'corner', 'free'];
   var USAGE_FACES = ['front', 'long', 'foot', 'around'];
-  var RELATION_KINDS = ['near', 'same-wall', 'different-wall', 'between', 'faces'];
+  var RELATION_KINDS = ['near', 'distance-range', 'gap-range', 'perimeter-max',
+    'same-wall', 'different-wall', 'between', 'faces'];
 
   // Ces règles portent sur la désignation d'une pièce, avant toute géométrie.
   // Elles sont génériques : un nouveau type de pièce profite du même contrôle
@@ -32,6 +33,33 @@
     });
   }
 
+  /* Une gamme retient exactement une taille : la plus grande dont le seuil est
+     atteint, le plancher à défaut. Le choix est déterministe et ne dépend que
+     de la surface — la graine fait varier la pose, jamais le programme.
+
+     `id` est conservé. La montée en gamme change l'emprise, pas l'identité :
+     une relation qui nomme `sofa` doit continuer de s'appliquer quand le séjour
+     reçoit un trois-places. La taille retenue se relit dans `size`. */
+  function resolveSize(equipment, context) {
+    if (!Array.isArray(equipment.sizes) || !equipment.sizes.length) return equipment;
+    if (context.upgradeSizes === false || !Number.isFinite(context.area)) return equipment;
+    var chosen = null;
+    equipment.sizes.forEach(function (size) {
+      if (!Number.isFinite(size.from) || context.area < size.from) return;
+      if (!chosen || size.from > chosen.from) chosen = size;
+    });
+    if (!chosen) return equipment;
+    return Object.assign({}, equipment, {
+      size: chosen.id,
+      label: chosen.label || equipment.label,
+      val: chosen.val || equipment.val,
+      footprint: Object.assign({}, chosen.footprint),
+      anchor: chosen.anchor || equipment.anchor,
+      usage: chosen.usage || equipment.usage,
+      sizes: undefined
+    });
+  }
+
   function selectedEquipments(room, variant, context) {
     context = context || {};
     return room.equipments.filter(function (equipment) {
@@ -39,6 +67,8 @@
       if (equipment.required) return true;
       return context.includeOptional !== false && Number.isFinite(context.area) &&
         Number.isFinite(equipment.minRoomArea) && context.area >= equipment.minRoomArea;
+    }).map(function (equipment) {
+      return resolveSize(equipment, context);
     });
   }
 
@@ -51,7 +81,15 @@
      jamais les faire disparaître (ROADMAP §5.3, défaut D3). */
   var COMPOSITIONS = {
     living: { flag: 'openKitchen', with: 'kitchen' },
-    bath: { flag: 'integratedWc', with: 'wc' }
+    bath: {
+      flag: 'integratedWc', with: 'wc',
+      absorptions: [{ guest: 'handbasin', by: 'washbasin' }],
+      relations: [{
+        code: 'BATH-WC-WET-001', kind: 'different-wall', subject: 'wc_pan',
+        targetAny: ['shower', 'bathtub'], level: 'GUIDELINE', weight: 1.5,
+        label: 'La cuvette préserve la sortie de l’équipement humide principal'
+      }]
+    }
   };
 
   function mergeProgram(type, variant, context) {
@@ -74,7 +112,20 @@
         if (services.indexOf(service) === -1) services.push(service);
       });
     });
-    return { rooms: programs, equipments: equipments, relations: relations, services: services };
+    var absorptions = [];
+    if (programs.length > 1 && composition) {
+      (composition.absorptions || []).forEach(function (rule) {
+        var hostPresent = equipments.some(function (equipment) { return equipment.id === rule.by && equipment.program === type; });
+        if (!hostPresent) return;
+        var before = equipments.length;
+        equipments = equipments.filter(function (equipment) {
+          return !(equipment.id === rule.guest && equipment.program === composition.with);
+        });
+        if (equipments.length < before) absorptions.push({ guest: rule.guest, by: rule.by });
+      });
+      relations.push.apply(relations, composition.relations || []);
+    }
+    return { rooms: programs, equipments: equipments, relations: relations, services: services, absorptions: absorptions };
   }
 
   function relationReferences(relation, ids) {
@@ -141,6 +192,7 @@
       variant: selectedVariant,
       room: room || null,
       programs: program.rooms.map(function (entry) { return entry.type; }),
+      absorptions: program.absorptions || [],
       equipments: equipments,
       requirements: equipments.map(function (equipment) {
         return {

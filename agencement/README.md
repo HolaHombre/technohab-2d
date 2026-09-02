@@ -76,7 +76,7 @@ réel :
 | « `bedroom.clearance` latéral à 0,15 m » | **Sans objet** — le socle est à 0,60 m sur les faces longues, `sides: 2` pour le lit double |
 | « Séjour mono-composant, orientation incalculable » | **Déjà fait** — `sofa`, `coffee_table`, `tv_unit`, et la relation `LIVING-FOCAL-001` oriente le canapé vers le meuble média |
 | « Il manque un champ `passage` distinct de `clearance` » | **Autrement résolu** — le socle sépare `footprint` et `usage[].face`, et la cuisine porte un `facingClearance` propre |
-| « Minimum cuisine à 3 m², infaisable » | **Sans objet** — `DEFINITIONS.kitchen` porte `minArea: 7` et surtout `minSide: 1.8`, dérivé du socle (0,60 de plan + 1,20 de passage) |
+| « Minimum cuisine à 3 m², infaisable » | **Sans objet** — le profil C4 porte `minProgramArea: 7` et `minProgramSide: 1.85`, dérivé du linéaire à 0,65 m et du passage à 1,20 m |
 | « Trois seuils de séjour non réconciliés (8/20/24) » | **Partiellement** — `minArea: 20` et `minSide: 3.0` sont dérivés ; le 24 m² de `TH2D-SIZING-001` reste non sourcé |
 | « `dining.clearance` à 0,50 m, insuffisant » | **Corrigé côté socle** — `dining_table_4` porte 0,80 m `around`. Reste sous les 0,90–1,20 m sourcés pour circuler derrière une chaise occupée : **seul écart de cette table encore ouvert** |
 

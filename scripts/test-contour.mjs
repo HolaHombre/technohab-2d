@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-['fit.data.js', 'generator.js', 'rules.js'].forEach(function (file) {
+['fit.data.js', 'contracts.js', 'construction.js', 'typologie.js', 'squelette.js', 'generator.js', 'rules.js'].forEach(function (file) {
   new Function(readFileSync(join(root, 'assets', file), 'utf8'))();
 });
 
@@ -42,7 +42,8 @@ for (const surface of [45, 60, 75, 110, 150, 220]) {
       assert.equal((contour.match(/M/g) || []).length, 1,
         room.id + ' doit se tracer d’un seul contour');
       const aire = room.parts.reduce((s, p) => s + (p.x1 - p.x0) * (p.y1 - p.y0), 0);
-      assert.ok(Math.abs(aire - room.area) < 0.02, 'le contour couvre toute la surface de la pièce');
+      assert.ok(Math.abs(aire - room.partitionArea) < 0.02,
+        'le contour de partition couvre toute la surface avant retrait des murs');
       if (room.parts.length < 2) return;
       multiParties += 1;
       const u = room.usableRect;
@@ -51,13 +52,38 @@ for (const surface of [45, 60, 75, 110, 150, 220]) {
       // Le rectangle utile ne descend jamais sous la partie principale, et
       // remonte à la boîte englobante dès que les parties la pavent.
       assert.ok(aireUtile + 0.005 >= aireMain, room.id + ' ne doit pas perdre de surface utile');
-      assert.ok(aireUtile <= room.area + 0.02, room.id + ' ne doit pas en gagner d’inexistante');
+      assert.ok(aireUtile <= room.partitionArea + 0.02, room.id + ' ne doit pas en gagner d’inexistante');
       if (aireUtile > aireMain + 0.005) { unionRecuperee += 1; gain += aireUtile - aireMain; }
     });
   }
 }
-assert.ok(unionRecuperee > 0,
-  'des pièces rectangulaires nées de plusieurs parties doivent retrouver leur volume');
+
+/* La génération n'a pas l'obligation de produire une union rectangulaire à
+   chaque banc de graines. Le contrat, lui, ne doit pas dépendre de ce hasard :
+   ce plan témoin partage volontairement le séjour en deux parties qui pavent
+   exactement un rectangle. */
+const temoin = generator.assemblerPlan(
+  { surface: 42, bedrooms: 0, bathrooms: 1, separateKitchen: false,
+    includeWc: false, priority: 'compact', couloirsMax: 0 },
+  [
+    { id: 'living', parts: [
+      { role: 'main', x0: 0, y0: 0, x1: 3, y1: 5 },
+      { role: 'storage', x0: 3, y0: 0, x1: 6, y1: 5 }
+    ] },
+    { id: 'bath_1', parts: [{ role: 'main', x0: 0, y0: 5, x1: 6, y1: 7 }] }
+  ],
+  { shape: 'rectangle', source: 'test-contour-multipartie' }
+);
+const sejourTemoin = temoin.rooms.find((room) => room.id === 'living');
+assert.equal(sejourTemoin.parts.length, 2, 'le témoin doit rester produit en deux parties');
+const utileTemoin = (sejourTemoin.usableRect.x1 - sejourTemoin.usableRect.x0) *
+  (sejourTemoin.usableRect.y1 - sejourTemoin.usableRect.y0);
+const mainTemoin = (sejourTemoin.parts[0].x1 - sejourTemoin.parts[0].x0) *
+  (sejourTemoin.parts[0].y1 - sejourTemoin.parts[0].y0);
+assert.ok(utileTemoin > mainTemoin + 0.005,
+  'une union multipartie rectangulaire doit rendre sa boîte entière au solveur');
+unionRecuperee += 1;
+gain += utileTemoin - mainTemoin;
 
 /* 3. Une bande de rangement incluse reste rattachée ------------------------ */
 

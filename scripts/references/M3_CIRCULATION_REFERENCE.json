@@ -1,0 +1,19 @@
+{
+  "measuredAt": "2026-08-29",
+  "method": {
+    "selection": "21 fixed attempts, 7 surfaces × 3 seeds; S4 neutralized to isolate M3.0",
+    "branchProxy": "branch-service-span-v2",
+    "path": "grid-shortest-path-v1",
+    "note": "Mesure moteur active, sans valeur normative. L’ablation poids zéro de M3.0 est archivée : sans budget de recherche elle ne fait plus partie de la porte M4."
+  },
+  "totals": { "plans": 19, "nonFound": 2, "worstCirculationShare": 22.62, "worstBranchLength": 27.79, "worstScoringLength": 19.28, "worstPathLength": 21.6 },
+  "rows": [
+    { "surface": 45, "plans": 3, "nonFound": 0, "circulationShareMean": 17.66, "circulationShareMax": 22.62, "branchLengthMean": 7.48, "branchLengthMax": 9.69, "scoringLengthMean": 5.68, "scoringLengthMax": 6.99, "metersPerServiceMean": 1.42, "pathMean": 4.16, "pathMax": 7 },
+    { "surface": 60, "plans": 1, "nonFound": 2, "circulationShareMean": 0, "circulationShareMax": 0, "branchLengthMean": 0, "branchLengthMax": 0, "scoringLengthMean": 0, "scoringLengthMax": 0, "metersPerServiceMean": 0, "pathMean": 3.6, "pathMax": 5.7 },
+    { "surface": 75, "plans": 3, "nonFound": 0, "circulationShareMean": 16.69, "circulationShareMax": 20.03, "branchLengthMean": 11.22, "branchLengthMax": 14.27, "scoringLengthMean": 9.46, "scoringLengthMax": 9.75, "metersPerServiceMean": 1.576, "pathMean": 4.52, "pathMax": 9.3 },
+    { "surface": 90, "plans": 3, "nonFound": 0, "circulationShareMean": 17.7, "circulationShareMax": 18.37, "branchLengthMean": 14.64, "branchLengthMax": 14.93, "scoringLengthMean": 9.26, "scoringLengthMax": 9.38, "metersPerServiceMean": 1.543, "pathMean": 6.73, "pathMax": 14.2 },
+    { "surface": 130, "plans": 3, "nonFound": 0, "circulationShareMean": 15.86, "circulationShareMax": 16.12, "branchLengthMean": 18.41, "branchLengthMax": 18.92, "scoringLengthMean": 11.86, "scoringLengthMax": 12.05, "metersPerServiceMean": 1.482, "pathMean": 8.07, "pathMax": 18 },
+    { "surface": 180, "plans": 3, "nonFound": 0, "circulationShareMean": 13.77, "circulationShareMax": 14.05, "branchLengthMean": 22.42, "branchLengthMax": 22.97, "scoringLengthMean": 14.08, "scoringLengthMax": 14.51, "metersPerServiceMean": 1.565, "pathMean": 10.19, "pathMax": 21 },
+    { "surface": 250, "plans": 3, "nonFound": 0, "circulationShareMean": 11.88, "circulationShareMax": 12.05, "branchLengthMean": 26.91, "branchLengthMax": 27.79, "scoringLengthMean": 18.22, "scoringLengthMax": 19.28, "metersPerServiceMean": 2.024, "pathMean": 12.4, "pathMax": 21.6 }
+  ]
+}
