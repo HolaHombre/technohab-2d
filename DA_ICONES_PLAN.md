@@ -1,5 +1,13 @@
 # Icônes de pièces — DA du plan TechnoHab
 
+**Statut au 3 septembre 2026 : assets livrés, couverture produit à auditer en
+M5.4.** Le sprite contient 18 symboles de pièces et le mobilier dispose de son
+propre jeu de 34 symboles. Les 32 identifiants d'équipements ou de gammes du
+socle courant ont tous un dessin ; `oven` et `double_washbasin` sont deux
+réserves sans entrée de catalogue active. Les passages ci-dessous formulés au
+futur documentent la fabrication initiale ; ils ne sont plus une liste de
+travail active.
+
 Objectif : donner à chaque type d'espace affiché sur le plan un pictogramme
 cohérent avec la direction artistique de Wonderland (voir
 [`../DA_GRAPHIQUE.md`](../DA_GRAPHIQUE.md)), au lieu du simple libellé texte
@@ -174,6 +182,9 @@ pas référencer des symboles qui n'existent pas encore.
 - `assets/icons/room-icons.svg` : 18 `<symbol>` (13 glyphes + 5 fonctions du
   référentiel qui en partagent un), `viewBox 0 0 64 64` commun, trait en
   `currentColor`. Source de vérité éditable.
+- `assets/icons/furniture.svg` : 34 `<symbol>` à l'échelle, dont 32 raccordés
+  aux identifiants du socle et 2 en réserve. Aucun identifiant du catalogue
+  courant n'est dépourvu de symbole.
 - Le sprite est **recopié inline dans `index.html`** entre les marqueurs
   `room-icons:start/end` : `<use href="fichier.svg#id">` ne résout pas en
   `file://`, et la page doit rester consultable sans serveur
@@ -196,3 +207,9 @@ Reste ouvert : les 12 fonctions du catalogue `technohab_rules.md` §1 autres
 que les 6 du moteur JS ne sont pas encore atteignables depuis l'interface —
 leurs symboles existent et se câbleront seuls dès que `DEFINITIONS` les
 exposera, l'`id` du symbole étant l'`id` de fonction.
+
+Un symbole disponible n'est toutefois pas nécessairement visible dans le
+produit. Le bilan M5.4 distingue désormais cinq états : présence au catalogue,
+présence dans le sprite source, copie inline compatible `file://`, raccord au
+rendu et apparition observée sur un plan. Son point zéro du 3 septembre est
+consigné dans `ROADMAP.md` §6.1 nonies.

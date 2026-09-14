@@ -138,7 +138,8 @@ exporté conserve `requestedProgram`, `resolvedProgram` et `changes[]`.
 3. **[x] M5.2c — orchestration** : `resolveProgram()` autour de
    `generateResult()`, trois essais déterministes par niveau, saut immédiat
    d'un niveau prouvé `IMPOSSIBLE` et arrêt honnête sur debug. Livré sous forme
-   d'API explicite ; `generateResult()` et l'interface restent inchangés.
+   d'API explicite ; `generateResult()` est resté compatible. L'interface a
+   ensuite adopté la sortie composée au lot M5.1.
 4. **[x] M5.2d — sélection** : réemploi du premier résultat puis
    `PlanSelection` sur le programme résolu. Livré par `resolveSelection()` et
    le contrat `ResolvedSelection` ; aucune recherche de diversité n'est lancée

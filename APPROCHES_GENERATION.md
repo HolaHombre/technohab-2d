@@ -4,7 +4,12 @@ Revue large des méthodes possibles, avant de choisir. Écrit pour sortir de
 l'effet tunnel : le moteur actuel est une approche parmi d'autres, et pas
 nécessairement la bonne.
 
-**Statut : document de décision, aucune implémentation.**
+**Statut : étude de décision historique, relue au 2 septembre 2026.** Le choix
+« typologies paramétrées + dimensionnement + filtre » est désormais
+partiellement implémenté par `squelette.js`, `typologie.js` et le filtre M5.
+Les sections suivantes conservent le raisonnement qui a conduit à ce choix ;
+elles ne décrivent pas le runtime courant. Pour celui-ci, lire
+[`CARTOGRAPHIE_MOTEUR.md`](CARTOGRAPHIE_MOTEUR.md).
 
 ---
 

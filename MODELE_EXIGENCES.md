@@ -17,8 +17,10 @@ pièce d’un premier placement arbitraire.
    ordre déterminé par la graine du plan et classe les préférences.
 5. Le rendu ne reçoit que la pose optimisée après validation.
 
-Le cache `fit.data.js` reste le contrôle rapide dans la boucle de génération.
-La chaîne ci-dessus ne s’exécute qu’une fois sur le plan retenu.
+Le cache `fit.data.js` reste le contrôle rapide pour les enveloppes
+rectangulaires. Depuis M4, la chaîne de pose s'exécute aussi dans la boucle de
+construction des candidats destinés au verdict ; le plan rendu relit les poses
+du `BuiltPlan` au lieu de calculer un mobilier indépendant.
 
 ## 1 bis. Définition d’une pièce
 
@@ -130,7 +132,11 @@ dures.
 
 ## 5. Limites actuelles
 
-Les portes, leurs débattements et le cheminement interne ne sont pas encore
-des objets du moteur. Les règles `S3` et `S4` restent donc hors du modèle de
-pose. Leur ajout devra étendre la validation dure, jamais le seul score de
-l’optimiseur.
+Les portes, leurs débattements et le cheminement interne sont désormais des
+objets du plan construit. `S3` contrôle les conflits avec le battant et `S4`
+prouve qu'une porte rejoint les zones d'usage requises. Restent hors de cette
+preuve générique les ouvrants propres à certains équipements — penderie, four,
+lave-vaisselle —, plusieurs relations fines de profil et la représentation
+fidèle de toutes les rotations calculées. Leur ajout doit continuer d'étendre
+la validation dure lorsque l'usage l'exige, jamais le seul score de
+l'optimiseur.

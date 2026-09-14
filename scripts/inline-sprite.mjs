@@ -2,7 +2,7 @@
 // Recopie les sprites SVG de TechnoHab dans technohab/index.html.
 //
 // Le sprite doit être inline : `<use href="fichier.svg#id">` ne résout pas en
-// file://, et le site reste consultable sans serveur (CLAUDE.md §1). Le fichier
+// file://, et le site reste consultable sans serveur (AGENTS.md § 2). Le fichier
 // SVG reste la source de vérité éditable ; ce script propage, il ne génère pas.
 //
 // Usage : node scripts/technohab-icons/inline-sprite.mjs [--check]

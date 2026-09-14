@@ -4,7 +4,11 @@ Préparation de l'intégration des ouvertures — portes et baies — comme
 élément validant d'un modèle, et du renforcement du cheminement qui doit les
 desservir.
 
-**Statut : étude, non implémenté.**
+**Statut : étude initiale, partiellement livrée par M3–M4.** Portes, entrée,
+fenêtres, réservations dans les murs et parcours meublé appartiennent au plan
+construit et à son verdict. Restent hors de cette livraison l'étude complète
+des surfaces vitrées, l'orientation solaire, les vues et les réseaux. Pour
+l'état courant, voir [`CARTOGRAPHIE_MOTEUR.md`](CARTOGRAPHIE_MOTEUR.md) §5.
 
 Documents liés : [`SOCLE_AGENCEMENT.md`](SOCLE_AGENCEMENT.md) (équipements et
 placement), [`VEILLE_NORMATIVE.md`](VEILLE_NORMATIVE.md) (traçabilité des

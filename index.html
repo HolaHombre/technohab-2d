@@ -545,6 +545,48 @@
           <div id="plan-view" class="canvas-frame" role="tabpanel" aria-live="polite">
             <svg id="plan-svg" role="img" preserveAspectRatio="xMidYMid meet"></svg>
             <span class="north-marker" aria-label="Orientation nord">N</span>
+            <button id="analysis-open" class="analysis-trigger" type="button"
+              aria-controls="analysis-panel" aria-expanded="false" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5.5h8M8 9.5h8M8 13.5h5M6 2.5h12a2 2 0 0 1 2 2v15H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Z" />
+                <circle cx="16.5" cy="16.5" r="2.5" /><path d="m18.3 18.3 2.2 2.2" />
+              </svg>
+              <span>Analyse</span>
+            </button>
+
+            <section id="analysis-panel" class="analysis-panel" role="dialog" aria-modal="true"
+              aria-labelledby="analysis-title" hidden>
+              <div class="analysis-heading">
+                <div>
+                  <p class="analysis-kicker">Audit standardisé</p>
+                  <h3 id="analysis-title">Lecture humaine du plan</h3>
+                </div>
+                <button id="analysis-close" class="analysis-close" type="button" aria-label="Fermer l’analyse">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19" /></svg>
+                </button>
+              </div>
+              <p id="analysis-meta" class="analysis-meta"></p>
+              <p class="analysis-intro">Évaluez chaque point selon ce plan précis. Les constats sont enregistrés localement par graine et par rang.</p>
+              <div class="analysis-guidance">
+                <p id="analysis-progress" class="analysis-progress" role="status" aria-live="polite"></p>
+                <p id="analysis-cell-help" class="analysis-cell-help">Survolez une réponse ou placez-y le focus pour lire sa portée.</p>
+              </div>
+              <div id="analysis-grid" class="analysis-grid"></div>
+              <div class="analysis-summary-fields">
+                <label for="analysis-synthesis">Synthèse du plan
+                  <textarea id="analysis-synthesis" rows="3" maxlength="1200" placeholder="Ce qui fonctionne, ce qui est presque bon, ce qui échoue…"></textarea>
+                </label>
+                <label for="analysis-first-correction">Première correction à apporter
+                  <textarea id="analysis-first-correction" rows="2" maxlength="600" placeholder="Le premier changement que vous feriez pour habiter ici."></textarea>
+                </label>
+              </div>
+              <div class="analysis-footer">
+                <p id="analysis-status" class="analysis-status" role="status" aria-live="polite"></p>
+                <button id="analysis-export-panel" class="primary-button analysis-export-panel" type="button" disabled>
+                  Exporter le dossier <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            </section>
           </div>
 
           <ul class="plan-legend" aria-label="Légende du plan">
@@ -569,6 +611,7 @@
             <label class="switch plan-switch"><input id="show-furniture" type="checkbox" /><span>Mobilier</span></label>
             <label class="switch plan-switch"><input id="show-paths" type="checkbox" /><span>Parcours</span></label>
             <button id="download-json" class="secondary-button" type="button">Exporter JSON</button>
+            <button id="download-analysis" class="secondary-button" type="button" disabled>Exporter l’analyse</button>
             <button id="download-svg" class="secondary-button" type="button">Exporter SVG</button>
             <button id="download-log" class="secondary-button" type="button">Exporter le journal</button>
             <button id="download-eval" class="secondary-button" type="button">Exporter les avis</button>

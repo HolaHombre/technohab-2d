@@ -8,6 +8,11 @@ géométrique des parties de pièce
 **Principe :** livrer d'abord un MVP géométriquement vrai, sans prétendre
 modéliser tous les systèmes constructifs.
 
+**Lecture actuelle :** le « problème » ci-dessous décrit l'état antérieur au
+chantier. Le moteur publié construit désormais les murs, leurs faces et leurs
+réservations avant la pose finale et le verdict. La chaîne courante est décrite
+dans [`CARTOGRAPHIE_MOTEUR.md`](CARTOGRAPHIE_MOTEUR.md) §5.
+
 ## 1. Problème
 
 Le moteur représente aujourd'hui une limite de pièce par une ligne sans
@@ -179,8 +184,9 @@ pour le MVP.
 - [x] éliminer les faux murs entre parties d'une même pièce ;
 - [x] tester rectangles, pièces en L, angles et jonctions en T.
 
-**Livrable :** un tableau `walls` stable, exporté mais pas encore utilisé par
-les autres calculs.
+**Livrable M1 à l'époque :** un tableau `walls` stable. Il est désormais
+utilisé par les ouvertures, l'ancrage du mobilier, les surfaces utiles et le
+cheminement.
 
 Implémentation : `assets/construction.js` dérive ce tableau après la fusion et
 la mise en forme finales des pièces. Les identifiants dépendent de la géométrie

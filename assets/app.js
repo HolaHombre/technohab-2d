@@ -5,7 +5,7 @@
      modification du moteur — `scoreCandidate`, la découpe, les enveloppes —
      doit la faire monter, sans quoi le journal mélangera des jugements
      portant sur des plans que le code ne produit plus. */
-  var APP_VERSION = '3.2.0-alpha.1';
+  var APP_VERSION = '3.3.0-alpha.1';
   var STORAGE_KEY = 'technohab:mvp-2d:v2';
   var HISTORY_KEY = 'technohab:mvp-2d:history:v1';
   var HISTORY_MAX = 20;
@@ -30,6 +30,8 @@
   var planSelectionCompromise = document.getElementById('plan-selection-compromise');
   var planView = document.getElementById('plan-view');
   var jsonExportButton = document.getElementById('download-json');
+  var analysisOpenButton = document.getElementById('analysis-open');
+  var analysisExportButton = document.getElementById('download-analysis');
   var svgExportButton = document.getElementById('download-svg');
   var latestResult = null;
   var pendingResolution = null;
@@ -41,6 +43,10 @@
   var variant = 1;
   var history = [];
   var pendingSeed;
+  var analysisController = null;
+  var analysisLoading = null;
+  var generationStartedAt = null;
+  var latestGenerationPerformance = null;
   var PATHS_KEY = 'technohab:parcours:v1';
   var pathsToggle = document.getElementById('show-paths');
   var afficherParcours = false;
@@ -1024,10 +1030,13 @@
 
   function setPlanAvailable(available) {
     jsonExportButton.disabled = !available;
+    analysisOpenButton.disabled = !available;
+    analysisExportButton.disabled = !available;
     svgExportButton.disabled = !available;
   }
 
   function clearActivePlan(message) {
+    if (analysisController) analysisController.close();
     latestResult = null;
     clearPlanSelection();
     while (planSvg.firstChild) planSvg.removeChild(planSvg.firstChild);
@@ -1052,6 +1061,43 @@
     };
   }
 
+  function beginGenerationPerformance() {
+    generationStartedAt = {
+      wallClock: new Date().toISOString(),
+      monotonic: root.performance && root.performance.now ? root.performance.now() : Date.now()
+    };
+    latestGenerationPerformance = {
+      status: 'RUNNING',
+      startedAt: generationStartedAt.wallClock
+    };
+  }
+
+  function completeGenerationPerformance(resolvedSelection, status, error) {
+    var now = root.performance && root.performance.now ? root.performance.now() : Date.now();
+    var resolution = resolvedSelection && resolvedSelection.resolution || error && error.programResolution || null;
+    var resolutionAttempts = resolution && Array.isArray(resolution.attempts) ? resolution.attempts.length : 0;
+    var selectionAttempts = resolvedSelection && Number.isFinite(resolvedSelection.generatedAttempts)
+      ? resolvedSelection.generatedAttempts : 0;
+    latestGenerationPerformance = {
+      status: status,
+      startedAt: generationStartedAt ? generationStartedAt.wallClock : null,
+      completedAt: new Date().toISOString(),
+      elapsedMs: generationStartedAt ? Math.round((now - generationStartedAt.monotonic) * 10) / 10 : null,
+      resolutionStatus: resolution ? resolution.status : null,
+      selectionStatus: resolvedSelection && resolvedSelection.selection
+        ? resolvedSelection.selection.status : null,
+      resolutionAttempts: resolutionAttempts,
+      selectionAttempts: selectionAttempts,
+      totalGeneratorCalls: resolutionAttempts + selectionAttempts,
+      failure: error ? {
+        name: error.name || 'Error',
+        message: error.message || String(error),
+        selectionStatus: error.selectionStatus || null
+      } : null
+    };
+    generationStartedAt = null;
+  }
+
   function activateResolution(resolution, consent, generation, resolvedSelection, selectionIndex, recordHistory) {
     generation = generation || resolution.result;
     var plan = generation.builtPlan.plan;
@@ -1065,7 +1111,8 @@
       programResolution: resolution,
       resolvedSelection: resolvedSelection || null,
       selectionIndex: Number.isFinite(selectionIndex) ? selectionIndex : 0,
-      consent: consent
+      consent: consent,
+      performance: latestGenerationPerformance
     };
     renderPlan(plan);
     renderRules(report); renderMeta(report);
@@ -1109,6 +1156,7 @@
         evaluatedRules: report.evaluatedRules, hard: report.summary.hard,
         guideline: report.summary.guideline, limites: report.summary.limites,
         prealableRompu: report.prealableRompu, graviteMax: report.summary.graviteMax,
+        performance: latestGenerationPerformance,
         echecs: report.violations.map(function (item) {
           return { regle: item.ruleId, niveau: item.level, entite: item.entityId,
             mesure: item.mesure, seuil: item.seuil, gravite: item.gravite, message: item.message };
@@ -1117,6 +1165,7 @@
       history = history.slice(0, HISTORY_MAX);
       saveHistory(); renderHistory();
     }
+    if (analysisController) analysisController.setPlan();
     if (root.TechnoHabEvaluation) root.TechnoHabEvaluation.contexte(plan, report, APP_VERSION);
   }
 
@@ -1124,6 +1173,7 @@
     var request = ++generationRequest;
     pendingResolution = null;
     setPlanAvailable(false);
+    beginGenerationPerformance();
     statusElement.textContent = 'Exploration des propositions…';
     statusElement.dataset.state = 'warning';
     setTimeout(function () {
@@ -1138,6 +1188,8 @@
       pendingResolution = null;
       var resolvedSelection = root.TechnoHabGenerator.resolveSelection(options, variant, pendingSeed, 3);
       var resolution = resolvedSelection.resolution;
+      completeGenerationPerformance(resolvedSelection,
+        resolution.status === 'UNRESOLVED' ? 'UNRESOLVED' : 'DONE', null);
       pendingSeed = undefined;
       if (resolution.status === 'UNRESOLVED' || !resolution.result || !resolution.result.builtPlan) {
         var resolutionError = new Error('Aucune proposition valide n’a été construite après les replis autorisés.');
@@ -1174,6 +1226,15 @@
       var failedResolution = error && error.programResolution || failedSelection && failedSelection.resolution;
       var lastAttempt = failedResolution && failedResolution.attempts.length
         ? failedResolution.attempts[failedResolution.attempts.length - 1] : null;
+      if (!latestGenerationPerformance || latestGenerationPerformance.status === 'RUNNING') {
+        completeGenerationPerformance(failedSelection, 'FAILED', error);
+      } else if (latestGenerationPerformance && !latestGenerationPerformance.failure) {
+        latestGenerationPerformance.status = 'FAILED';
+        latestGenerationPerformance.failure = {
+          name: error.name || 'Error', message: error.message || String(error),
+          selectionStatus: error.selectionStatus || null
+        };
+      }
       pendingResolution = null;
       resolutionNotice.hidden = true;
       clearActivePlan('Une erreur a interrompu la résolution : ' +
@@ -1192,6 +1253,86 @@
   function download(filename, content, type) {
     var url = URL.createObjectURL(new Blob([content], { type: type }));
     var link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url);
+  }
+
+  function loadDeferredScript(source) {
+    return new Promise(function (resolve, reject) {
+      var existing = document.querySelector('script[data-deferred-source="' + source + '"]');
+      if (existing) {
+        if (existing.dataset.loaded === 'true') resolve();
+        else {
+          existing.addEventListener('load', resolve, { once: true });
+          existing.addEventListener('error', reject, { once: true });
+        }
+        return;
+      }
+      var script = document.createElement('script');
+      script.src = source;
+      script.dataset.deferredSource = source;
+      script.addEventListener('load', function () { script.dataset.loaded = 'true'; resolve(); }, { once: true });
+      script.addEventListener('error', function () {
+        script.remove();
+        reject(new Error('Le module d’analyse n’a pas pu être chargé.'));
+      }, { once: true });
+      document.head.appendChild(script);
+    });
+  }
+
+  function analysisContext() {
+    var resultSnapshot = latestResult;
+    var historySnapshot = history.slice();
+    return {
+      result: resultSnapshot,
+      performance: resultSnapshot ? resultSnapshot.performance : latestGenerationPerformance,
+      appVersion: APP_VERSION,
+      planSvg: planSvg,
+      resolutionTrace: resultSnapshot
+        ? resolutionExportTrace(resultSnapshot.programResolution, resultSnapshot.consent) : null,
+      getPlanDocument: function () {
+        return resultSnapshot ? root.TechnoHabGenerator.exportDocument(
+          resultSnapshot.plan, resultSnapshot.rulesReport, APP_VERSION,
+          resolutionExportTrace(resultSnapshot.programResolution, resultSnapshot.consent)
+        ) : null;
+      },
+      getHistory: function () { return historySnapshot; }
+    };
+  }
+
+  function loadAnalysis() {
+    if (analysisController) return Promise.resolve(analysisController);
+    if (analysisLoading) return analysisLoading;
+    analysisOpenButton.setAttribute('aria-busy', 'true');
+    analysisExportButton.setAttribute('aria-busy', 'true');
+    analysisOpenButton.disabled = true;
+    analysisExportButton.disabled = true;
+    analysisOpenButton.querySelector('span').textContent = 'Chargement…';
+    analysisExportButton.textContent = 'Chargement de l’analyse…';
+    analysisLoading = loadDeferredScript('./assets/analysis.data.js')
+      .then(function () { return loadDeferredScript('./assets/analysis.js'); })
+      .then(function () {
+        analysisController = root.TechnoHabAnalysis.mount({ getContext: analysisContext });
+        return analysisController;
+      }).catch(function (error) {
+        analysisLoading = null;
+        throw error;
+      }).then(function (loaded) {
+        analysisOpenButton.removeAttribute('aria-busy');
+        analysisExportButton.removeAttribute('aria-busy');
+        analysisOpenButton.disabled = !latestResult;
+        analysisExportButton.disabled = !latestResult;
+        analysisOpenButton.querySelector('span').textContent = 'Analyse';
+        analysisExportButton.textContent = 'Exporter l’analyse';
+        return loaded;
+      }, function (error) {
+        analysisOpenButton.removeAttribute('aria-busy');
+        analysisExportButton.removeAttribute('aria-busy');
+        analysisOpenButton.disabled = !latestResult;
+        analysisExportButton.disabled = !latestResult;
+        analysisOpenButton.querySelector('span').textContent = 'Analyse';
+        analysisExportButton.textContent = 'Exporter l’analyse';
+        throw error;
+      });
+    return analysisLoading;
   }
   // Chaque génération tire sa propre graine : elle devient la référence du
   // plan, recopiable et rejouable, plutôt qu'un numéro de variante opaque.
@@ -1254,6 +1395,34 @@
     );
     download('technohab-plan-v' + variant + '-p' + (latestResult.selectionIndex + 1) + '.json',
       JSON.stringify(exported, null, 2), 'application/json');
+  });
+  analysisOpenButton.addEventListener('click', function () {
+    if (!latestResult) return;
+    loadAnalysis().then(function (loaded) {
+      loaded.open();
+    }).catch(function (error) {
+      rulesMeta.textContent = error && error.message
+        ? error.message : 'Le module d’analyse n’a pas pu être ouvert.';
+    });
+  });
+  analysisExportButton.addEventListener('click', function () {
+    if (!latestResult) return;
+    analysisExportButton.disabled = true;
+    analysisExportButton.setAttribute('aria-busy', 'true');
+    analysisExportButton.textContent = 'Préparation du dossier…';
+    loadAnalysis().then(function (loaded) {
+      analysisExportButton.disabled = true;
+      analysisExportButton.setAttribute('aria-busy', 'true');
+      analysisExportButton.textContent = 'Préparation du dossier…';
+      return loaded.exportCurrent();
+    }).catch(function (error) {
+      rulesMeta.textContent = error && error.message
+        ? error.message : 'Le dossier d’analyse n’a pas pu être exporté.';
+    }).then(function () {
+      analysisExportButton.disabled = !latestResult;
+      analysisExportButton.removeAttribute('aria-busy');
+      analysisExportButton.textContent = 'Exporter l’analyse';
+    });
   });
   svgExportButton.addEventListener('click', function () {
     if (!latestResult) return;

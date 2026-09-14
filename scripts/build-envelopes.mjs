@@ -87,7 +87,7 @@ for (const [type, room] of Object.entries(socle.rooms)) {
      navigateur charge fit.data.js au premier octet (index.html) tandis que
      socle.data.js reste différé jusqu'au premier usage du solveur. Sans cette
      recopie, generator.js et rules.js ne pourraient pas lire le rôle ni
-     l'agrément sans casser le chargement paresseux (CLAUDE.md §2). */
+     l'agrément sans casser le chargement paresseux (AGENTS.md § 3.1). */
   result[type] = {
     label: room.label, mvp: Boolean(room.mvp),
     role: room.role, agrement: room.agrement,

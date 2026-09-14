@@ -1,5 +1,11 @@
 # Cheminement et accès — DA du plan TechnoHab
 
+**Statut au 2 septembre 2026 :** spécification graphique historique ; le
+cheminement orthogonal, les accès, les portes et le calque de parcours sont
+désormais calculés et rendus. Les listes « à spécifier » plus bas conservent le
+raisonnement d'origine et ne décrivent plus toutes des dettes actives. État du
+moteur : [`CARTOGRAPHIE_MOTEUR.md`](CARTOGRAPHIE_MOTEUR.md) §5.
+
 Objectif : tracer sur le plan le **parcours réel** qui dessert le logement —
 depuis l'entrée, à travers chaque accès franchi, jusqu'à chaque pièce — et
 donner à ce parcours un vocabulaire graphique cohérent avec la direction
