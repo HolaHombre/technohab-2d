@@ -27,6 +27,7 @@ pas à ce dépôt.
 Exécuter les commandes proportionnées au changement, puis au minimum :
 
 ```sh
+npm run serve:test
 npm run icons:check
 npm run test:analysis
 npm run technohab:validate

@@ -49,6 +49,28 @@ technique ; son futur lien public relève du jalon J3.1 de MetaProjet.*
 
 ---
 
+## Pilotage
+
+Format et cycle : [`../MetaProjet/METHODE.md`](../MetaProjet/METHODE.md) (D-020).
+Le détail historique des jalons reste dans les sections numérotées ci-dessous ;
+seuls le travail actif et le todo immédiat suivent ce format.
+
+| Item courant | État | Gate de validation | Vérification | Documentation | Mis à jour |
+|---|---|---|---|---|---|
+| `J0.6-TECHNOHAB — dépôt extrait vérifiable, lançable et prêt à être commité` | `needs_review` | La suite complète rend un verdict hors de la limite de 150 s ; l'aperçu local démarre par `lancer.command` comme par `npm run serve` ; aucune perte constatée face à la copie `56402fc` | `npm run serve:test` ; `npm run icons:check` ; `npm run test:analysis` ; `npm run technohab:validate` exécuté hors agent — `test-fusion` et `test-kitchen-c4` restent sans verdict | `README.md` ; `AGENTS.md` ; `ROADMAP.md` | 2026-09-14 |
+
+## Todo
+
+| Ordre | ID | Résultat attendu | Gate de validation | État |
+|---:|---|---|---|---|
+| 1 | `M5.4` | Les plans sont audités en amont, les constats traduits en conséquences métier et la roadmap réordonnée | Le pilote qualité a rendu ses constats, chacun est rattaché à une conséquence écrite, et l'ordre des lots suivants est publié dans ce document | `todo` |
+| 2 | `I1` | Les vagues de pièces retenues sont intégrées ou leur report est explicite | Chaque vague est soit intégrée avec sa preuve, soit reportée avec sa raison écrite ; aucune ne reste sans statut | `blocked` — attend `M5.4` |
+| 3 | `C-P3` | Salle d'eau sans WC, cellier, buanderie et local technique atteignent la maturité C4 | Chaque profil expose canon, variantes ou proportions et preuves isolées, et le moteur les consomme | `todo` |
+| 4 | `F1` | Le socle porte les annotations `capabilities[]` / `requiredCapabilities` | `npm run technohab:validate` rend le même verdict qu'avant l'annotation : zéro changement de génération | `todo` |
+| 5 | `J0.7-TECHNOHAB` | Le dépôt possède un distant conforme à son niveau de diffusion | J0.4 et J0.5 de MetaProjet franchis ; distant vérifié projet par projet | `blocked` — attend `J0.4` et `J0.5` |
+
+---
+
 ## 1. Objectif
 
 Publier une application 2D autonome qui transforme un

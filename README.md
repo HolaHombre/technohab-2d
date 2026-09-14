@@ -9,6 +9,17 @@ TechnoHab transforme un programme domestique borné en plusieurs organisations
 2D mesurées, meublées et contrôlées. Le moteur fonctionne localement, sans
 dépendance d'exécution et sans transmission de données.
 
+## Démarrer localement
+
+Double-cliquer sur `lancer.command`, utiliser le bouton **Lancer** de la carte
+TechnoHab dans l'onglet **Dépôts**, ou exécuter :
+
+```sh
+npm run serve
+```
+
+L'aperçu écoute uniquement sur <http://127.0.0.1:8001>.
+
 La formulation exacte de son état actuel est :
 
 > **générateur procédural de plans de principe 2D sous contraintes, dans un

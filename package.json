@@ -3,6 +3,8 @@
   "private": true,
   "description": "Générateur procédural local de plans de principe 2D sous contraintes.",
   "scripts": {
+    "serve": "node scripts/serve.mjs",
+    "serve:test": "node scripts/test-serve.mjs",
     "fit:build": "node scripts/build-envelopes.mjs",
     "fit:test": "node scripts/test-placement.mjs",
     "fit:check": "node scripts/test-definition-pieces.mjs",
