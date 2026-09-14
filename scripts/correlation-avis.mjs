@@ -10,14 +10,14 @@
 // ferait de ce journal un ornement. Ce script refuse donc de conclure sous le
 // seuil, au lieu d'afficher un coefficient qui aurait l'air d'une réponse.
 //
-//   node technohab/scripts/correlation-avis.mjs technohab/eval/avis.eval.json
+//   node scripts/correlation-avis.mjs eval/avis.eval.json
 import fs from 'fs';
 
 const SEUIL_CONCLUSION = 50;
 
 const chemin = process.argv[2];
 if (!chemin) {
-  console.error('usage : node technohab/scripts/correlation-avis.mjs <fichier.eval.json>');
+  console.error('usage : node scripts/correlation-avis.mjs <fichier.eval.json>');
   console.error('Le fichier s’obtient par le bouton « Exporter les avis » de la page.');
   process.exit(2);
 }

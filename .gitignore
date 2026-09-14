@@ -1,0 +1,7 @@
+.DS_Store
+.claude/
+House 2D plans dataset/
+eval/
+*.eval.json
+node_modules/
+

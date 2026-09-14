@@ -24,7 +24,7 @@
 // référence doit donc désormais battre ou égaler le meilleur plan moteur ;
 // aucune tolérance historique ne subsiste.
 //
-//   node technohab/scripts/test-instrument.mjs
+//   node scripts/test-instrument.mjs
 import fs from 'fs';
 import vm from 'vm';
 import { dirname, join } from 'path';

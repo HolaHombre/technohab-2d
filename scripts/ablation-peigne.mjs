@@ -10,7 +10,7 @@
 // générateur est patché en mémoire et chaque variante tourne dans son propre
 // contexte, sur exactement les mêmes graines.
 //
-//   node technohab/scripts/ablation-peigne.mjs
+//   node scripts/ablation-peigne.mjs
 import fs from 'fs';
 import vm from 'vm';
 import { dirname, join } from 'path';

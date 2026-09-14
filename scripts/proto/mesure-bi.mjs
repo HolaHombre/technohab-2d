@@ -1,6 +1,6 @@
 // PROTOTYPE — diversité et conformité de la double distribution.
 // Deux circulations au programme, patch en mémoire (voir essai-typologie.mjs).
-//   node technohab/scripts/proto/mesure-bi.mjs
+//   node scripts/proto/mesure-bi.mjs
 import fs from 'fs';
 import vm from 'vm';
 import { dirname, join } from 'path';

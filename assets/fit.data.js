@@ -1,7 +1,7 @@
 (function (root) {
   'use strict';
 
-  // Fichier généré par scripts/technohab-fit/build-envelopes.mjs.
+  // Fichier généré par scripts/build-envelopes.mjs.
   // Ne pas éditer : modifier socle.data.js puis relancer npm run fit:build.
   //
   // Pour chaque type de pièce et chaque variante, la liste des plus petits

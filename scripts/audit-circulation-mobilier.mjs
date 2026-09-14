@@ -12,7 +12,7 @@
  *   fenetres   baies de fenêtre masquées par une emprise, ou hors d'atteinte
  *   usages     zones d'usage requises séparées de la porte (règle S4 du socle)
  *
- *   node technohab/scripts/audit-circulation-mobilier.mjs [--seeds N]
+ *   node scripts/audit-circulation-mobilier.mjs [--seeds N]
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

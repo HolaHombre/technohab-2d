@@ -481,7 +481,7 @@ sans desserte — 13,1 % des pièces sans contact avec une circulation,
 Mesure rejouable :
 
 ```bash
-node technohab/scripts/diagnostic-circulation.mjs
+node scripts/diagnostic-circulation.mjs
 ```
 
 Suite attendue : arbitrer les trois points du §5, puis mesurer avant/après à
@@ -645,7 +645,7 @@ puisqu'on sait désormais que le seuil actuel ne mesure plus rien.
 
 ```bash
 npm run technohab:validate     # porte A : 18 tests, O0, banc de 360 plans
-node technohab/scripts/diagnostic-circulation.mjs
+node scripts/diagnostic-circulation.mjs
 ```
 
 Les chiffres du §8.2 et du §8.5 ont été relevés par instrumentation temporaire.

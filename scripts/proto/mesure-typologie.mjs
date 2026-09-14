@@ -5,7 +5,7 @@
 // référence dessiné à la main, qui en dessert cinq avec un seul couloir
 // (`test-instrument.mjs`).
 //
-//   node technohab/scripts/proto/mesure-typologie.mjs
+//   node scripts/proto/mesure-typologie.mjs
 import fs from 'fs';
 import vm from 'vm';
 import { dirname, join } from 'path';

@@ -1,7 +1,6 @@
-# Roadmap — TechnoHab dans Wonderland
+# Roadmap — TechnoHab
 
-Document de pilotage de l'intégration de TechnoHab et de l'évolution du
-générateur de plans 2D.
+Document de pilotage du générateur de plans 2D.
 
 **Mise à jour : 3 septembre 2026**
 
@@ -42,17 +41,17 @@ n'en dépend pas),
 `DA_ICONES_PLAN.md` (icônes de pièces),
 `DA_CHEMINEMENT_PLAN.md` (parcours de desserte et accès),
 `DA_FORMES_ENVELOPPE.md` (vignettes de choix de forme),
-`../DA_GRAPHIQUE.md` (direction artistique de Wonderland).
+`../Wonderland/DA_GRAPHIQUE.md` (direction artistique historique de Wonderland).
 
-*Le dépôt de développement `technohab` et son `technohab_rules.md` sont
-archivés depuis le 18 août : le dossier de travail est unique, ici même, et
-suivi avec le dépôt `wonderland`.*
+*Depuis le 14 septembre 2026, TechnoHab possède son dépôt autonome dans
+`~/Developpement/TechnoHab`. Wonderland ne conserve aucune dépendance
+technique ; son futur lien public relève du jalon J3.1 de MetaProjet.*
 
 ---
 
 ## 1. Objectif
 
-Publier dans Wonderland une application 2D autonome qui transforme un
+Publier une application 2D autonome qui transforme un
 questionnaire d'intention en plusieurs plans de principe explicables,
 comparables et contrôlés.
 
@@ -69,9 +68,7 @@ runtime reste en partie room-first — voir [`DOCTRINE.md`](DOCTRINE.md) §7) :
 7. restituer le plan, sa typologie (décrite ou contrainte), ses hypothèses
    et ses limites.
 
-TechnoHab reste chargé indépendamment du reste de Wonderland depuis
-`technohab/index.html`. Il ne doit ajouter aucune dépendance au chargement de
-la page principale.
+TechnoHab est servi depuis `index.html` et ne dépend pas de Wonderland.
 
 ## 1 bis. Horizons de release — MVP, V1, cap (tranchés le 27 août 2026)
 
@@ -80,7 +77,7 @@ Décision de produit. Autorité de vocabulaire :
 
 | Horizon | Définition opérationnelle | Lots / portes | Statut |
 |---|---|---|---|
-| **MVP** | Application autonome dans Wonderland ; contrats ; génération locale ; murs ; mobilier dans la boucle ; échecs honnêtes | M0–M2, porte B ; amorce porte C | **largement tenu** (M3.0 livré ; C pas encore ouverte) |
+| **MVP** | Application autonome ; contrats ; génération locale ; murs ; mobilier dans la boucle ; échecs honnêtes | M0–M2, porte B ; amorce porte C | **largement tenu** (M3.0 livré ; C pas encore ouverte) |
 | **V1** | **Proposeur honnête** — plans de principe tenables, explicables, comparables, sans HARD ; domaine domestique 2D borné ; **sans** prétention d’agrément | Porte **C** obligatoire ; porte **D** cible V1 « utile » ; **E hors V1** | **cible de release** |
 | **Cap post-V1** | Auteur statistique puis **co-auteur** (moteur propose, humain signe) | Leviers L1–L3 complets ; porte **E** ; F4–F6 sur micro-surfaces | **cap**, pas promesse V1 |
 

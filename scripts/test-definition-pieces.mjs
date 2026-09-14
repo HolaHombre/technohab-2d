@@ -6,7 +6,7 @@
 //   2. le compilé diverge de la source (un `npm run fit:build` oublié) ;
 //   3. la dérivation des planchers change sans décision les plans historiques.
 //
-// Usage : node technohab/scripts/test-definition-pieces.mjs
+// Usage : node scripts/test-definition-pieces.mjs
 
 import assert from 'node:assert/strict';
 

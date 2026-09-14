@@ -25,7 +25,7 @@
 // sans déduire ni les façades ni les angles. Une infaisabilité constatée
 // sous une borne optimiste est donc une infaisabilité certaine.
 //
-//   node technohab/scripts/capacite-desserte.mjs
+//   node scripts/capacite-desserte.mjs
 import fs from 'fs';
 import vm from 'vm';
 import { dirname, join } from 'path';

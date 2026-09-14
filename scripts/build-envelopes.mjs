@@ -12,20 +12,20 @@
 // refus valide ne dépend donc pas d'une heuristique différente selon le
 // runner : l'algorithmique vit uniquement dans assets/placement.js.
 //
-// Usage : node scripts/technohab-fit/build-envelopes.mjs [--verbose]
+// Usage : node scripts/build-envelopes.mjs [--verbose]
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import '../../technohab/assets/placement.js';
+import '../assets/placement.js';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const placement = globalThis.TechnoHabPlacement;
 const MIN_SIDE = placement.minimumSideCentimeters;
 
 // socle.data.js est un script classique qui s'attache à globalThis.
-new Function(readFileSync(join(root, 'technohab/assets/socle.data.js'), 'utf8'))();
+new Function(readFileSync(join(root, 'assets/socle.data.js'), 'utf8'))();
 const socle = globalThis.TechnoHabSocle;
 
 // -------------------------------------------------------------------- sortie
@@ -127,7 +127,7 @@ const body = Object.entries(result).map(([type, data]) =>
 const out = `(function (root) {
   'use strict';
 
-  // Fichier généré par scripts/technohab-fit/build-envelopes.mjs.
+  // Fichier généré par scripts/build-envelopes.mjs.
   // Ne pas éditer : modifier socle.data.js puis relancer npm run fit:build.
   //
   // Pour chaque type de pièce et chaque variante, la liste des plus petits
@@ -313,6 +313,6 @@ ${body}
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 `;
 
-mkdirSync(join(root, 'technohab/assets'), { recursive: true });
-writeFileSync(join(root, 'technohab/assets/fit.data.js'), out, 'utf8');
-console.log(`${Object.keys(result).length} types calculés en ${((Date.now() - started) / 1000).toFixed(1)} s → technohab/assets/fit.data.js`);
+mkdirSync(join(root, 'assets'), { recursive: true });
+writeFileSync(join(root, 'assets/fit.data.js'), out, 'utf8');
+console.log(`${Object.keys(result).length} types calculés en ${((Date.now() - started) / 1000).toFixed(1)} s → assets/fit.data.js`);

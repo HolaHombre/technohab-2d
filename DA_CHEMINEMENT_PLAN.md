@@ -301,7 +301,7 @@ Sortie attendue : `assets/icons/route-markers.svg`, mêmes conventions que
 `room-icons.svg` — `<symbol id="mark-{id}">`, `viewBox 0 0 64 64` commun,
 trait en `currentColor` — recopié inline dans `index.html` pour la même
 raison que le sprite de pièces : `<use href="fichier.svg#id">` ne résout pas
-en `file://`. `scripts/technohab-icons/inline-sprite.mjs` est aujourd'hui
+en `file://`. `scripts/inline-sprite.mjs` est aujourd'hui
 codé sur un seul couple source/marqueurs ; il devra être généralisé à une
 liste de sprites, ou dupliqué, avant d'accueillir celui-ci.
 

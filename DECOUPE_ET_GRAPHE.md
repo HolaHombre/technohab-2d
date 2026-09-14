@@ -13,9 +13,9 @@ pas.
 **Mesures rejouables** :
 
 ```bash
-node technohab/scripts/diagnostic-desserte.mjs
-node technohab/scripts/ablation-peigne.mjs
-node technohab/scripts/capacite-desserte.mjs
+node scripts/diagnostic-desserte.mjs
+node scripts/ablation-peigne.mjs
+node scripts/capacite-desserte.mjs
 ```
 
 Banc commun aux trois : 14 configurations × 4 formes d'enveloppe × 15 graines
@@ -230,7 +230,7 @@ continuait d'annoncer (§2). Ce qui reste est un commentaire, et le moyen de
 refaire la mesure :
 
 ```bash
-node technohab/scripts/scan-capacites.mjs --sans-peigne
+node scripts/scan-capacites.mjs --sans-peigne
 ```
 
 Ce drapeau du banc a été conservé : il permet de rejouer l'ablation sans

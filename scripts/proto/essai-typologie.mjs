@@ -9,7 +9,7 @@
 // adjacences réalisées, diversité, meublabilité, capacité à dire l'impossible,
 // durée. Ils ne sont pas renégociés ici.
 //
-//   node technohab/scripts/proto/essai-typologie.mjs
+//   node scripts/proto/essai-typologie.mjs
 import fs from 'fs';
 import vm from 'vm';
 import { dirname, join } from 'path';

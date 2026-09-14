@@ -7,9 +7,9 @@
 // pouvait pas servir de contrôle de non-régression, ce qu'il est pourtant
 // censé être pour chaque lot du chantier 7.
 //
-//   node technohab/scripts/scan-capacites.mjs              graine 20260818
-//   node technohab/scripts/scan-capacites.mjs --seed=1234  autre graine
-//   node technohab/scripts/scan-capacites.mjs --random     tirage libre
+//   node scripts/scan-capacites.mjs              graine 20260818
+//   node scripts/scan-capacites.mjs --seed=1234  autre graine
+//   node scripts/scan-capacites.mjs --random     tirage libre
 //
 // Une mesure ne se compare qu'à une mesure de même graine : le tableau
 // l'affiche en tête pour qu'un résultat collé ailleurs reste interprétable.

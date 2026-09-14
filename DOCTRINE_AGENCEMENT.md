@@ -152,7 +152,7 @@ minimal annoncé passe à 1,50. À trancher dans le socle, qui fait foi.
 | `SOCLE_AGENCEMENT.md` | équipements, emprises, dégagements, ancrages, règles `S1`–`S6` | **source, fait foi** |
 | `assets/socle.data.js` | transcription exécutable du §5 | source, à garder aligné |
 | `assets/placement.js` | algorithmique unique de placement et API navigateur `solve` | **autorité exécutable** |
-| `scripts/technohab-fit/build-envelopes.mjs` | runner hors ligne, oracle de test et générateur du cache | outil |
+| `scripts/build-envelopes.mjs` | runner hors ligne, oracle de test et générateur du cache | outil |
 | `assets/fit.data.js` | cache chaud, programmes minimaux compilés, API `fits`, `smallest`, `programOf` | **généré**, ne pas éditer |
 | `scripts/test-placement.mjs` | comparaison du solveur en ligne aux treize préréglages | test |
 | `assets/icons/furniture.svg` | 28 équipements dessinés, `viewBox` en centimètres | source |

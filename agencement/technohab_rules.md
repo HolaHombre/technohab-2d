@@ -5,7 +5,7 @@ respecter. Deux statuts coexistent dans ce dépôt :
 
 - **Cible (Python, `g2p_service/rules/packs/*.yaml`)** — le référentiel complet
   visé, pensé pour un moteur géométrique riche (Graph2Plan/MATLAB).
-- **Implémenté (JS, `Wonderland/technohab/assets/rules.js`)** — le sous-ensemble
+- **Implémenté (JS, `assets/rules.js`)** — le sous-ensemble
   réellement évalué par le moteur autonome livré dans Wonderland
   (`Créer → Numérique → Générateur de plans 2D`).
 
@@ -135,7 +135,7 @@ directement depuis l'extérieur (HARD, x2).
 
 ## 3. Référentiel implémenté (JS, moteur Wonderland)
 
-Source : `Wonderland/technohab/assets/rules.js`. Six règles, évaluées à
+Source : `assets/rules.js`. Six règles, évaluées à
 chaque génération, avec niveaux `HARD` / `GUIDELINE`.
 
 | id | Niveau | Contrôle |
@@ -194,9 +194,9 @@ géométrie de murs — le moteur JS raisonne déjà en graphe de contact réel
 - `g2p_service/wrapper_api/rule_engine/evaluator.py` — évaluateur Python ;
   seuls 10 des ~24 `kind` du YAML y sont réellement implémentés (cf. audit
   du 2026-08-15, section « rule_engine incomplet »).
-- `Wonderland/technohab/assets/rules.js` — moteur de règles JS autonome,
+- `assets/rules.js` — moteur de règles JS autonome,
   seul moteur réellement déployé et exécuté par les utilisateurs.
-- `Wonderland/technohab/assets/generator.js` — génération géométrique
+- `assets/generator.js` — génération géométrique
   (découpage guillotine, 96 tirages, scoring) sur laquelle `rules.js`
   s'applique.
 

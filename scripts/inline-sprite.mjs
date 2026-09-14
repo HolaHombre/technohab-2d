@@ -1,18 +1,18 @@
 #!/usr/bin/env node
-// Recopie les sprites SVG de TechnoHab dans technohab/index.html.
+// Recopie les sprites SVG de TechnoHab dans index.html.
 //
 // Le sprite doit être inline : `<use href="fichier.svg#id">` ne résout pas en
 // file://, et le site reste consultable sans serveur (AGENTS.md § 2). Le fichier
 // SVG reste la source de vérité éditable ; ce script propage, il ne génère pas.
 //
-// Usage : node scripts/technohab-icons/inline-sprite.mjs [--check]
+// Usage : node scripts/inline-sprite.mjs [--check]
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const pagePath = join(root, 'technohab', 'index.html');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const pagePath = join(root, 'index.html');
 const sources = [
   { name: 'furniture', file: 'furniture.svg' },
   { name: 'room-icons', file: 'room-icons.svg' }
@@ -21,7 +21,7 @@ const sources = [
 let next = await readFile(pagePath, 'utf8');
 let total = 0;
 for (const source of sources) {
-  const spritePath = join(root, 'technohab', 'assets', 'icons', source.file);
+  const spritePath = join(root, 'assets', 'icons', source.file);
   const open = `    <!-- ${source.name}:start — généré depuis assets/icons/${source.file}, ne pas éditer ici -->`;
   const close = `    <!-- ${source.name}:end -->`;
   const sprite = (await readFile(spritePath, 'utf8')).trim()
@@ -48,5 +48,5 @@ if (process.argv.includes('--check')) {
   console.log('Sprites à jour.');
 } else {
   await writeFile(pagePath, next, 'utf8');
-  console.log(`${total} symboles injectés dans technohab/index.html`);
+  console.log(`${total} symboles injectés dans index.html`);
 }

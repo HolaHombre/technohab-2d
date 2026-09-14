@@ -143,7 +143,7 @@ c'est la structure de donnée qui rend l'aveu de non-opposabilité tenable.
 ## 4. L'invariant à tenir
 
 Le plancher de meublabilité de `fit.data.js` est calculé sur les équipements
-**requis** ([`build-envelopes.mjs:41`](../scripts/technohab-fit/build-envelopes.mjs)).
+**requis** ([`build-envelopes.mjs`](scripts/build-envelopes.mjs)).
 Avec une gamme, il se calcule sur son **membre plancher**.
 
 Donc : **ajouter des tailles au-dessus du plancher ne change aucune enveloppe.**

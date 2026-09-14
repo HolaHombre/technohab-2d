@@ -11,7 +11,7 @@
 // répond en ventilant l'échec par forme d'enveloppe, par type de pièce et par
 // taille de programme — les trois suspects.
 //
-//   node technohab/scripts/diagnostic-desserte.mjs
+//   node scripts/diagnostic-desserte.mjs
 import fs from 'fs';
 import vm from 'vm';
 import { dirname, join } from 'path';

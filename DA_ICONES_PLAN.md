@@ -167,7 +167,7 @@ pipeline déjà utilisé pour `assets/habiter/plan-src.png` → `plan.svg`
 5. **`svgo.config.mjs`** — réutiliser tel quel pour la compaction finale
    (déjà réglé pour ce style de trait, cf. dossier `scripts/plan-habiter/`).
 
-Sortie finale attendue : `Wonderland/technohab/assets/icons/room-icons.svg`,
+Sortie finale attendue : `assets/icons/room-icons.svg`,
 un seul fichier avec 18 `<symbol>`, chargé une fois et référencé par
 `<use href="#icon-living">` etc. dans chaque groupe `.room` de
 `app.js::renderPlan`. Ce câblage (ajout du `<use>`, positionnement
@@ -189,7 +189,7 @@ pas référencer des symboles qui n'existent pas encore.
   `room-icons:start/end` : `<use href="fichier.svg#id">` ne résout pas en
   `file://`, et la page doit rester consultable sans serveur
   (`CLAUDE.md` §1). Propagation par
-  `node scripts/technohab-icons/inline-sprite.mjs` ; le même script en
+  `node scripts/inline-sprite.mjs` ; le même script en
   `--check` échoue si la page a divergé du fichier.
 - `app.js::renderPlan` compose le bloc central de chaque pièce
   (`composeRoomContent`) : il est masqué au repos pour laisser lire les

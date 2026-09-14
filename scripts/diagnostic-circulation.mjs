@@ -12,7 +12,7 @@
 //   final     ce qu'il reste après cession, et c'est ce que la règle mesure
 //   seuil     10 % de la surface du plan
 //
-//   node technohab/scripts/diagnostic-circulation.mjs
+//   node scripts/diagnostic-circulation.mjs
 import fs from 'fs';
 import vm from 'vm';
 import { dirname, join } from 'path';

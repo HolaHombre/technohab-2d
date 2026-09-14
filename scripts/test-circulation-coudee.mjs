@@ -11,7 +11,7 @@
 // test le rend visible avant qu'on produise des L, et il échouera si la
 // mesure retourne un jour à la boîte englobante.
 //
-//   node technohab/scripts/test-circulation-coudee.mjs
+//   node scripts/test-circulation-coudee.mjs
 import assert from 'node:assert/strict';
 import fs from 'fs';
 import vm from 'vm';

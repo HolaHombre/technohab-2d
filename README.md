@@ -3,6 +3,8 @@
 **Version de travail : 3.3.0-alpha.1 · 2 septembre 2026**  
 **Démonstration : <https://wonderland-4fi.pages.dev/technohab/>**
 
+**Dépôt local :** `~/Developpement/TechnoHab` · aucun dépôt distant configuré
+
 TechnoHab transforme un programme domestique borné en plusieurs organisations
 2D mesurées, meublées et contrôlées. Le moteur fonctionne localement, sans
 dépendance d'exécution et sans transmission de données.

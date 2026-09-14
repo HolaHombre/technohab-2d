@@ -1,0 +1,16 @@
+{
+  "name": "technohab",
+  "private": true,
+  "description": "Générateur procédural local de plans de principe 2D sous contraintes.",
+  "scripts": {
+    "fit:build": "node scripts/build-envelopes.mjs",
+    "fit:test": "node scripts/test-placement.mjs",
+    "fit:check": "node scripts/test-definition-pieces.mjs",
+    "technohab:validate": "node scripts/validate-m0.mjs",
+    "technohab:audit-circulation": "node scripts/audit-circulation-mobilier.mjs",
+    "icons:inline": "node scripts/inline-sprite.mjs",
+    "icons:check": "node scripts/inline-sprite.mjs --check",
+    "test:analysis": "node scripts/test-analysis-export-ui.mjs"
+  }
+}
+
