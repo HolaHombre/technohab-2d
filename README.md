@@ -1,14 +1,17 @@
-# TechnoHab — générateur local de plans de principe 2D
+# TechnoHab — générateur de plans de principe 2D
 
 **Version de travail : 3.3.0-alpha.1 · 2 septembre 2026**  
+**Ouvrir le générateur : <https://technohab.theoseguret.fr>**  
 **Code public : <https://github.com/HolaHombre/technohab-2d>**
 
 **Dépôt local :** `~/Developpement/TechnoHab` · distant public
 `HolaHombre/technohab-2d`
 
 TechnoHab transforme un programme domestique borné en plusieurs organisations
-2D mesurées, meublées et contrôlées. Le moteur fonctionne localement, sans
-dépendance d'exécution et sans transmission de données.
+2D mesurées, meublées et contrôlées. Le moteur s'exécute entièrement dans le
+navigateur, sans dépendance d'exécution et sans transmission de données : la
+version en ligne est le même code, servi en statique, et n'observe rien de ce
+que vous y faites.
 
 ## Démarrer localement
 
@@ -20,6 +23,19 @@ npm run serve
 ```
 
 L'aperçu écoute uniquement sur <http://127.0.0.1:8001>.
+
+## Publier
+
+```sh
+npm run deploy
+```
+
+`public:build` construit `dist-public/` **par allowlist** : seules la page et
+ses scripts classiques sortent du dépôt. Le jeu de plans de référence, la
+doctrine, les profils, les scripts de mesure et l'historique Git restent hors
+ligne, et ne peuvent y entrer que par modification explicite de
+`scripts/build-public.mjs`. `wrangler deploy` sert ensuite cet artefact sur
+`technohab.theoseguret.fr`.
 
 La formulation exacte de son état actuel est :
 

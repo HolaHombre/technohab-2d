@@ -1,0 +1,22 @@
+{
+  // TechnoHab est un site statique : le moteur s'exécute entièrement dans le
+  // navigateur, rien ne tourne côté serveur et rien n'est transmis. Ce fichier
+  // ne décrit donc qu'une chose — le dossier à servir.
+  "name": "technohab",
+  "compatibility_date": "2026-09-18",
+  "assets": {
+    // Artefact construit par allowlist avec `npm run public:build`. Le jeu de
+    // plans de référence, la doctrine, les profils et les scripts de mesure
+    // restent hors ligne : ils ne peuvent entrer ici que par modification
+    // explicite du script de construction.
+    "directory": "./dist-public"
+  },
+  "routes": [
+    {
+      // I-3 : le namespace public est theoseguret.fr, Wonderland à la racine
+      // et les services en sous-domaines.
+      "pattern": "technohab.theoseguret.fr",
+      "custom_domain": true
+    }
+  ]
+}

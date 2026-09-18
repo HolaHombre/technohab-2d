@@ -1,9 +1,11 @@
 {
   "name": "technohab",
   "private": true,
-  "description": "Générateur procédural local de plans de principe 2D sous contraintes.",
+  "description": "Générateur procédural de plans de principe 2D sous contraintes, exécuté entièrement dans le navigateur — aucune dépendance d'exécution, aucune transmission de données.",
   "scripts": {
     "serve": "node scripts/serve.mjs",
+    "public:build": "node scripts/build-public.mjs",
+    "deploy": "npm run public:build && npx wrangler deploy",
     "serve:test": "node scripts/test-serve.mjs",
     "fit:build": "node scripts/build-envelopes.mjs",
     "fit:test": "node scripts/test-placement.mjs",

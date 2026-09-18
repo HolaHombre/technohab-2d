@@ -5,3 +5,5 @@ eval/
 *.eval.json
 node_modules/
 
+dist-public/
+.wrangler/
