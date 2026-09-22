@@ -36,3 +36,19 @@ npm run technohab:validate
 Toute validation interrompue ou expirée reste inconnue ; elle n'est jamais
 présentée comme réussie.
 
+## Niveaux de diffusion (J1.1)
+
+Un dépôt n'a pas un niveau, il a une carte. Le classement se fait **avant le
+premier commit d'un fichier** : un historique Git ne s'oublie pas, il se
+réécrit, ce qui coûte toujours plus cher.
+
+| Zone | Niveau | Où elle vit |
+|---|---|---|
+| Moteur, `scripts/`, `agencement/`, `profils/`, `assets/`, doctrine | `diffusable` | versionné, **distant public** |
+| `dist-public/` | `diffusable` | non versionné, servi publiquement par allowlist (D-032) |
+| Évaluations — `eval/`, `*.eval.json` | `personnel` | ignorées, sauvegardées |
+| Jeu de plans — `House 2D plans dataset/` | `personnel` | **hors Git** : volume et droits, pas confidentialité |
+| — | `secret` | aucune zone |
+
+Seul dépôt **public** du portefeuille. Tout ce qui y entre est lisible par
+quiconque, immédiatement et définitivement.
