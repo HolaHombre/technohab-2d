@@ -7,3 +7,11 @@ node_modules/
 
 dist-public/
 .wrangler/
+
+# Convention commune `*.prive.*` — jalon J1.2 du méta-projet.
+# Un fichier ou un dossier ainsi nommé ne franchit jamais Git : il est
+# sauvegardé, pas versionné. Le hook `pre-commit` partagé le refuse de toute
+# façon ; cette ligne évite qu'il apparaisse dans `git status` et soit proposé
+# à l'ajout, ce qui est la seconde barrière, pas la première.
+*.prive.*
+*.prive/
