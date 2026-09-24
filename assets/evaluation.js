@@ -44,7 +44,19 @@
   var journal = [];
   var contexteCourant = null;
   var racine = null;
+  var declencheur = null;
+  var disponible = false;
   var repondu = {};
+
+  function basculer() {
+    if (!racine || !disponible) return;
+    var ouvert = racine.hidden;
+    racine.hidden = !ouvert;
+    racine.dataset.open = ouvert ? 'true' : 'false';
+    if (declencheur) declencheur.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+    var titre = racine.querySelector('.quiz-title');
+    if (titre) titre.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+  }
 
   function charger() {
     try { journal = JSON.parse(localStorage.getItem(CLE)) || []; } catch (_) { journal = []; }
@@ -187,15 +199,30 @@
 
   function rendre(visible) {
     if (!racine) return;
+    disponible = visible;
     racine.innerHTML = '';
-    racine.hidden = !visible;
+    racine.dataset.open = 'false';
+    racine.hidden = true;
+    if (declencheur) {
+      declencheur.disabled = !visible;
+      declencheur.setAttribute('aria-expanded', 'false');
+    }
     if (!visible) return;
 
     var etat = { habiterais: null, pense: null };
 
     var titre = document.createElement('p');
     titre.className = 'quiz-title';
-    titre.textContent = 'Deux questions sur ce plan';
+    titre.textContent = 'Avis sur ce plan';
+    titre.setAttribute('role', 'button');
+    titre.setAttribute('tabindex', '0');
+    titre.setAttribute('aria-expanded', 'false');
+    titre.addEventListener('click', basculer);
+    titre.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      basculer();
+    });
     racine.appendChild(titre);
 
     var note = document.createElement('p');
@@ -286,6 +313,14 @@
       journal = []; repondu = {}; sauver();
       try { localStorage.removeItem(CLE_JUGES); } catch (_) { /* facultatif */ }
     },
-    monter: function (element) { racine = element; if (racine) racine.hidden = true; }
+    monter: function (element) {
+      racine = element;
+      declencheur = document.getElementById('quiz-open');
+      if (racine) racine.hidden = true;
+      if (declencheur) {
+        declencheur.disabled = true;
+        declencheur.addEventListener('click', basculer);
+      }
+    }
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

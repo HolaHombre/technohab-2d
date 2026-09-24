@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="TechnoHab, conception instantanée de plans d’habitat en 2D." />
-    <meta name="theme-color" content="#0B0B0B" />
+    <meta name="theme-color" content="#E8ECE9" />
     <title>TechnoHab — Atelier 2D</title>
     <link rel="canonical" href="https://technohab.theoseguret.fr/" />
     <meta property="og:type" content="website" />
@@ -392,21 +392,14 @@
       <header class="topbar">
         <a class="brand" href="https://theoseguret.fr/#creer" aria-label="Revenir à la section Créer de Wonderland">
           <span class="brand-mark" aria-hidden="true">TH</span>
-          <span>Wonderland / TechnoHab</span>
+          <span>TechnoHab</span>
         </a>
+        <h1 id="page-title" class="topbar-title">Laboratoire de plan</h1>
         <div class="topbar-meta">
-          <span class="mode-badge">Atelier 2D</span>
+          <span class="mode-badge"><i aria-hidden="true"></i> Moteur local</span>
           <span id="app-version" class="version"></span>
         </div>
       </header>
-
-      <section class="intro" aria-labelledby="page-title">
-        <div>
-          <p class="eyebrow">Créer · Numérique · Générateur de plan</p>
-          <h1 id="page-title">Dessinez l’intention.<br />Nous posons le plan.</h1>
-        </div>
-        <p class="intro-copy">Composez un programme d’habitat. Le moteur local explore des centaines de découpes, mesure les adjacences du graphe et retient une proposition contrôlée — directement dans votre navigateur.</p>
-      </section>
 
       <section class="workspace" aria-label="Atelier de génération de plan">
         <aside class="controls-panel">
@@ -465,7 +458,13 @@
               <label class="switch"><input name="includeWc" type="checkbox" checked /><span>WC indépendant</span></label>
             </div>
 
-            <button class="primary-button" type="submit">Générer une variante <span aria-hidden="true">→</span></button>
+            <fieldset class="field generation-mode">
+              <legend>Nombre de propositions</legend>
+              <label class="choice"><input type="radio" name="planCount" value="1" checked /><span><strong>1 plan</strong></span></label>
+              <label class="choice"><input type="radio" name="planCount" value="3" /><span><strong>3 plans</strong></span></label>
+            </fieldset>
+
+            <button class="primary-button" type="submit">Générer un plan <span aria-hidden="true">→</span></button>
           </form>
 
           <details id="room-composer" class="room-composer">
@@ -550,14 +549,6 @@
           <div id="plan-view" class="canvas-frame" role="tabpanel" aria-live="polite">
             <svg id="plan-svg" role="img" preserveAspectRatio="xMidYMid meet"></svg>
             <span class="north-marker" aria-label="Orientation nord">N</span>
-            <button id="analysis-open" class="analysis-trigger" type="button"
-              aria-controls="analysis-panel" aria-expanded="false" disabled>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M8 5.5h8M8 9.5h8M8 13.5h5M6 2.5h12a2 2 0 0 1 2 2v15H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Z" />
-                <circle cx="16.5" cy="16.5" r="2.5" /><path d="m18.3 18.3 2.2 2.2" />
-              </svg>
-              <span>Analyse</span>
-            </button>
 
             <section id="analysis-panel" class="analysis-panel" role="dialog" aria-modal="true"
               aria-labelledby="analysis-title" hidden>
@@ -594,6 +585,8 @@
             </section>
           </div>
 
+          <details class="legend-layer">
+            <summary>Légende du dessin</summary>
           <ul class="plan-legend" aria-label="Légende du plan">
             <li><svg width="26" height="14" viewBox="0 0 26 14" aria-hidden="true"><rect x="0.5" y="0.5" width="25" height="13" class="legend-room" /></svg>Surface utile</li>
             <li><svg width="26" height="14" viewBox="0 0 26 14" aria-hidden="true"><rect x="0.5" y="0.5" width="25" height="13" class="legend-storage" /></svg>Rangement</li>
@@ -602,6 +595,7 @@
             <li><svg width="26" height="14" viewBox="0 0 26 14" aria-hidden="true"><path d="M1 7h9m6 0h9" class="legend-opening" /></svg>Baie</li>
             <li class="plan-legend-hint">Survol : nom · L × l · surface</li>
           </ul>
+          </details>
 
           <dl class="stats-strip">
             <div><dt>Habitable</dt><dd id="stat-habitable">—</dd></div>
@@ -612,7 +606,9 @@
             <div><dt>Blocages</dt><dd id="stat-alerts">—</dd></div>
           </dl>
 
-          <div class="actions">
+          <details class="actions">
+            <summary>Affichage &amp; exports</summary>
+            <div class="actions-content">
             <label class="switch plan-switch"><input id="show-furniture" type="checkbox" /><span>Mobilier</span></label>
             <label class="switch plan-switch"><input id="show-paths" type="checkbox" /><span>Parcours</span></label>
             <button id="download-json" class="secondary-button" type="button">Exporter JSON</button>
@@ -620,7 +616,8 @@
             <button id="download-svg" class="secondary-button" type="button">Exporter SVG</button>
             <button id="download-log" class="secondary-button" type="button">Exporter le journal</button>
             <button id="download-eval" class="secondary-button" type="button">Exporter les avis</button>
-          </div>
+            </div>
+          </details>
 
           <!-- Chantier 6 §6.4 — jamais bloquant, toujours refusable. Le quiz
                se monte sous le plan une fois celui-ci affiché, et disparaît
@@ -629,23 +626,38 @@
         </div>
       </section>
 
-      <section class="rules-section" aria-labelledby="rules-title">
-        <div class="rules-intro">
-          <p class="eyebrow">Contrôle explicite</p>
-          <h2 id="rules-title">Lecture du plan</h2>
-          <p>Ce moteur local reprend le principe initial — programme, graphe d’adjacence, géométrie, contrôles — sans prétendre remplacer Graph2Plan/MATLAB, dont le code n’est pas présent dans le projet.</p>
+      <footer class="app-footer">
+        <span class="footer-note">Plan de principe non contractuel · calcul local</span>
+        <div class="footer-tools" aria-label="Outils du plan">
+          <details class="rules-section footer-rules">
+            <summary class="rules-summary footer-tool">
+              <span>Contrôles du plan</span>
+              <span id="rules-meta" class="rules-meta" aria-live="polite"></span>
+            </summary>
+            <div class="rules-layer" aria-labelledby="rules-title">
+              <div class="rules-intro">
+                <p class="eyebrow">Contrôle explicite</p>
+                <h2 id="rules-title">Lecture du plan</h2>
+                <p>Ce moteur local reprend le principe initial — programme, graphe d’adjacence, géométrie, contrôles — sans prétendre remplacer Graph2Plan/MATLAB, dont le code n’est pas présent dans le projet.</p>
+              </div>
+              <ul id="rules-list" class="rules-list" aria-live="polite"></ul>
+              <details class="rules-history-wrap">
+                <summary>Journal des générations</summary>
+                <ol id="rules-history" class="rules-history"></ol>
+              </details>
+            </div>
+          </details>
+          <button id="analysis-open" class="footer-tool analysis-trigger" type="button"
+            aria-controls="analysis-panel" aria-expanded="false" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5.5h8M8 9.5h8M8 13.5h5M6 2.5h12a2 2 0 0 1 2 2v15H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Z" />
+              <circle cx="16.5" cy="16.5" r="2.5" /><path d="m18.3 18.3 2.2 2.2" />
+            </svg>
+            <span>Analyse</span>
+          </button>
+          <button id="quiz-open" class="footer-tool" type="button"
+            aria-controls="quiz-eval" aria-expanded="false" disabled>Avis sur le plan</button>
         </div>
-        <p id="rules-meta" class="rules-meta" aria-live="polite"></p>
-        <ul id="rules-list" class="rules-list" aria-live="polite"></ul>
-        <details class="rules-history-wrap">
-          <summary>Journal des générations</summary>
-          <ol id="rules-history" class="rules-history"></ol>
-        </details>
-      </section>
-
-      <footer>
-        <span>TechnoHab · Moteur local par graphe, aucune donnée transmise</span>
-        <span>Plan de principe non contractuel</span>
       </footer>
     </main>
   </body>

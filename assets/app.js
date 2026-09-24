@@ -11,6 +11,7 @@
   var HISTORY_MAX = 20;
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var form = document.getElementById('plan-form');
+  var generationButton = form.querySelector('button[type="submit"]');
   var planSvg = document.getElementById('plan-svg');
   var rulesList = document.getElementById('rules-list');
   var rulesMeta = document.getElementById('rules-meta');
@@ -47,6 +48,8 @@
   var analysisLoading = null;
   var generationStartedAt = null;
   var latestGenerationPerformance = null;
+  var generationBusy = false;
+  var clickLockUntil = 0;
   var PATHS_KEY = 'technohab:parcours:v1';
   var pathsToggle = document.getElementById('show-paths');
   var afficherParcours = false;
@@ -194,6 +197,96 @@
         }));
       });
     });
+
+    // La frontière extérieure ne se déduit pas des rectangles de murs : leur
+    // bordure ferait apparaître chaque about et chaque raccord. On épaissit
+    // plutôt les volumes de l'enveloppe, puis on trace le contour de leur
+    // union. Rectangle, L et U produisent ainsi une boucle extérieure unique,
+    // sans aucune arête intérieure au mur.
+    var contour = root.TechnoHabGenerator && root.TechnoHabGenerator.cheminContour;
+    var volumes = plan.boundary && plan.boundary.volumes;
+    var epaisseur = plan.construction && plan.construction.exteriorWallThickness;
+    if (contour && volumes && volumes.length && epaisseur) {
+      var masqueId = 'plan-envelope-openings';
+      var defs = svgElement('defs');
+      var masque = svgElement('mask', {
+        id: masqueId,
+        x: '-1000', y: '-1000', width: '10000', height: '10000',
+        maskUnits: 'userSpaceOnUse'
+      });
+      masque.appendChild(svgElement('rect', {
+        x: '-1000', y: '-1000', width: '10000', height: '10000', fill: 'white'
+      }));
+      plan.walls.filter(function (wall) { return wall.kind === 'exterior'; })
+        .forEach(function (wall) {
+          var dehorsNegatif = wall.between && wall.between[0] === 'exterior';
+          (wall.reservations || []).forEach(function (reservation) {
+            var marge = 0.025;
+            var segment = wall.orientation === 'vertical'
+              ? {
+                  x1: dehorsNegatif ? wall.volume.x0 : wall.volume.x1,
+                  y1: reservation.start - marge,
+                  x2: dehorsNegatif ? wall.volume.x0 : wall.volume.x1,
+                  y2: reservation.end + marge
+                }
+              : {
+                  x1: reservation.start - marge,
+                  y1: dehorsNegatif ? wall.volume.y0 : wall.volume.y1,
+                  x2: reservation.end + marge,
+                  y2: dehorsNegatif ? wall.volume.y0 : wall.volume.y1
+                };
+            masque.appendChild(svgElement('line', {
+              x1: segment.x1, y1: segment.y1, x2: segment.x2, y2: segment.y2,
+              stroke: 'black', 'stroke-width': Math.max(0.08, epaisseur * 0.6),
+              'stroke-linecap': 'butt'
+            }));
+          });
+        });
+      defs.appendChild(masque);
+      group.appendChild(defs);
+
+      var volumesExterieurs = volumes.map(function (volume) {
+        return {
+          x0: volume.x0 - epaisseur,
+          y0: volume.y0 - epaisseur,
+          x1: volume.x1 + epaisseur,
+          y1: volume.y1 + epaisseur
+        };
+      });
+      group.appendChild(svgElement('path', {
+        d: contour(volumesExterieurs),
+        class: 'plan-envelope-outline',
+        mask: 'url(#' + masqueId + ')',
+        'vector-effect': 'non-scaling-stroke'
+      }));
+
+      // Chaque réservation extérieure possède deux tableaux : ils relient
+      // la face dehors à la face dedans du mur. Sans eux, les lignes de
+      // fenêtre sont proches de l'enveloppe mais flottent sans jamais la
+      // toucher, et la largeur de la baie reste graphiquement ouverte.
+      plan.walls.filter(function (wall) { return wall.kind === 'exterior'; })
+        .forEach(function (wall) {
+          (wall.reservations || []).forEach(function (reservation) {
+            [reservation.start, reservation.end].forEach(function (position) {
+              var tableau = wall.orientation === 'vertical'
+                ? {
+                    x1: wall.volume.x0, y1: position,
+                    x2: wall.volume.x1, y2: position
+                  }
+                : {
+                    x1: position, y1: wall.volume.y0,
+                    x2: position, y2: wall.volume.y1
+                  };
+              group.appendChild(svgElement('line', {
+                x1: tableau.x1, y1: tableau.y1,
+                x2: tableau.x2, y2: tableau.y2,
+                class: 'plan-opening-jamb',
+                'vector-effect': 'non-scaling-stroke'
+              }));
+            });
+          });
+        });
+    }
     planSvg.appendChild(group);
   }
 
@@ -568,7 +661,9 @@
     var viewPadding = Math.max(0.18, (plan.construction && plan.construction.exteriorWallThickness || 0.3) * 0.55);
     /* La bande de légende n'est réservée que lorsqu'il y a du mobilier à
        légender : sans elle, le plan doit occuper toute la largeur. */
-    var bandeLegende = afficherMobilier ? LEGEND_BAND : 0;
+    // La légende détaillée n'entre plus dans le cadrage du dessin : elle
+    // réduisait le logement pour commenter du mobilier déjà reconnaissable.
+    var bandeLegende = 0;
     planSvg.setAttribute('viewBox', (bounds.x0 - viewPadding) + ' ' + (bounds.y0 - viewPadding) + ' ' +
       (bounds.x1 - bounds.x0 + viewPadding * 2 + bandeLegende) + ' ' + (bounds.y1 - bounds.y0 + viewPadding * 2));
     planSvg.setAttribute('role', 'img');
@@ -675,7 +770,8 @@
 
     // La légende se pose une fois le mobilier connu : elle ne liste que les
     // équipements réellement dessinés, jamais le catalogue.
-    if (afficherMobilier && equipmentList.length) renderEquipmentLegend(equipmentList, bounds);
+    // Les symboles restent accessibles dans chaque pièce et dans l'export ;
+    // aucune colonne de texte ne vient désormais rapetisser le plan.
 
     /* M4 : le parcours meublé appartient au BuiltPlan. Le rendu consomme les
        poses et le verdict du moteur ; il ne fabrique plus une seconde vérité. */
@@ -748,6 +844,20 @@
         });
       });
     }
+
+    // Le contrat géométrique du plan reste la source du calcul, mais le cadre
+    // d'affichage se cale sur ce qui a réellement été dessiné. Cela absorbe
+    // les débords de murs, de mobilier ou de formes composées sans jamais
+    // rogner une pièce au bord du SVG.
+    try {
+      var dessin = planSvg.getBBox();
+      var margeDessin = Math.max(0.28, (plan.construction && plan.construction.exteriorWallThickness || 0.3));
+      if (dessin.width > 0 && dessin.height > 0) {
+        planSvg.setAttribute('viewBox',
+          (dessin.x - margeDessin) + ' ' + (dessin.y - margeDessin) + ' ' +
+          (dessin.width + margeDessin * 2) + ' ' + (dessin.height + margeDessin * 2));
+      }
+    } catch (_) { /* le viewBox contractuel posé plus haut reste le repli */ }
 
   }
 
@@ -1003,7 +1113,7 @@
       tab.appendChild(meta);
       planSelectionTabs.appendChild(tab);
     });
-    planSelection.hidden = false;
+    planSelection.hidden = selection.results.length === 1;
   }
 
   function activateResolvedSelection(resolvedSelection, consent) {
@@ -1070,6 +1180,36 @@
       status: 'RUNNING',
       startedAt: generationStartedAt.wallClock
     };
+  }
+
+  function setGenerationBusy(busy) {
+    generationBusy = busy;
+    document.body.setAttribute('aria-busy', busy ? 'true' : 'false');
+    form.setAttribute('aria-busy', busy ? 'true' : 'false');
+    generationButton.disabled = busy;
+    generationButton.innerHTML = busy
+      ? 'Calcul en cours <span aria-hidden="true">…</span>'
+      : generationButtonLabel();
+  }
+
+  function generationButtonLabel() {
+    var count = Number(new FormData(form).get('planCount')) === 3 ? 3 : 1;
+    return (count === 3 ? 'Générer 3 propositions' : 'Générer un plan') +
+      ' <span aria-hidden="true">→</span>';
+  }
+
+  function blockGenerationClick(event) {
+    var now = root.performance && root.performance.now ? root.performance.now() : Date.now();
+    if (!generationBusy && now >= clickLockUntil) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+  document.addEventListener('click', blockGenerationClick, true);
+
+  function releaseGenerationLock() {
+    var now = root.performance && root.performance.now ? root.performance.now() : Date.now();
+    clickLockUntil = now + 250;
+    setGenerationBusy(false);
   }
 
   function completeGenerationPerformance(resolvedSelection, status, error) {
@@ -1170,15 +1310,24 @@
   }
 
   function queueGeneration() {
+    if (generationBusy) return;
     var request = ++generationRequest;
     pendingResolution = null;
     setPlanAvailable(false);
     beginGenerationPerformance();
+    setGenerationBusy(true);
     statusElement.textContent = 'Exploration des propositions…';
     statusElement.dataset.state = 'warning';
-    setTimeout(function () {
-      if (request === generationRequest) generate();
-    }, 0);
+    var launch = function () {
+      setTimeout(function () {
+        if (request === generationRequest) generate();
+        else setGenerationBusy(false);
+      }, 0);
+    };
+    // Une frame complète laisse le navigateur peindre le curseur d'attente
+    // avant que le calcul synchrone ne monopolise le fil principal.
+    if (root.requestAnimationFrame) root.requestAnimationFrame(launch);
+    else launch();
   }
 
   function generate() {
@@ -1186,7 +1335,9 @@
       var options = readForm();
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(options)); } catch (_) { /* facultatif */ }
       pendingResolution = null;
-      var resolvedSelection = root.TechnoHabGenerator.resolveSelection(options, variant, pendingSeed, 3);
+      var requestedCount = Number(new FormData(form).get('planCount')) === 3 ? 3 : 1;
+      var resolvedSelection = root.TechnoHabGenerator.resolveSelection(
+        options, variant, pendingSeed, requestedCount);
       var resolution = resolvedSelection.resolution;
       completeGenerationPerformance(resolvedSelection,
         resolution.status === 'UNRESOLVED' ? 'UNRESOLVED' : 'DONE', null);
@@ -1248,6 +1399,8 @@
           ? 'Aucune disposition trouvée'
           : 'Échec de la génération';
       statusElement.dataset.state = 'warning';
+    } finally {
+      releaseGenerationLock();
     }
   }
   function download(filename, content, type) {
@@ -1338,11 +1491,22 @@
   // plan, recopiable et rejouable, plutôt qu'un numéro de variante opaque.
   form.addEventListener('submit', function (event) {
     event.preventDefault();
+    if (generationBusy) return;
     variant += 1;
     pendingSeed = (Math.random() * 4294967296) >>> 0;
     queueGeneration();
   });
-  form.addEventListener('change', function () { variant = 1; pendingSeed = undefined; queueGeneration(); });
+  form.addEventListener('change', function () {
+    variant = 1;
+    pendingSeed = undefined;
+    generationRequest += 1;
+    pendingResolution = null;
+    clearActivePlan('Paramètres modifiés. Lancez la génération pour construire une nouvelle proposition.');
+    resolutionNotice.hidden = true;
+    statusElement.textContent = 'Prêt à générer';
+    statusElement.dataset.state = '';
+    generationButton.innerHTML = generationButtonLabel();
+  });
   resolutionConsentCheck.addEventListener('change', function () {
     resolutionActivate.disabled = !resolutionConsentCheck.checked;
     resolutionConsentStatus.textContent = resolutionConsentCheck.checked
@@ -1540,7 +1704,10 @@
     furnitureToggle.addEventListener('change', function () { montrerMobilier(furnitureToggle.checked); });
   }
 
-  loadHistory(); restoreForm(); queueGeneration();
+  loadHistory(); restoreForm();
+  clearActivePlan('Choisissez les paramètres du lieu, puis lancez la génération.');
+  statusElement.textContent = 'Prêt à générer';
+  statusElement.dataset.state = '';
 
   /* Le chargeur est défini par un script qui suit celui-ci : on attend la fin
      de l'analyse du document pour honorer un choix retenu d'une visite

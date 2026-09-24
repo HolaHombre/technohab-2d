@@ -2,12 +2,14 @@
 
 Document de pilotage du générateur de plans 2D.
 
-**Mise à jour : 3 septembre 2026**
+**Mise à jour : 24 septembre 2026**
 
 **Statut : M0 à M5.2, dont M5.1 produit, M4c limité, C-P1.2 et C-P2 sont
 livrés et branchés. M5.3 est un prototype gelé, non accepté comme lot terminé.
-M5.4 — audit amont piloté et refonte de la roadmap — précède désormais la
-décision I1 d'intégration des autres pièces, puis M6.**
+La reprise visuelle `V-MVP` est le chantier actif. Elle livre d'abord un parcours
+principal utilisable, puis une revue autorise sa correction avant le polish.
+M5.4 — audit amont piloté et refonte de la roadmap — reprend ensuite sur cette
+interface, avant la décision I1 d'intégration des autres pièces, puis M6.**
 Le mobilier, la porte, le passage
 face-à-face, la longueur de desserte, les topologies explicites et le parcours meublé participent désormais à la génération. Trois audits techniques
 (26–27 août) sont au §6.1 bis ; l’audit d’émergence fonctionnelle du même jour
@@ -57,17 +59,81 @@ seuls le travail actif et le todo immédiat suivent ce format.
 
 | Item courant | État | Gate de validation | Vérification | Documentation | Mis à jour |
 |---|---|---|---|---|---|
-| `J0.6-TECHNOHAB — dépôt extrait vérifiable, lançable et prêt à être commité` | `needs_review` | La suite complète rend un verdict hors de la limite de 150 s ; l'aperçu local démarre par `lancer.command` comme par `npm run serve` ; aucune perte constatée face à la copie `56402fc` | `npm run serve:test` ; `npm run icons:check` ; `npm run test:analysis` ; `npm run technohab:validate` exécuté hors agent — `test-fusion` et `test-kitchen-c4` restent sans verdict | `README.md` ; `AGENTS.md` ; `ROADMAP.md` | 2026-09-14 |
+| `V-MVP — parcours visuel principal utilisable` | `in_progress` | Un utilisateur peut ouvrir explicitement le worktree local, saisir un programme, générer, comparer, inspecter et exporter sans explication extérieure ; la version locale et la dernière version publique ne peuvent pas être confondues ; les états de concession et d'échec restent lisibles | Relecture manuelle du parcours sur ordinateur puis mobile ; accès local vérifié depuis le poste de pilotage ; commandes proportionnées aux fichiers touchés ; validation minimale du dépôt avant clôture | `ROADMAP.md` ; documentation d'interface seulement si le parcours retenu l'exige | 2026-09-24 |
 
 ## Todo
 
 | Ordre | ID | Résultat attendu | Gate de validation | État |
 |---:|---|---|---|---|
-| 1 | `M5.4` | Les plans sont audités en amont, les constats traduits en conséquences métier et la roadmap réordonnée | Le pilote qualité a rendu ses constats, chacun est rattaché à une conséquence écrite, et l'ordre des lots suivants est publié dans ce document | `todo` |
-| 2 | `I1` | Les vagues de pièces retenues sont intégrées ou leur report est explicite | Chaque vague est soit intégrée avec sa preuve, soit reportée avec sa raison écrite ; aucune ne reste sans statut | `blocked` — attend `M5.4` |
-| 3 | `C-P3` | Salle d'eau sans WC, cellier, buanderie et local technique atteignent la maturité C4 | Chaque profil expose canon, variantes ou proportions et preuves isolées, et le moteur les consomme | `todo` |
-| 4 | `F1` | Le socle porte les annotations `capabilities[]` / `requiredCapabilities` | `npm run technohab:validate` rend le même verdict qu'avant l'annotation : zéro changement de génération | `todo` |
-| 5 | `J0.7-TECHNOHAB` | Le dépôt possède un distant conforme à son niveau de diffusion | J0.4 et J0.5 de MetaProjet franchis ; distant vérifié projet par projet | `blocked` — attend `J0.4` et `J0.5` |
+| 1 | `V-MVP` | Le parcours principal est utilisable de bout en bout dans une interface recentrée sur le plan | Sans explication extérieure : saisir un programme, générer, comparer les propositions, inspecter un plan et l'exporter ; les états de repli et d'échec restent compréhensibles ; fonctionnement local et statique conservé | `in_progress` (24 sept.) — direction visuelle et organisation validées par Théo ; reste à fermer les défauts du parcours et du dessin, dont l'enveloppe extérieure |
+| 2 | `V-REV` | Le MVP est relu en usage réel et adapté avant tout approfondissement graphique | Une revue courte sur ordinateur et mobile produit une décision explicite : accepter, corriger ou réduire chaque partie ; les défauts bloquant le parcours sont fermés, les finitions sont différées | `blocked` — attend `V-MVP` |
+| 3 | `M5.4` | Les plans sont audités en amont, les constats traduits en conséquences métier et la roadmap réordonnée | Le pilote qualité a rendu ses constats, chacun est rattaché à une conséquence écrite, et l'ordre des lots suivants est publié dans ce document | `blocked` — attend `V-REV` |
+| 4 | `I1` | Les vagues de pièces retenues sont intégrées ou leur report est explicite | Chaque vague est soit intégrée avec sa preuve, soit reportée avec sa raison écrite ; aucune ne reste sans statut | `blocked` — attend `M5.4` |
+| 5 | `C-P3` | Salle d'eau sans WC, cellier, buanderie et local technique atteignent la maturité C4 | Chaque profil expose canon, variantes ou proportions et preuves isolées, et le moteur les consomme | `todo` |
+| 6 | `F1` | Le socle porte les annotations `capabilities[]` / `requiredCapabilities` | `npm run technohab:validate` rend le même verdict qu'avant l'annotation : zéro changement de génération | `todo` |
+| 7 | `J0.7-TECHNOHAB` | Le dépôt possède un distant conforme à son niveau de diffusion | J0.4 et J0.5 de MetaProjet franchis ; distant vérifié projet par projet | `blocked` — attend `J0.4` et `J0.5` |
+
+### Reprise visuelle — `V-MVP` puis `V-REV`
+
+**Décision du 24 septembre 2026.** La reprise cherche d'abord un produit qui
+fonctionne clairement en usage. Le polish, la finition graphique et le
+nettoyage exhaustif viennent après la preuve du parcours. Les concessions sont
+admises lorsqu'elles permettent de livrer cette tranche sans modifier le
+moteur ni ouvrir un chantier secondaire. Le résultat reste révisable : la
+revue `V-REV` peut conserver, adapter, réduire ou retirer une solution.
+
+**Périmètre du MVP.** Une seule tranche verticale :
+
+1. ouvrir sans ambiguïté la version locale en cours depuis le poste de pilotage,
+   distincte de `technohab.theoseguret.fr`, qui reste le dernier déploiement ;
+2. saisir le programme essentiel sans détour par les outils avancés ;
+3. générer et afficher un plan sans régression du moteur ;
+4. parcourir les propositions et comprendre leur compromis principal ;
+5. rendre visibles les concessions, l'impossibilité et l'échec de recherche ;
+6. activer les calques utiles et exporter le résultat ;
+7. laisser le compositeur, l'audit détaillé, les règles et les journaux
+   accessibles comme couches secondaires.
+
+**Concessions admises pour démarrer.** Le MVP peut conserver les composants,
+le vocabulaire visuel et la structure JavaScript existants. Il n'exige ni
+design system, ni animation, ni refonte du moteur, ni nettoyage complet du CSS,
+ni identité graphique définitive. Le mobile doit rester utilisable, sans viser
+la même densité que l'atelier sur ordinateur.
+
+**Point de départ technique.** Le worktree du 24 septembre porte déjà le
+prototype dans `index.html`, `assets/styles.css`, `assets/app.js` et
+`assets/evaluation.js` : plan agrandi, informations secondaires repliables,
+avis escamotable et cadrage SVG resserré sur le dessin. Ce travail est la base
+à stabiliser. La direction visuelle et l'organisation de cet écran sont
+validées le 24 septembre ; cette validation autorise les corrections ciblées,
+sans ouvrir encore le polish.
+
+**Ordre d'exécution immédiat.** Rejouer d'abord le parcours actuel et relever
+uniquement les ruptures bloquantes. Fermer ensuite ces ruptures dans l'ordre
+programme → génération → comparaison → inspection → export. Faire enfin la
+revue `V-REV`. Le nettoyage structurel et la finition deviennent un lot séparé
+seulement si la revue confirme l'organisation retenue.
+
+**Chargement à la demande retenu dans `V-MVP`.** Le 24 septembre, le banc
+M5.2f mesure 30 demandes : la résolution du premier plan coûte en moyenne
+4,23 appels générateur et 5,7 s, tandis que la comparaison mesurée porte le
+total à 14,25 appels et ajoute 11,0 s en moyenne. L'écran attendait jusque-là la
+fin de ces deux étapes avant tout affichage. Le chargement automatique est
+retiré : aucun plan n'est calculé avant une action explicite de l'utilisateur.
+Deux modes explicites sont proposés : un plan, retenu par défaut pour la
+vitesse, ou trois propositions pour comparer. Pendant le calcul, un unique
+listener global intercepte les clics, y compris ceux restés dans la file du
+navigateur, afin d'empêcher toute relance multiple. Le mode unitaire réemploie
+strictement le résultat de résolution et ne calcule aucun candidat masqué.
+Un simple calcul différé automatique n'est pas retenu comme optimisation : le
+générateur est synchrone et bloquerait encore le fil principal après le premier
+affichage. Un Web Worker reste une évolution possible si la comparaison à la
+demande ne suffit pas. Gate : mesurer séparément temps jusqu'au premier plan,
+temps de comparaison et absence de recalcul du premier résultat.
+
+**Hors périmètre.** Aucun changement de règles, de profils, de génération ou
+de promesse produit. M5.4 reste l'autorité pour transformer l'observation des
+plans en conséquences métier et réordonner la suite moteur.
 
 ---
 

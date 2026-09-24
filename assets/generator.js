@@ -4046,6 +4046,9 @@
       seen[signature] = true;
       pool.push({ result: result, signature: signature });
     });
+    // En mode unitaire, resolveSelection a déjà payé et validé le premier
+    // plan. Ne pas lancer silencieusement sept candidats supplémentaires.
+    if (requested === 1 && reused.length) attemptBudget = 1;
     var generatedAttempts = 0;
     for (var attempt = reused.length; attempt < attemptBudget; attempt += 1) {
       var seed = attempt === 0 ? baseSeed
