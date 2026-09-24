@@ -221,13 +221,13 @@ satisfaction des pièces requises, priorité — et une condition portant sur la
 d'être dit avant que le lot soit engagé.
 
 **Depuis le 27 août**, ce lot L1 converge avec le lot **F2** de la roadmap
-([`DOCTRINE.md`](DOCTRINE.md), `ROADMAP.md` §6.2 bis) : l’interpréteur active
+([`DOCTRINE.md`](DOCTRINE.md), `ROADMAP_HISTORIQUE.md` §6.2 bis) : l’interpréteur active
 des **fonctions**, pas seulement des types de pièce déjà présents au socle.
 
 ### 4.4 Trois questions de séquence, reformulées et en attente
 
 Elles portent sur l'ordre d'exécution, non sur le modèle. Voir la reformulation
-dans `ROADMAP.md` §6.1 et §9.5 ; elles restent à trancher.
+dans `ROADMAP_HISTORIQUE.md` §6.1 et §9.5 ; elles restent à trancher.
 
 ---
 

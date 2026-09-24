@@ -7,7 +7,7 @@ seule est retenue selon la pièce qui la reçoit.
 Document de conception. Il fait foi sur le mécanisme et sur les tailles
 proposées ; [`SOCLE_AGENCEMENT.md`](SOCLE_AGENCEMENT.md) fait foi sur les
 cotes existantes, [`DATASOURCE_EQUIPEMENTS.md`](DATASOURCE_EQUIPEMENTS.md) sur
-leur sourcing, [`ROADMAP.md`](ROADMAP.md) §5 octies sur l'ordre des travaux.
+leur sourcing, [`ROADMAP_HISTORIQUE.md`](ROADMAP_HISTORIQUE.md) §5 octies sur l'ordre des travaux.
 
 ---
 

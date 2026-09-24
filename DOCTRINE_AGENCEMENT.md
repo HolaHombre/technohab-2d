@@ -102,7 +102,7 @@ qu'en refuser un valide.**
 ## 5. Mesures du 15 août — un pronostic démenti
 
 L'attente était que le contrôle échoue souvent, comme les adjacences du
-`ROADMAP.md` §3.2. Relevé sur 40 variantes par configuration, en comparant
+`ROADMAP_HISTORIQUE.md` §3.2. Relevé sur 40 variantes par configuration, en comparant
 le rectangle utile de chaque pièce à la table :
 
 | Configuration | Pièces | Hors gabarit |

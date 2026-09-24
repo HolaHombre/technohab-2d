@@ -212,4 +212,4 @@ Un symbole disponible n'est toutefois pas nécessairement visible dans le
 produit. Le bilan M5.4 distingue désormais cinq états : présence au catalogue,
 présence dans le sprite source, copie inline compatible `file://`, raccord au
 rendu et apparition observée sur un plan. Son point zéro du 3 septembre est
-consigné dans `ROADMAP.md` §6.1 nonies.
+consigné dans `ROADMAP_HISTORIQUE.md` §6.1 nonies.

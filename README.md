@@ -70,6 +70,9 @@ différence, les preuves disponibles et les limites sont exposées dans
 - murs, portes, fenêtres, mobilier, zones d'usage et cheminements représentés ;
 - résultat rejouable à partir de sa graine ;
 - audit humain standardisé par graine et par rang, exporté avec le PNG, les paramètres et les journaux ;
+- **export DXF (R12)** — le plan se rouvre dans un outil de CAO tiers : murs,
+  contours de pièces, baies et débattements, mobilier et zones d'usage, chacun
+  sur son calque. La portée non contractuelle voyage dans le fichier ;
 - refus, échec de recherche et repli de programme explicitement distingués.
 
 Le plan produit est un **plan de principe non contractuel**. Il n'intègre pas

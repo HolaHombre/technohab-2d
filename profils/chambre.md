@@ -2,7 +2,7 @@
 
 **`BEDROOM` · variantes `enfant` | `parentale` · maturité `C4` · 31 août 2026**
 
-Premier profil de la vague **C-P1** ([`ROADMAP.md`](../ROADMAP.md) §6.2).
+Premier profil de la vague **C-P1** ([`ROADMAP_HISTORIQUE.md`](../ROADMAP_HISTORIQUE.md) §6.2).
 Gabarit : [`GABARIT_PIECE.md`](../GABARIT_PIECE.md). Source de valeurs :
 [`agencement/chambre.md`](../agencement/chambre.md), dont les cotes `[S3]` sont
 reprises ici et qui reste la fiche de sourcing.

@@ -617,7 +617,7 @@ longueur ne tiendra : le moteur préférera toujours payer.
    distingue pas un couloir large d'un couloir long, alors que le premier
    n'arrive jamais et le second toujours. La grandeur qui vise juste est la
    longueur rapportée au besoin de desserte.
-   **Pilotage :** lot **M3.0** de [`ROADMAP.md`](ROADMAP.md) §6.0 (levier L2
+   **Pilotage :** lot **M3.0** de [`ROADMAP_HISTORIQUE.md`](ROADMAP_HISTORIQUE.md) §6.0 (levier L2
    d’agrément) — prérequis de M3.
 2. **Recalibrer `TH2D-CIRC-004` sur la découpe actuelle, ou la suspendre.**
    Elle ne peut pas rester dans cet état. Recalibrer suppose de rejouer la

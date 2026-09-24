@@ -93,7 +93,7 @@ vers l'un des deux :
 Deux lectures. Le **U triple le défaut** : ses trois volumes se partagent un
 programme dont une seule circulation, donc au moins un volume n'a aucun
 dégagement propre. Et la dégradation est **monotone avec la taille** — un
-couloir unique ne passe pas à l'échelle, ce que `ROADMAP.md` §965 annonçait
+couloir unique ne passe pas à l'échelle, ce que `ROADMAP_HISTORIQUE.md` §965 annonçait
 déjà sans le chiffrer.
 
 Par type : chambres 13,8 % et WC 13,6 % sans contact, contre 7,3 % pour les
@@ -148,7 +148,7 @@ occurrence). La phrase décrivait l'état au 19 août ; le §5 ter dit le retrai
 au 20. Le compte rendu reste valable comme historique, sa dernière phrase
 non.
 
-**`ROADMAP.md` §3.1** — « `layout()` découpe l'espace en guillotine sans
+**`ROADMAP_HISTORIQUE.md` §3.1** — « `layout()` découpe l'espace en guillotine sans
 jamais consulter les adjacences demandées ». Littéralement exact —
 `layout()` ne lit jamais `requestedEdges` — mais trompeur dans sa
 conclusion : la fonction consulte le **programme** (`item.type ===

@@ -39,7 +39,7 @@ doivent la rendre lisible — le socle de « Souple » doit se lire comme un
 corps principal auquel on a ajouté, pas comme un rectangle entamé.
 
 **Aléatoire, précisément.** Deux sources de hasard coexistent désormais et ne
-doivent pas être confondues : la **graine** (§5 bis de `ROADMAP.md`) fait
+doivent pas être confondues : la **graine** (§5 bis de `ROADMAP_HISTORIQUE.md`) fait
 varier la géométrie à forme donnée ; `random` fait varier la **famille de
 forme** elle-même. Choisir `random` puis rejouer une graine doit redonner la
 même forme — sans quoi la graine cesse d'être une donnée du plan.
@@ -166,7 +166,7 @@ près. C'est la promesse visuelle du jeu, et c'est vérifiable.
 
 ## 4. Conséquence sur le moteur
 
-Le Chantier 1 de `ROADMAP.md` ne prévoyait que trois valeurs de `shape`. Les
+Le Chantier 1 de `ROADMAP_HISTORIQUE.md` ne prévoyait que trois valeurs de `shape`. Les
 six vignettes en font six, dont deux sont des sous-cas nommés de l'ancien
 `freeOrthogonal` et une est un tirage. Le §5 de la roadmap est mis à jour en
 conséquence ; `freeOrthogonal` conserve son nom et devient « Souple ».

@@ -1,8 +1,17 @@
 # Suivi du développement des règles par pièce
 
-État consolidé du moteur Wonderland au **1er septembre 2026**. Ce document distingue
-quatre niveaux qui ne doivent plus être confondus : fiche documentaire,
-équipements du socle, génération effective et règle évaluée en production.
+État consolidé du moteur Wonderland au 1er septembre 2026, **rafraîchi et
+vérifié contre le code le 24 septembre 2026**. Ce document distingue quatre
+niveaux qui ne doivent plus être confondus : fiche documentaire, équipements
+du socle, génération effective et règle évaluée en production.
+
+**Portée du rafraîchissement.** Les compteurs de l'État global ont été
+recomptés contre `assets/socle.data.js`, `assets/rules.js` et une génération
+réelle (`generateResult`) ; deux étaient faux, contredits par le propre
+journal de ce document quelques lignes plus bas. Le récit daté — D1 à D4,
+Chantier 1, Chantier 6 — n'a pas été rejoué : c'est un historique de mesures,
+il reste exact à la date qu'il porte. Seul le **présent** de ce document,
+l'État global et la matrice, devait être revérifié.
 
 ## Légende
 
@@ -14,21 +23,29 @@ quatre niveaux qui ne doivent plus être confondus : fiche documentaire,
 
 ## État global
 
-- **6 types générés** : séjour, chambre, salle d'eau, WC, cuisine, circulation.
-- **13 types décrits dans le socle** : les 6 précédents, plus salle à manger,
-  entrée, bureau, buanderie, cellier, local technique et garage.
+- **7 types générés** : séjour, chambre, salle d'eau, WC, cuisine, circulation,
+  **bureau** — activé le 24 septembre 2026 par le lot L1 du chantier 7
+  (interpréteur générique du `trigger: count`, voir plus bas). C'était encore
+  6 au 1er septembre.
+- **13 types décrits dans le socle** : les 7 précédents, plus salle à manger,
+  entrée, buanderie, cellier, local technique et garage.
 - **7 fiches de pièce ou fonction** : salon, cuisine, chambre, salle de bain,
-  WC, bureau et seuil d'entrée.
+  WC, bureau et seuil d'entrée — plus `profils/salle-eau-wc-integre.md`, la
+  fiche de la composition « salle d'eau avec WC » de la ligne dédiée ci-dessous.
 - **2 fiches transverses** : circulation et rangements.
-- **32 règles de plan actives** dans `assets/rules.js`.
+- **32 règles de plan actives** dans `assets/rules.js` — recompté, inchangé.
 - **6 règles génériques de placement** (`S1` à `S6`) dans
-  `assets/socle.data.js`.
+  `assets/socle.data.js` — recompté, inchangé.
 - **13 pièces déclarant rôle, agrément, planchers, plafond et critère
   d'existence** — table unifiée dans `assets/socle.data.js` depuis le 20 août,
   compilée dans `assets/fit.data.js`. Voir
-  [`MODELE_EXIGENCES.md` §1 bis](MODELE_EXIGENCES.md). Le `trigger` est
-  déclaré partout où il est connu mais **lu par personne** : son interpréteur
-  est le lot L1 du chantier 7.
+  [`MODELE_EXIGENCES.md` §1 bis](MODELE_EXIGENCES.md). Le `trigger` de type
+  `count` a désormais un **interpréteur générique** dans `buildProgram()`
+  (`generator.js`, depuis le 24 septembre) : c'est lui qui active le bureau
+  sans branche spéciale. Cette phrase disait l'inverse — « lu par personne » —
+  jusqu'à ce rafraîchissement ; le journal plus bas l'avait déjà noté sans que
+  ce paragraphe ne soit corrigé en même temps. **Reste vrai** : aucune autre
+  pièce `trigger: count` du socle n'a encore de programme qui l'active.
 
 ## Matrice de couverture
 
@@ -102,7 +119,7 @@ de M4c.
 
 ### P2 — Activer les pièces déjà prêtes dans le socle
 
-**Exécution portée par le chantier 7 de `ROADMAP.md` (§5 septies)** : lots
+**Exécution portée par le chantier 7 de `ROADMAP_HISTORIQUE.md` (§5 septies)** : lots
 L1 à L7, dépendances, tests exigés et définition de terminé. Ce document
 reste l'état de référence pièce par pièce ; la roadmap porte l'ordre et les
 conditions d'entrée.
@@ -123,10 +140,17 @@ Aucun lot ne démarre avant la correction de D1, D2, D3 et la première mesure
 
 - profil accessible/évolutif, aire de rotation et transfert WC ;
 - attribut d'ouvrant pour les rangements et leurs dégagements ;
-- réseaux humides, ventilation et regroupement technique ;
+- ~~réseaux humides, ventilation et regroupement technique~~ — **le
+  regroupement technique est câblé depuis le 24 septembre 2026** :
+  `PONDERATION_AGENCEMENT.md` §3.3 pénalise au score l'éloignement entre
+  pièces humides (cuisine, salle d'eau, WC, buanderie). Restent ouverts :
+  ventilation et réseaux à proprement parler ;
 - relations d'adjacence typées : obligatoire, interdite, souhaitable,
   déconseillée ;
-- nord et orientation réels ;
+- **nord et orientation réels** — toujours absent, et c'est précisément ce
+  qui bloque `PONDERATION_AGENCEMENT.md` §3.4 (bonus façade sud) et
+  `PLACEMENT_ET_ADJACENCES.md` §2.3 (orientation par type de pièce). Un angle
+  déclaré suffirait, sans terrain réel — voir `REFERENTIEL_ETENDU.md` §8 ;
 - rattachement des ouvertures, du mobilier et du parcours aux faces des murs ;
 - programmes composés : suite parentale, cuisine ouverte, séjour avec repas
   ou bureau.
@@ -155,8 +179,18 @@ Aucun lot ne démarre avant la correction de D1, D2, D3 et la première mesure
   accessibles, le seuil externe de longueur par desserte et la lumière en bout.
 - **Entrée** : C4 hébergé livré ; poursuivre seulement si le programme exige
   une pièce autonome, un placard ou un sas, sans les confondre avec le seuil.
+- **Bureau** : C4 livré le 24 septembre 2026, activé par le lot L1 (interpréteur
+  générique du `trigger: count`) — variantes compact/convertible, plateau,
+  chaise et recul propre, gammes, refus, porte, fenêtre, S4 et trois plans
+  complets éprouvés. Manquait au backlog depuis sa livraison ; ajouté ici.
+  Poursuivre par l'accessibilité et la preuve C5 en plan.
 - **Rangements** : C4 limité livré pour penderie de chambre et `STORAGE_BAY` ;
   poursuivre par placard d'entrée, unités de service, dressing et émergence F2/L1.
+  L'**équipement lié** — quantité dépendante d'un autre équipement, et
+  activation conditionnelle — reste le mécanisme manquant qui débloquerait
+  quatre lignes déjà cotées et sourcées ailleurs (table de chevet et commode
+  ici, îlot de cuisine et dressing dans leurs profils respectifs) : voir
+  `DIFFERENTIEL_REFERENTIEL.md` §6 et `profils/README.md` §48.
 
 ## Définition de « terminé » pour une pièce
 
@@ -484,6 +518,14 @@ une forme mais la commande le rendu autant qu'elle.
 | — | Première mesure de discrimination à l'aveugle — bloque la phase 12 b | à faire |
 | — | Réconciliation des documents devenus périmés après l'ajout des ouvertures et parcours | à faire |
 | 2026-09-24 | Activation du bureau dans le programme et le questionnaire | fait |
+| 2026-09-24 | REF-1 : audit de complétude du référentiel contre un éditeur manuel externe (ArchiFacile) ; six manques supposés sur neuf tombés à la vérification contre le code ; export DXF écrit puis gelé (qualité de rendu insuffisante) | fait |
+| 2026-09-24 | PONDERATION §3.3 : regroupement technique câblé au score (pièces humides), déjà spécifié dans `PLACEMENT_ET_ADJACENCES.md` §2.4, jamais implémenté avant ce jour | fait |
+| 2026-09-24 | PONDERATION §3.4 : mode lumineux relit la façade réellement obtenue, remplace un proxy binaire sans rapport à une vraie façade | fait |
+| 2026-09-24 | PONDERATION §3.1/§3.2 : mode compact pénalise la montée en gamme et inverse l'objectif de confort (jamais additionné à la pénalité générale, sous peine de punir toute pose) | fait |
+| 2026-09-24 | Cumul des modes compact/lumineux/économie : `priorities` (tableau) remplace `priority` (chaîne unique) dans `normalizeOptions()`, interface passée en cases à cocher | fait |
+| 2026-09-24 | Refonte documentaire : `ROADMAP.md` séparé de son historique (`ROADMAP_HISTORIQUE.md`), 22 citations de section corrigées dans 17 fichiers dont `canonical-values.data.js` | fait |
+| — | Équipement lié — quantité dépendante d'un autre équipement, activation conditionnelle : débloquerait chevet, commode, îlot de cuisine et dressing, tous déjà cotés dans leurs profils respectifs | à faire |
+| — | Orientation réelle (angle de nord déclaré) — débloquerait le bonus façade sud de PONDERATION §3.4 et les préférences d'orientation par pièce de `PLACEMENT_ET_ADJACENCES.md` §2.3 | à faire |
 | — | Première remontée des verdicts de placement par pièce | à faire |
 
 ## Chantier 6 — mesure de la qualité perçue (19 août 2026)

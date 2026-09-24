@@ -325,4 +325,4 @@ décisions qui ne sont pas graphiques :
    WC pour desservir une autre pièce doit être une violation, pas un détour
    plus coûteux.
 
-Ces quatre points sont portés en Phase 9 de `ROADMAP.md`.
+Ces quatre points sont portés en Phase 9 de `ROADMAP_HISTORIQUE.md`.

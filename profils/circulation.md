@@ -152,7 +152,7 @@ un couloir étroit longe moins de pièces, donc dessert moins bien. Le surplus e
 **cédé aux pièces longées** sous forme de bandes de rangement — la surface
 totale est conservée, et les pièces receveuses deviennent des L.
 
-C'est une doctrine assumée (`ROADMAP.md` §5 ter) et mesurée : plafonner le
+C'est une doctrine assumée (`ROADMAP_HISTORIQUE.md` §5 ter) et mesurée : plafonner le
 créneau dégraderait les adjacences plus qu'il ne réduirait la largeur. Elle a
 un défaut, identifié dans les profils précédents : **la cession ignore
 l'agrément de la pièce receveuse**, et un WC reçoit une bande dont il n'a aucun

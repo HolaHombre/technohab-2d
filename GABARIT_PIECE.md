@@ -1,7 +1,7 @@
 # Gabarit d'analyse d'une pièce
 
 Trame commune à toute analyse de pièce TechnoHab. Elle est le livrable de
-méthode du lot **C-P0** de la vNext ([`ROADMAP.md`](ROADMAP.md) §6.2) : les
+méthode du lot **C-P0** de la vNext ([`ROADMAP_HISTORIQUE.md`](ROADMAP_HISTORIQUE.md) §6.2) : les
 profils pilotes ne valent pas seulement pour eux-mêmes, ils fixent la forme que
 prendront les suivants.
 

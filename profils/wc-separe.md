@@ -13,7 +13,7 @@ identifiants `VAL-WC-*`.
 
 Premier profil écrit au [`GABARIT_PIECE.md`](../GABARIT_PIECE.md), et exemplaire
 de référence pour les suivants. Lot **C-P0** de la vNext
-([`ROADMAP.md`](../ROADMAP.md) §6.2).
+([`ROADMAP_HISTORIQUE.md`](../ROADMAP_HISTORIQUE.md) §6.2).
 
 **Maturité C4** : les exigences sont exprimées dans le socle, les niveaux
 minimum/cible/confort sont séparés, et `scripts/test-profils-pilotes.mjs`

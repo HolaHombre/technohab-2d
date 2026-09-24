@@ -21,7 +21,7 @@ une famille d'équipements, et ce qui vaut pour la surface architecturale.
 | Où c'est défini | `equipments` du socle | `carveCirculation()` et `shapeRooms()` |
 | Ce qui le contrôle | `TH2D-RANGEMENT-003` pour la penderie | `TH2D-RANGEMENT-001` et `002` |
 | Ce qui le dimensionne | emprise + zone de service | profondeur ≥ 0,45 m, ratio ≤ 0,6 |
-| Doctrine | ce profil | `ROADMAP.md` §5 ter |
+| Doctrine | ce profil | `ROADMAP_HISTORIQUE.md` §5 ter |
 
 La fiche de sourcing s'interrogeait : trois règles `TH2D-RANGEMENT-*` existent
 en production, leur contenu n'est pas documenté, « il peut y avoir
