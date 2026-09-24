@@ -34,6 +34,12 @@
   var analysisOpenButton = document.getElementById('analysis-open');
   var analysisExportButton = document.getElementById('download-analysis');
   var svgExportButton = document.getElementById('download-svg');
+  var dxfExportButton = document.getElementById('download-dxf');
+  var fastSaveRoot = document.getElementById('fast-save');
+  var fastSaveButton = document.getElementById('fast-save-current');
+  var fastSaveExport = document.getElementById('fast-save-export');
+  var fastSaveList = document.getElementById('fast-save-list');
+  var fastSaveCount = document.getElementById('fast-save-count');
   var latestResult = null;
   var pendingResolution = null;
   var activeResolvedSelection = null;
@@ -50,6 +56,8 @@
   var latestGenerationPerformance = null;
   var generationBusy = false;
   var clickLockUntil = 0;
+  var FAST_SAVE_KEY = 'technohab:fast-saves:v1';
+  var fastSaves = [];
   var PATHS_KEY = 'technohab:parcours:v1';
   var pathsToggle = document.getElementById('show-paths');
   var afficherParcours = false;
@@ -76,6 +84,72 @@
   function saveHistory() {
     try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, HISTORY_MAX))); } catch (_) { /* facultatif */ }
   }
+
+  function readFastSaves() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(FAST_SAVE_KEY));
+      fastSaves = Array.isArray(saved) ? saved : [];
+    } catch (_) { fastSaves = []; }
+  }
+
+  function writeFastSaves() {
+    try { localStorage.setItem(FAST_SAVE_KEY, JSON.stringify(fastSaves.slice(0, 100))); } catch (_) { /* facultatif */ }
+  }
+
+  function renderFastSaves() {
+    if (!fastSaveList) return;
+    fastSaveList.innerHTML = '';
+    fastSaves.forEach(function (entry, index) {
+      var item = document.createElement('li');
+      var replay = document.createElement('button');
+      replay.type = 'button';
+      replay.dataset.fastSaveReplay = String(index);
+      replay.textContent = entry.seed + ' · plan ' + entry.rank + ' · ' + entry.errorCount + ' erreur(s)';
+      replay.title = 'Rejouer la graine ' + entry.seed;
+      var remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'fast-save-remove';
+      remove.dataset.fastSaveRemove = String(index);
+      remove.setAttribute('aria-label', 'Retirer ' + entry.seed);
+      remove.textContent = '×';
+      item.appendChild(replay);
+      item.appendChild(remove);
+      fastSaveList.appendChild(item);
+    });
+    fastSaveCount.textContent = String(fastSaves.length);
+    fastSaveExport.disabled = fastSaves.length === 0;
+  }
+
+  function archiveActivePlan() {
+    if (!latestResult) return;
+    var rank = latestResult.selectionIndex + 1;
+    var key = latestResult.plan.seed + ':' + rank;
+    var report = latestResult.rulesReport;
+    var entry = {
+      format: 'technohab-fast-save-v1',
+      archivedAt: new Date().toISOString(),
+      key: key,
+      seed: latestResult.plan.seed,
+      seedValue: latestResult.plan.seedValue,
+      rank: rank,
+      variant: latestResult.plan.variant,
+      topology: latestResult.plan.topologyFamily,
+      appVersion: APP_VERSION,
+      errorCount: report.summary.hard,
+      verdict: report.summary,
+      errors: report.violations.map(function (item) {
+        return { ruleId: item.ruleId, level: item.level, entityId: item.entityId,
+          mesure: item.mesure, seuil: item.seuil, gravite: item.gravite, message: item.message };
+      }),
+      options: latestResult.plan.options,
+      resolutionStatus: latestResult.programResolution.status
+    };
+    fastSaves = fastSaves.filter(function (saved) { return saved.key !== key; });
+    fastSaves.unshift(entry);
+    writeFastSaves();
+    renderFastSaves();
+    rulesMeta.textContent = 'Graine ' + entry.seed + ' archivée localement pour analyse.';
+  }
   function renderHistory() {
     rulesHistory.innerHTML = '';
     history.forEach(function (entry) {
@@ -95,12 +169,17 @@
   }
 
   document.getElementById('app-version').textContent = 'v' + APP_VERSION;
+  readFastSaves();
+  renderFastSaves();
   function readForm() {
     var data = new FormData(form);
     return root.TechnoHabGenerator.normalizeOptions({
       surface: data.get('surface'), bedrooms: data.get('bedrooms'), bathrooms: data.get('bathrooms'),
       separateKitchen: data.get('separateKitchen') === 'on', includeWc: data.get('includeWc') === 'on',
-      officeType: data.get('officeType'), priority: data.get('priority'), shape: data.get('shape')
+      officeType: data.get('officeType'),
+      // Cumulable depuis le 24 septembre 2026 : les trois cases partagent le
+      // nom `priority`, `getAll()` en relève celles cochées.
+      priorities: data.getAll('priority'), shape: data.get('shape')
     });
   }
   function restoreForm() {
@@ -108,6 +187,18 @@
       var saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (!saved) return;
       Object.keys(saved).forEach(function (key) {
+        // `priorities` est un tableau porté par plusieurs cases du même nom
+        // `priority` : la restauration générique ci-dessous, faite pour un
+        // champ unique, ne s'y applique pas. `priority` (singulier, dérivé)
+        // est ignoré ici pour ne pas rejouer un état incohérent avec lui.
+        if (key === 'priorities') {
+          var chosen = Array.isArray(saved.priorities) ? saved.priorities : [];
+          document.querySelectorAll('input[name="priority"]').forEach(function (box) {
+            box.checked = chosen.indexOf(box.value) >= 0;
+          });
+          return;
+        }
+        if (key === 'priority') return;
         var field = form.elements.namedItem(key);
         if (!field) return;
         if (field.type === 'checkbox') field.checked = Boolean(saved[key]);
@@ -1143,7 +1234,9 @@
     jsonExportButton.disabled = !available;
     analysisOpenButton.disabled = !available;
     analysisExportButton.disabled = !available;
+    if (fastSaveButton) fastSaveButton.disabled = !available;
     svgExportButton.disabled = !available;
+    dxfExportButton.disabled = !available;
   }
 
   function clearActivePlan(message) {
@@ -1552,6 +1645,32 @@
     pendingSeed = root.TechnoHabGenerator.decodeSeed(item.dataset.seed);
     if (pendingSeed !== null) queueGeneration();
   });
+  if (fastSaveButton) fastSaveButton.addEventListener('click', archiveActivePlan);
+  if (fastSaveList) fastSaveList.addEventListener('click', function (event) {
+    var replay = event.target.closest('[data-fast-save-replay]');
+    var remove = event.target.closest('[data-fast-save-remove]');
+    if (remove) {
+      fastSaves.splice(Number(remove.dataset.fastSaveRemove), 1);
+      writeFastSaves(); renderFastSaves();
+      return;
+    }
+    if (!replay) return;
+    var entry = fastSaves[Number(replay.dataset.fastSaveReplay)];
+    if (!entry) return;
+    pendingSeed = root.TechnoHabGenerator.decodeSeed(entry.seed);
+    if (pendingSeed !== null) {
+      if (fastSaveRoot) fastSaveRoot.open = false;
+      queueGeneration();
+    }
+  });
+  if (fastSaveExport) fastSaveExport.addEventListener('click', function () {
+    download('technohab-plans-a-analyser.json', JSON.stringify({
+      format: 'technohab-fast-saves-v1',
+      exportedAt: new Date().toISOString(),
+      appVersion: APP_VERSION,
+      entries: fastSaves
+    }, null, 2), 'application/json');
+  });
   jsonExportButton.addEventListener('click', function () {
     if (!latestResult) return;
     var exported = root.TechnoHabGenerator.exportDocument(
@@ -1614,6 +1733,15 @@
     }
     download('technohab-plan-v' + variant + '-p' + (latestResult.selectionIndex + 1) + '.svg',
       new XMLSerializer().serializeToString(clone), 'image/svg+xml');
+  });
+  /* DXF — REF-1 ligne 3. Le SVG se regarde, le DXF se reprend : c'est la
+     seule sortie du produit qu'un tiers peut rouvrir dans son propre outil.
+     La portée non contractuelle voyage dans le fichier (calque
+     TH_AVERTISSEMENT), parce qu'un fichier se transmet sans sa page. */
+  dxfExportButton.addEventListener('click', function () {
+    if (!latestResult) return;
+    download('technohab-plan-v' + variant + '-p' + (latestResult.selectionIndex + 1) + '.dxf',
+      root.TechnoHabDxf.build(latestResult.plan), 'image/vnd.dxf');
   });
   /* Le journal complet, échecs compris, pour analyse hors ligne. Chaque
      entrée porte sa graine : n'importe quel échec de la liste se rejoue

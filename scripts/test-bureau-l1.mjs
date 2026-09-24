@@ -31,7 +31,11 @@ assert.deepEqual(
   {
     surface: 75, bedrooms: 0, bathrooms: 1, separateKitchen: false,
     includeWc: true, offices: 1, officeVariant: 'convertible',
-    shape: 'rectangle', priority: 'compact'
+    shape: 'rectangle',
+    // Cumul des modes, 24 septembre 2026 : `priorities` (tableau) fait foi,
+    // `priority` (singulier) n'en reste que la primaire — voir
+    // PONDERATION_AGENCEMENT.md et normalizeOptions() dans generator.js.
+    priorities: ['compact'], priority: 'compact'
   }
 );
 assert.equal(G.normalizeOptions({ officeType: 'none', offices: 1 }).offices, 0);

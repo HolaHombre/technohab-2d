@@ -35,8 +35,12 @@ assert.match(engineSource, /mouseenter[\s\S]*focus[\s\S]*setHelp/,
   'l’explication d’une cellule doit être disponible au survol et au clavier');
 assert.match(engineSource, /ArrowRight'[\s\S]*ArrowDown'[\s\S]*ArrowLeft'[\s\S]*ArrowUp'/,
   'les réponses doivent être parcourables avec les quatre flèches');
-assert.match(engineSource, /answeredCount\(\) !== data\.criteria\.length/,
-  'l’archive ne doit pas être produite à partir d’une grille incomplète');
+assert.match(engineSource, /draft\.mode === 'short'[\s\S]*draft\.synthesis[\s\S]*draft\.firstCorrection/,
+  'le mode court doit exiger uniquement les deux réponses de synthèse');
+assert.match(indexSource, /id="fast-save"[\s\S]*id="fast-save-current"[\s\S]*id="fast-save-export"/,
+  'le header doit proposer archivage local et export des graines');
+assert.match(appSource, /technohab:fast-saves:v1[\s\S]*archiveActivePlan[\s\S]*technohab-plans-a-analyser\.json/,
+  'les plans signalés doivent rester dans le navigateur et être exportables');
 assert.match(engineSource, /plan\.png[\s\S]*analyse\.json|analyse\.json[\s\S]*plan\.png/,
   'l’archive doit réunir le résultat structuré et le PNG du plan');
 assert.match(engineSource, /identity:[\s\S]*seed:[\s\S]*rank:/,
@@ -53,8 +57,7 @@ assert.match(stylesSource, /\.analysis-trigger \{[^}]*min-height: 44px/,
   'le déclencheur doit garder une cible tactile suffisante');
 assert.match(stylesSource, /@media \(max-width: 560px\)[\s\S]*\.analysis-row \{ grid-template-columns: 1fr;/,
   'la grille doit se replier sans défilement horizontal sur petit écran');
-assert.doesNotMatch(stylesSource.slice(stylesSource.indexOf('.analysis-trigger')),
-  /box-shadow:/,
+assert.doesNotMatch(stylesSource.match(/\.analysis-trigger \{[^}]*\}/)[0], /box-shadow:/,
   'l’analyse ne doit pas introduire d’ombre hors direction artistique');
 
 const encoder = new TextEncoder();

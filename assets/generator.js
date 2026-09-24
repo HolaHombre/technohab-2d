@@ -145,6 +145,34 @@
     return Math.min(Math.abs(box.x1 - box.x0), Math.abs(box.y1 - box.y0));
   }
 
+  /* CLASSIFICATION_LOGEMENT §2 — un logement porte désormais son type et sa
+     classe, lisibles à l'export. Rien n'en dépend encore : ni un poids de
+     PONDERATION, ni un refus de programme. C'est le §2.3 du document qui le
+     dit — publier la donnée n'est pas l'exploiter, et l'exploiter demande
+     une Table B/C que personne n'a encore sourcée.
+
+     Typologie — sans risque : `T = bedrooms + 1` est la convention
+     immobilière française usuelle, pas une invention du projet, et elle
+     couvre exactement la plage 0-5 déjà bornée par normalizeOptions().
+     Classe de taille — provisoire, assumée comme telle : trois seuils
+     canoniques, tous `PROVISIONAL`, faute de Table B sourcée. */
+  function classificationLogement(surface, bedrooms) {
+    var typologie = 'T' + (Math.max(0, Math.min(5, Math.trunc(bedrooms))) + 1);
+    var seuilPetit = valeurCanonique('VAL-CLASSE-PETIT-MIN-001', 55);
+    var seuilMoyen = valeurCanonique('VAL-CLASSE-MOYEN-MIN-001', 90);
+    var seuilGrand = valeurCanonique('VAL-CLASSE-GRAND-MIN-001', 140);
+    var classe = surface < seuilPetit ? 'petit'
+      : surface < seuilMoyen ? 'moyen'
+      : surface < seuilGrand ? 'grand'
+      : 'tres_grand';
+    return {
+      typologie: typologie,
+      classe: classe,
+      method: 'bedrooms-plus-one-v1',
+      statut: 'classe non exploitée — voir CLASSIFICATION_LOGEMENT.md §2.3'
+    };
+  }
+
   function normalizeOptions(input) {
     input = input || {};
     var officeVariant = ['compact', 'convertible'].indexOf(input.officeVariant) >= 0
@@ -169,8 +197,36 @@
       // rectangle), soustractive (L, U, un quartier retiré du rectangle
       // englobant), additive — celle-ci pas encore servie.
       shape: ['square', 'rectangle', 'lShape', 'uShape'].indexOf(input.shape) >= 0 ? input.shape : 'rectangle',
-      priority: ['compact', 'light', 'economy'].indexOf(input.priority) >= 0 ? input.priority : 'compact'
+      priorities: normalizePriorities(input),
+      // Rétrocompatibilité et portée assumée : `priority` (singulier) reste
+      // lu par l'enveloppe (`envelopeAspect`) et la découpe (`layout`), qui
+      // précèdent ce champ et choisissaient déjà entre trois formes de
+      // silhouette incompatibles entre elles — élancée (light) contre
+      // carrée (economy). Les cumuler à ce niveau tranchierait une question
+      // de géométrie que PONDERATION_AGENCEMENT.md n'a jamais posée : le
+      // chantier n'active que le SCORE (décision 3, DECISIONS_REGLES.md),
+      // pas la forme de l'enveloppe. `priority` reste donc la première
+      // priorité choisie, primaire par construction de la liste ci-dessous.
+      priority: normalizePriorities(input)[0]
     };
+  }
+
+  var VALID_PRIORITIES = ['compact', 'light', 'economy'];
+
+  /* PONDERATION — les préférences de score (regroupement technique,
+     façade lumineuse, gamme et confort compacts, adjacences économiques)
+     portent sur des critères indépendants : rien n'empêche de les cumuler,
+     choix de l'utilisateur. Accepte `priorities` (tableau, nouveau) et
+     `priority` (chaîne, historique) ; les deux formes cohabitent tant que
+     l'interface n'expose qu'un radio. */
+  function normalizePriorities(input) {
+    var source = Array.isArray(input.priorities) ? input.priorities
+      : VALID_PRIORITIES.indexOf(input.priority) >= 0 ? [input.priority] : [];
+    var kept = [];
+    source.forEach(function (value) {
+      if (VALID_PRIORITIES.indexOf(value) >= 0 && kept.indexOf(value) < 0) kept.push(value);
+    });
+    return kept.length ? kept : ['compact'];
   }
 
   function createRoom(type, index, explicitVariant) {
@@ -791,6 +847,50 @@
     return entry && Number.isFinite(entry.value) ? entry.value : fallback;
   }
 
+  /* PONDERATION §3.3 — regroupement technique. Spécifié en préférence dans
+     le référentiel d'origine (PLACEMENT_ET_ADJACENCES.md §2.4), jamais
+     câblé : « les pièces partageant un réseau gagnent à se toucher ». Pas de
+     prérequis manquant, contrairement à l'orientation (§2.3) — calculable
+     sur les centroïdes, avec ce que le plan connaît déjà.
+
+     La liste reprend exactement la catégorie « humide » du document, pas le
+     champ `services` de room-model.js : celui-ci varie avec le mobilier
+     retenu (un lave-vaisselle ajoute `evacuation` à une cuisine qui ne
+     l'avait pas) et scoreCandidateDetails() score la géométrie du candidat,
+     avant que l'équipement ne soit résolu. Router par le type de pièce est
+     ce que la doctrine demande, pas une approximation de ce qu'elle demande. */
+  var PIECES_HUMIDES = ['kitchen', 'bath', 'wc', 'buanderie'];
+  var SERVICES_DISTANCE_THRESHOLD_ID = 'VAL-SCORE-SERVICES-DISTANCE-THRESHOLD-001';
+  var SERVICES_DISTANCE_THRESHOLD_FALLBACK = 3.5;
+  var SERVICES_DISTANCE_WEIGHT_ID = 'VAL-SCORE-SERVICES-DISTANCE-EXCESS-WEIGHT-001';
+  var SERVICES_DISTANCE_WEIGHT_FALLBACK = 10;
+
+  function centroid(box) {
+    return { x: (box.x0 + box.x1) / 2, y: (box.y0 + box.y1) / 2 };
+  }
+
+  /* Préférence, jamais un blocage : contrairement à `TH2D-ADJ-002`, deux
+     pièces humides éloignées ne rendent aucun plan invalide, elles perdent
+     seulement du terrain face à un candidat qui les groupe. Le malus croît
+     avec l'excédent au-delà du seuil, jamais avec la distance brute — deux
+     pièces déjà groupées ne se disputent pas un mètre de plus. */
+  function penaliteRegroupementTechnique(boxes) {
+    var humides = boxes.filter(function (box) { return PIECES_HUMIDES.indexOf(box.type) >= 0; });
+    if (humides.length < 2) return 0;
+    var seuil = valeurCanonique(SERVICES_DISTANCE_THRESHOLD_ID, SERVICES_DISTANCE_THRESHOLD_FALLBACK);
+    var poids = valeurCanonique(SERVICES_DISTANCE_WEIGHT_ID, SERVICES_DISTANCE_WEIGHT_FALLBACK);
+    var score = 0;
+    for (var i = 0; i < humides.length; i += 1) {
+      var a = centroid(humides[i]);
+      for (var j = i + 1; j < humides.length; j += 1) {
+        var b = centroid(humides[j]);
+        var distance = Math.hypot(a.x - b.x, a.y - b.y);
+        if (distance > seuil) score += (distance - seuil) * poids;
+      }
+    }
+    return score;
+  }
+
   /* Les pièces où l'on vit doivent toucher la façade : sans elle, ni fenêtre
      ni entrée d'air. `TH2D-FACADE-001` le juge en HARD, mais la recherche
      l'ignorait — exactement le défaut de D1, sur une autre règle. Mesuré en
@@ -835,6 +935,42 @@
     // équivalents, trop peu pour sacrifier une desserte (110) ou la façade
     // d'une chambre (100).
     return score + Math.max(0, meilleurRang - Math.max(0, rangIdeal)) * 18;
+  }
+
+  /* PONDERATION §3.4 — lumière, sans ce qu'elle demanderait vraiment.
+
+     Remplace un proxy binaire — le séjour touche-t-il le nord du plan,
+     indépendamment de toute façade réelle — par la longueur de façade
+     effectivement obtenue par chaque pièce principale.
+
+     Ce n'est PAS un compte d'ouvertures. `scoreCandidateDetails()` est
+     appelée depuis `candidatDepuisPieces()` sur des `boxes` nues, avant que
+     `poserFenetres()` ne place la moindre baie — la trame l'annonçait à
+     tort, corrigé ici après lecture du point d'appel. Ce que le score peut
+     lire à ce stade, c'est le mètre linéaire de mur donnant sur l'extérieur
+     que `facadeSegments()` calcule déjà pour `penaliteFacade()` : la matière
+     première d'une baie, pas la baie elle-même. Compter les fenêtres posées
+     exigerait de déplacer ce critère après construction — hors périmètre de
+     ce chantier, qui n'active que ce que le moteur sait déjà faire.
+
+     N'agit qu'en mode `light`, choisi par l'utilisateur : ce n'est pas une
+     déduction du moteur sur ce qui serait mieux, c'est une préférence
+     demandée, au sens de la décision 3 (`DECISIONS_REGLES.md` §3). */
+  function penaliteLumiere(boxes, enveloppe, priorities) {
+    if ((priorities || []).indexOf('light') < 0) return 0;
+    var reference = valeurCanonique('VAL-SCORE-LIGHT-FACADE-REFERENCE-001', 2.0);
+    var poids = valeurCanonique('VAL-SCORE-LIGHT-FACADE-SHORTFALL-WEIGHT-001', 8);
+    var longueurParPiece = {};
+    facadeSegments(boxes, enveloppe).forEach(function (segment) {
+      longueurParPiece[segment.room] = (longueurParPiece[segment.room] || 0) + segment.longueur;
+    });
+    var score = 0;
+    boxes.forEach(function (box) {
+      if (PIECES_EN_FACADE.indexOf(box.type) < 0) return;
+      var longueur = longueurParPiece[box.id] || 0;
+      if (longueur < reference) score += (reference - longueur) * poids;
+    });
+    return score;
   }
 
   /* M4a.2 — la façade nécessaire à une entrée et la façade consommée par un
@@ -1088,6 +1224,7 @@
       breakdown[criterion] = (breakdown[criterion] || 0) + amount;
     }
     add('facade', penaliteFacade(boxes, enveloppe));
+    add('servicesProximity', penaliteRegroupementTechnique(boxes));
     var circulationFacade = circulationFacadeMetrics(boxes, enveloppe);
     add('circulationFacade', circulationFacade.cost);
     /* La recherche vise la desserte, non le simple contact : sinon elle
@@ -1178,11 +1315,8 @@
     if (circulation.length > 0 && circulation.requestedServices > 0) {
       add('circulationLength', Math.pow(circulation.metersPerRequestedService, 2) * CIRCULATION_LENGTH_WEIGHT);
     }
-    if (program.options.priority === 'light') {
-      var living = boxes.find(function (room) { return room.id === 'living'; });
-      if (living && living.y0 > 0.012) add('lightPriority', 28);
-    }
-    if (program.options.priority === 'economy') add('economyPriority', edges.length * 0.4);
+    add('lightPriority', penaliteLumiere(boxes, enveloppe, program.options.priorities));
+    if ((program.options.priorities || []).indexOf('economy') >= 0) add('economyPriority', edges.length * 0.4);
     var total = Object.keys(breakdown).reduce(function (sum, key) { return sum + breakdown[key]; }, 0);
     Object.keys(breakdown).forEach(function (key) { breakdown[key] = round(breakdown[key], 2); });
     return {
@@ -3302,6 +3436,13 @@
     var clearanceTotals = {
       targetRequired: 0, targetMet: 0, comfortRequired: 0, comfortMet: 0
     };
+    // PONDERATION §3.1 — un équipement n'est « surdimensionné » que si
+    // resolveSize() a retenu une taille de gamme au-delà du plancher
+    // (room-model.js) : `sizeId` diffère alors de `equipmentId`. Seuls deux
+    // équipements du socle déclarent une gamme aujourd'hui (`bed_140`,
+    // `sofa`) ; le compte reste à 0 partout ailleurs, ce qui est correct,
+    // pas un défaut de couverture.
+    var oversizedCount = 0;
     var s4Rooms = [], furnitureObstacles = [];
     plan.rooms.forEach(function (room) {
       var program = compiledRoomProgram(room);
@@ -3368,6 +3509,9 @@
           inward: pose.inward
         };
       }) : [];
+      room.placements.forEach(function (pose) {
+        if (pose.sizeId !== pose.equipmentId) oversizedCount += 1;
+      });
       room.furnitureOccupancy = result.fits && placement.assessOccupancy
         ? placement.assessOccupancy(result.placements, {
           w: rectangle.x1 - rectangle.x0, h: rectangle.y1 - rectangle.y0
@@ -3438,9 +3582,18 @@
     }
     var preferencesDisabled = root.TechnoHabAblations &&
       (root.TechnoHabAblations.disableM5BranchUtility || root.TechnoHabAblations.disableM5Preferences);
+    // PONDERATION §3.2 — en mode compact, poursuivre le confort et le
+    // pénaliser une fois atteint serait contradictoire : les deux
+    // coexisteraient et puniraient toute pose, qu'elle atteigne le confort
+    // ou non. Le mode compact REMPLACE l'objectif de confort par son
+    // inverse (plus bas), il ne s'y ajoute pas. La cible, elle, reste
+    // poursuivie : viser en dessous du raisonnable n'est pas ce que compact
+    // demande, seulement renoncer au superflu.
+    var compactActive = Boolean(plan.options && plan.options.priorities &&
+      plan.options.priorities.indexOf('compact') >= 0);
     var targetWeight = preferencesDisabled ? 0
       : valeurCanonique(USAGE_TARGET_MISS_VALUE_ID, USAGE_TARGET_MISS_WEIGHT_FALLBACK);
-    var comfortWeight = preferencesDisabled ? 0
+    var comfortWeight = (preferencesDisabled || compactActive) ? 0
       : valeurCanonique(USAGE_COMFORT_MISS_VALUE_ID, USAGE_COMFORT_MISS_WEIGHT_FALLBACK);
     var targetMissed = clearanceTotals.targetRequired - clearanceTotals.targetMet;
     var comfortMissed = clearanceTotals.comfortRequired - clearanceTotals.comfortMet;
@@ -3464,7 +3617,34 @@
     delete plan.scoreBreakdown.usageComfort;
     if (targetCost > 0) plan.scoreBreakdown.usageTarget = targetCost;
     if (comfortCost > 0) plan.scoreBreakdown.usageComfort = comfortCost;
-    plan.score = round((plan.score || 0) + targetCost + comfortCost, 2);
+
+    // PONDERATION §3.1 et §3.2 — actifs seulement en mode compact, sur des
+    // totaux que la boucle ci-dessus vient de calculer pour d'autres raisons :
+    // aucune donnée nouvelle n'est demandée au moteur, seulement un jugement
+    // inverse de celui que targetCost/comfortCost portent déjà en mode normal.
+    var compact = compactActive && !preferencesDisabled;
+    var oversizeWeight = compact
+      ? valeurCanonique('VAL-SCORE-COMPACT-OVERSIZE-WEIGHT-001', 6) : 0;
+    var compactComfortWeight = compact
+      ? valeurCanonique('VAL-SCORE-COMPACT-COMFORT-WEIGHT-001', 2) : 0;
+    var oversizeCost = round(oversizedCount * oversizeWeight, 2);
+    var compactComfortCost = round(clearanceTotals.comfortMet * compactComfortWeight, 2);
+    plan.compactObjective = {
+      method: 'gamme-and-comfort-inverse-v1',
+      active: compact,
+      oversizedCount: oversizedCount,
+      oversizeCost: oversizeCost,
+      oversizeValueId: 'VAL-SCORE-COMPACT-OVERSIZE-WEIGHT-001',
+      comfortAchieved: clearanceTotals.comfortMet,
+      comfortCost: compactComfortCost,
+      comfortValueId: 'VAL-SCORE-COMPACT-COMFORT-WEIGHT-001'
+    };
+    delete plan.scoreBreakdown.compactOversize;
+    delete plan.scoreBreakdown.compactComfort;
+    if (oversizeCost > 0) plan.scoreBreakdown.compactOversize = oversizeCost;
+    if (compactComfortCost > 0) plan.scoreBreakdown.compactComfort = compactComfortCost;
+
+    plan.score = round((plan.score || 0) + targetCost + comfortCost + oversizeCost + compactComfortCost, 2);
     return plan;
   }
 
@@ -3639,7 +3819,9 @@
           return { x0: v.x, y0: v.y, x1: round(v.x + v.width), y1: round(v.y + v.height) };
         })
       },
-      options: program.options, construction: construction.settings,
+      options: program.options,
+      classification: classificationLogement(program.options.surface, program.options.bedrooms),
+      construction: construction.settings,
       constructionBounds: root.TechnoHabConstruction.constructionBounds(construction.walls),
       walls: construction.walls, wallDiagnostics: construction.diagnostics,
       reservations: openingResult.reservations,
@@ -4245,6 +4427,7 @@
     scoreCandidateDetails: scoreCandidateDetails,
     circulationDesserteMetrics: circulationDesserteMetrics,
     normalizeOptions: normalizeOptions,
+    classificationLogement: classificationLogement,
     // Chantier 6 §6.3 — un plan posé à la main passe par le même aval que
     // les plans générés, sinon le test de l'instrument ne teste rien.
     assemblerPlan: assemblerPlan,

@@ -50,7 +50,7 @@
         label: 'Coût d’une cible de dégagement non atteinte',
         quantity: 'score-weight', value: 6, unit: 'points-per-requirement',
         status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
-        source: doctrine('ROADMAP.md §6.1 septies', 'Une pose qui tient le minimum mais manque une cible déclarée reste valide ; elle doit toutefois être classée après une pose qui atteint cette cible. Six points rendent ce manque visible sans permettre à une préférence de compenser une violation HARD. M6 devra étalonner ce poids.'),
+        source: doctrine('ROADMAP_HISTORIQUE.md §6.1 septies', 'Une pose qui tient le minimum mais manque une cible déclarée reste valide ; elle doit toutefois être classée après une pose qui atteint cette cible. Six points rendent ce manque visible sans permettre à une préférence de compenser une violation HARD. M6 devra étalonner ce poids.'),
         scope: scope(ALL_ROOMS)
       },
       {
@@ -58,7 +58,7 @@
         label: 'Coût d’un dégagement de confort non atteint',
         quantity: 'score-weight', value: 2, unit: 'points-per-requirement',
         status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
-        source: doctrine('ROADMAP.md §6.1 septies', 'Le confort déclaré départage deux poses déjà valides et vient après la cible : deux points par exigence manquée maintiennent cette hiérarchie sans créer de seuil de conformité ni de prime par type de pièce. M6 devra étalonner ce poids.'),
+        source: doctrine('ROADMAP_HISTORIQUE.md §6.1 septies', 'Le confort déclaré départage deux poses déjà valides et vient après la cible : deux points par exigence manquée maintiennent cette hiérarchie sans créer de seuil de conformité ni de prime par type de pièce. M6 devra étalonner ce poids.'),
         scope: scope(ALL_ROOMS)
       },
       {
@@ -66,7 +66,7 @@
         label: 'Coût du linéaire de circulation sans desserte',
         quantity: 'score-weight', value: 18, unit: 'points-per-meter',
         status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
-        source: doctrine('ROADMAP.md §6.1 sexies', 'Une branche n’est justifiée que jusqu’à sa dernière porte ou son accès extérieur. Le reliquat sans desserte reçoit provisoirement le même coût métrique que la façade consommée : 18 points par mètre, sans seuil de conformité ni prime de famille. M6 devra étalonner ce poids.'),
+        source: doctrine('ROADMAP_HISTORIQUE.md §6.1 sexies', 'Une branche n’est justifiée que jusqu’à sa dernière porte ou son accès extérieur. Le reliquat sans desserte reçoit provisoirement le même coût métrique que la façade consommée : 18 points par mètre, sans seuil de conformité ni prime de famille. M6 devra étalonner ce poids.'),
         scope: scope(CIRCULATION)
       },
       {
@@ -74,8 +74,105 @@
         label: 'Coût de façade excédentaire consommée par la circulation',
         quantity: 'score-weight', value: 18, unit: 'points-per-meter',
         status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
-        source: doctrine('ROADMAP.md §6.1 quinquies', 'La façade est réservée en priorité aux pièces principales. Une circulation peut en consommer 0,90 m lorsqu’elle accueille l’entrée ; chaque mètre supplémentaire reçoit provisoirement 18 points de peine, assez pour départager deux topologies sans sacrifier une adjacence obligatoire. Ce coefficient N3 classe les candidats et ne constitue jamais un seuil de conformité.'),
+        source: doctrine('ROADMAP_HISTORIQUE.md §6.1 quinquies', 'La façade est réservée en priorité aux pièces principales. Une circulation peut en consommer 0,90 m lorsqu’elle accueille l’entrée ; chaque mètre supplémentaire reçoit provisoirement 18 points de peine, assez pour départager deux topologies sans sacrifier une adjacence obligatoire. Ce coefficient N3 classe les candidats et ne constitue jamais un seuil de conformité.'),
         scope: scope(CIRCULATION)
+      },
+      {
+        // PONDERATION — famille 3.3 : regroupement technique. Spécifié en
+        // préférence dans le référentiel d'origine, jamais implémenté
+        // (PLACEMENT_ET_ADJACENCES.md §2.4), câblé le 24 septembre 2026.
+        id: 'VAL-SCORE-SERVICES-DISTANCE-THRESHOLD-001', version: '1.0.0',
+        label: 'Distance de centroïdes en deçà de laquelle deux pièces humides sont jugées groupées',
+        quantity: 'length', value: 3.5, unit: 'm',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('PLACEMENT_ET_ADJACENCES.md §2.4', 'Les pièces partageant un réseau (eau, évacuation, ventilation) gagnent à se toucher — colonnes mutualisées. Faute de mesure sur corpus, 3,5 m couvre deux pièces humides de gabarit courant (3 à 4 m² chacune) directement voisines, mur commun compris. Convention N3, à étalonner comme les autres poids de ce fichier.'),
+        scope: scope(ALL_ROOMS)
+      },
+      {
+        id: 'VAL-SCORE-SERVICES-DISTANCE-EXCESS-WEIGHT-001', version: '1.0.0',
+        label: 'Coût de l’excédent de distance entre deux pièces humides',
+        quantity: 'score-weight', value: 10, unit: 'points-per-meter',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('PLACEMENT_ET_ADJACENCES.md §2.4', 'Préférence, jamais un blocage : le poids doit départager deux topologies sans jamais peser autant qu’une adjacence demandée (VAL-CIRC-FACADE-EXCESS-WEIGHT-001 = 18). 10 points par mètre au-delà du seuil de groupement tient cet ordre pour l’écart usuel sur un plan de 35 à 250 m². Convention N3, à étalonner sur corpus.'),
+        scope: scope(ALL_ROOMS)
+      },
+      {
+        // PONDERATION — famille 3.4 : lumière, sans orientation réelle.
+        // Remplace le 24 septembre 2026 un proxy binaire (le séjour touche-t-il
+        // le nord du plan) par la longueur de façade réellement obtenue,
+        // seule donnée disponible à ce stade du calcul — voir la note dans
+        // penaliteLumiere() sur ce que le score ne connaît pas encore.
+        id: 'VAL-SCORE-LIGHT-FACADE-REFERENCE-001', version: '1.0.0',
+        label: 'Longueur de façade en deçà de laquelle une pièce principale est jugée peu éclairée en mode lumineux',
+        quantity: 'length', value: 2.0, unit: 'm',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('PONDERATION_AGENCEMENT.md §3.4', 'Convention pure, sans cote externe : une pièce en façade satisfait déjà TH2D-FACADE-001 dès un contact minimal. Le mode lumineux doit distinguer ce minimum d’une façade généreuse ; 2,0 m est une valeur ronde de départ, sans source réglementaire ni professionnelle, à étalonner sur corpus comme les autres poids de ce fichier.'),
+        scope: scope(ALL_ROOMS)
+      },
+      {
+        id: 'VAL-SCORE-LIGHT-FACADE-SHORTFALL-WEIGHT-001', version: '1.0.0',
+        label: 'Coût du déficit de façade d’une pièce principale en mode lumineux',
+        quantity: 'score-weight', value: 8, unit: 'points-per-meter',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('PONDERATION_AGENCEMENT.md §3.4', 'Préférence explicitement choisie par l’utilisateur (mode lumineux) : le poids reste sous celui d’une adjacence de circulation (18) mais au-dessus du regroupement technique implicite (10), puisque c’est ici un choix demandé et non une déduction du moteur. Convention N3, à étalonner sur corpus.'),
+        scope: scope(ALL_ROOMS)
+      },
+      {
+        // PONDERATION — famille 3.1 : compact favorise le petit équipement.
+        // `resolveSize()` (room-model.js) choisit déjà la plus grande taille
+        // de gamme dont le seuil de surface est atteint, sans lire la
+        // priorité. Ce poids ne change pas ce choix géométrique — il classe
+        // les candidats après coup, comme tous les critères de ce fichier.
+        id: 'VAL-SCORE-COMPACT-OVERSIZE-WEIGHT-001', version: '1.0.0',
+        label: 'Coût d’un équipement monté en gamme au-delà de son plancher, en mode compact',
+        quantity: 'score-weight', value: 6, unit: 'points-per-requirement',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('PONDERATION_AGENCEMENT.md §3.1', 'Un équipement dont resolveSize() retient une taille au-delà du plancher (ex. bed_140 → bed_160/180) représente le même ordre d’événement qu’une cible de dégagement manquée : même poids que VAL-USAGE-TARGET-MISS-WEIGHT-001 (6), par symétrie plutôt que par mesure. Convention N3, à étalonner sur corpus.'),
+        scope: scope(ALL_ROOMS)
+      },
+      {
+        // PONDERATION — famille 3.2 : compact pénalise le dégagement
+        // généreux. Symétrique de VAL-USAGE-COMFORT-MISS-WEIGHT-001 : ce
+        // que ce poids-là facture quand le confort déclaré n’est PAS atteint,
+        // celui-ci le facture quand il L’EST, mais seulement en mode compact.
+        // Le solveur expose déjà l’usage réellement alloué par pose —
+        // `placement.assessClearanceLevels()`, vérifié avant d’écrire cette
+        // règle — donc rien de nouveau n’est demandé au moteur.
+        id: 'VAL-SCORE-COMPACT-COMFORT-WEIGHT-001', version: '1.0.0',
+        label: 'Coût d’un dégagement de confort atteint, en mode compact',
+        quantity: 'score-weight', value: 2, unit: 'points-per-requirement',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('PONDERATION_AGENCEMENT.md §3.2', 'Symétrique exact de VAL-USAGE-COMFORT-MISS-WEIGHT-001 : même poids (2 points-par-exigence) pour le même phénomène jugé en sens inverse — le confort n’est ni bon ni mauvais en soi, seulement désirable ou non selon la préférence exprimée. Convention N3, à étalonner sur corpus.'),
+        scope: scope(ALL_ROOMS)
+      },
+      {
+        // CLASSIFICATION_LOGEMENT §2.2 — bandes de classe de taille.
+        // Explicitement non sourcées : DATASOURCE_EQUIPEMENTS.md a déjà
+        // renoncé à sourcer sa Table B pour la même raison. Publiées comme
+        // convention N3, comme les poids de PONDERATION_AGENCEMENT.md, pas
+        // comme un fait. Aucun poids de score n'en dépend à ce jour.
+        id: 'VAL-CLASSE-PETIT-MIN-001', version: '1.0.0',
+        label: 'Surface à partir de laquelle un logement quitte la classe « petit »',
+        quantity: 'area', value: 55, unit: 'm2',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('CLASSIFICATION_LOGEMENT.md §2.2', 'Convention pure, faute de Table B sourcée (DATASOURCE_EQUIPEMENTS.md). Aucun poids n’en dépend encore ; publiée pour que la classe soit lisible sur le plan avant d’être exploitée.'),
+        scope: scope(ALL_ROOMS)
+      },
+      {
+        id: 'VAL-CLASSE-MOYEN-MIN-001', version: '1.0.0',
+        label: 'Surface à partir de laquelle un logement quitte la classe « moyen »',
+        quantity: 'area', value: 90, unit: 'm2',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('CLASSIFICATION_LOGEMENT.md §2.2', 'Convention pure, même statut que le seuil « petit ».'),
+        scope: scope(ALL_ROOMS)
+      },
+      {
+        id: 'VAL-CLASSE-GRAND-MIN-001', version: '1.0.0',
+        label: 'Surface à partir de laquelle un logement quitte la classe « grand »',
+        quantity: 'area', value: 140, unit: 'm2',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('CLASSIFICATION_LOGEMENT.md §2.2', 'Convention pure, même statut que les deux seuils précédents. Au-delà : « très grand », jusqu’au plafond du moteur (250 m²).'),
+        scope: scope(ALL_ROOMS)
       },
       {
         id: 'VAL-CIRC-PROGRAM-AREA-MIN-001', version: '1.0.0',
@@ -179,7 +276,7 @@
         id: 'VAL-WC-PROGRAM-AREA-MAX-RATIO-001', version: '1.0.0',
         label: 'Plafond de surface du WC rapporté au besoin meublable',
         quantity: 'ratio', value: 3.5, unit: 'ratio', status: 'ADOPTED', ruleLevel: 'HARD',
-        source: doctrine('ROADMAP.md §6.6 et §9.7', 'Le plafond correspond à environ 3,6 m² avec le besoin meublable pilote de 1,04 m² : borne haute du profil WC courant incluant la tolérance de matérialisation, mais fermée avant que la pièce ne redevienne variable d’ajustement. Un centile observé entérinerait précisément le défaut que O1 corrige.'),
+        source: doctrine('ROADMAP_HISTORIQUE.md §6.6 et §9.7', 'Le plafond correspond à environ 3,6 m² avec le besoin meublable pilote de 1,04 m² : borne haute du profil WC courant incluant la tolérance de matérialisation, mais fermée avant que la pièce ne redevienne variable d’ajustement. Un centile observé entérinerait précisément le défaut que O1 corrige.'),
         scope: scope(WC)
       },
       {

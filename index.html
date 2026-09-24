@@ -25,6 +25,7 @@
     <script defer src="./assets/generator.js"></script>
     <script defer src="./assets/rules.js"></script>
     <script defer src="./assets/evaluation.js"></script>
+    <script defer src="./assets/dxf.js"></script>
     <script defer src="./assets/app.js"></script>
     <script defer src="./assets/composition-loader.js"></script>
   </head>
@@ -404,6 +405,20 @@
         </a>
         <h1 id="page-title" class="topbar-title">Laboratoire de plan</h1>
         <div class="topbar-meta">
+          <details id="fast-save" class="fast-save">
+            <summary id="fast-save-toggle" aria-label="Archiver ce plan pour analyse" title="Archiver ce plan pour analyse">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 7h16v13H4zM3 3h18v4H3zM9 11h6" />
+              </svg>
+              <span id="fast-save-count">0</span>
+            </summary>
+            <div class="fast-save-panel">
+              <p><strong>Plans à analyser</strong><span>Conservés uniquement dans ce navigateur.</span></p>
+              <button id="fast-save-current" type="button" disabled>Archiver le plan actif</button>
+              <ol id="fast-save-list"></ol>
+              <button id="fast-save-export" type="button" disabled>Exporter les données</button>
+            </div>
+          </details>
           <span class="mode-badge"><i aria-hidden="true"></i> Moteur local</span>
           <span id="app-version" class="version"></span>
         </div>
@@ -464,10 +479,15 @@
             </fieldset>
 
             <fieldset class="field priority-field">
-              <legend>Priorité du plan</legend>
-              <label class="choice"><input type="radio" name="priority" value="compact" checked /><span><strong>Compact</strong><small>Volume équilibré</small></span></label>
-              <label class="choice"><input type="radio" name="priority" value="light" /><span><strong>Lumière</strong><small>Façade plus large</small></span></label>
-              <label class="choice"><input type="radio" name="priority" value="economy" /><span><strong>Économie</strong><small>Découpe simplifiée</small></span></label>
+              <!-- PONDERATION — décision du 24 septembre 2026 : les trois
+                   priorités portent sur des critères de score indépendants
+                   (voir PONDERATION_AGENCEMENT.md) et se cumulent, choix de
+                   l'utilisateur. Cases à cocher, plus radios : le moteur
+                   les accepte comme un ensemble depuis normalizeOptions(). -->
+              <legend>Priorité du plan <small>(cumulable)</small></legend>
+              <label class="choice"><input type="checkbox" name="priority" value="compact" checked /><span><strong>Compact</strong><small>Volume équilibré</small></span></label>
+              <label class="choice"><input type="checkbox" name="priority" value="light" /><span><strong>Lumière</strong><small>Façade plus large</small></span></label>
+              <label class="choice"><input type="checkbox" name="priority" value="economy" /><span><strong>Économie</strong><small>Découpe simplifiée</small></span></label>
             </fieldset>
 
             <div class="switches">
@@ -580,6 +600,11 @@
               </div>
               <p id="analysis-meta" class="analysis-meta"></p>
               <p class="analysis-intro">Évaluez chaque point selon ce plan précis. Les constats sont enregistrés localement par graine et par rang.</p>
+              <fieldset class="analysis-mode">
+                <legend>Mode d’analyse</legend>
+                <label><input type="radio" name="analysis-mode" value="complete" checked> Complète</label>
+                <label><input type="radio" name="analysis-mode" value="short"> Courte</label>
+              </fieldset>
               <div class="analysis-guidance">
                 <p id="analysis-progress" class="analysis-progress" role="status" aria-live="polite"></p>
                 <p id="analysis-cell-help" class="analysis-cell-help">Survolez une réponse ou placez-y le focus pour lire sa portée.</p>
@@ -631,6 +656,7 @@
             <button id="download-json" class="secondary-button" type="button">Exporter JSON</button>
             <button id="download-analysis" class="secondary-button" type="button" disabled>Exporter l’analyse</button>
             <button id="download-svg" class="secondary-button" type="button">Exporter SVG</button>
+            <button id="download-dxf" class="secondary-button" type="button">Exporter DXF</button>
             <button id="download-log" class="secondary-button" type="button">Exporter le journal</button>
             <button id="download-eval" class="secondary-button" type="button">Exporter les avis</button>
             </div>

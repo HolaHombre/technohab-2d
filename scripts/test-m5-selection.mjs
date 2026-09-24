@@ -15,8 +15,14 @@ const G = globalThis.TechnoHabGenerator;
 const P = globalThis.TechnoHabPlacement;
 const R = globalThis.TechnoHabRules;
 const options = {
+  // PONDERATION §3.2 (24 septembre 2026) : le mode compact inverse
+  // désormais l'objectif de confort au lieu de s'y ajouter — voir
+  // generator.js, validatePlanUsage(). Ce fichier teste le mécanisme
+  // GÉNÉRAL target/comfort, pas le compact ; 'compact' n'avait ici qu'une
+  // valeur arbitraire et entrait en conflit avec ce nouveau comportement.
+  // 'economy' garde l'intention du test intacte.
   surface: 90, bedrooms: 3, bathrooms: 1,
-  separateKitchen: true, includeWc: true, priority: 'compact', shape: 'rectangle'
+  separateKitchen: true, includeWc: true, priority: 'economy', shape: 'rectangle'
 };
 
 const clearance = P.assessClearanceLevels([{

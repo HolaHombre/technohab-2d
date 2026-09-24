@@ -38,6 +38,7 @@
       rank: context.result.selectionIndex + 1,
       ratings: {},
       notes: {},
+      mode: 'complete',
       synthesis: '',
       firstCorrection: '',
       updatedAt: new Date().toISOString()
@@ -256,6 +257,7 @@
     var synthesis = document.getElementById('analysis-synthesis');
     var correction = document.getElementById('analysis-first-correction');
     var panelExport = document.getElementById('analysis-export-panel');
+    var modeInputs = panel.querySelectorAll('input[name="analysis-mode"]');
     var planView = document.getElementById('plan-view');
     var planSvg = document.getElementById('plan-svg');
     var drafts = readDrafts();
@@ -276,11 +278,18 @@
       return data.criteria.filter(function (criterion) { return Boolean(draft && draft.ratings[criterion.id]); }).length;
     }
 
+    function isComplete() {
+      if (!draft) return false;
+      if (draft.mode === 'short') return Boolean(draft.synthesis && draft.firstCorrection);
+      return answeredCount() === data.criteria.length;
+    }
+
     function updateProgress(message) {
       var count = answeredCount();
-      progress.textContent = count + '/' + data.criteria.length + ' points renseignés.';
-      progress.dataset.state = count === data.criteria.length ? 'complete' : 'partial';
-      panelExport.disabled = count !== data.criteria.length;
+      progress.textContent = draft && draft.mode === 'short'
+        ? 'Deux réponses de synthèse.' : count + '/' + data.criteria.length + ' points renseignés.';
+      progress.dataset.state = isComplete() ? 'complete' : 'partial';
+      panelExport.disabled = !isComplete();
       if (message !== undefined) status.textContent = message;
     }
 
@@ -374,6 +383,9 @@
       });
       synthesis.value = draft.synthesis || '';
       correction.value = draft.firstCorrection || '';
+      draft.mode = draft.mode === 'short' ? 'short' : 'complete';
+      panel.dataset.mode = draft.mode;
+      Array.prototype.forEach.call(modeInputs, function (input) { input.checked = input.value === draft.mode; });
       updateProgress('Brouillon lié à ce plan.');
     }
 
@@ -428,7 +440,7 @@
       data.ratings.forEach(function (rating) { ratingLabels[rating.id] = rating.label; });
       var counts = {};
       data.ratings.forEach(function (rating) { counts[rating.id] = 0; });
-      var criteria = data.criteria.map(function (criterion) {
+      var criteria = (exportedDraft.mode === 'short' ? [] : data.criteria).map(function (criterion) {
         var rating = exportedDraft.ratings[criterion.id];
         counts[rating] += 1;
         return {
@@ -461,6 +473,7 @@
           navigation: navigationPerformance()
         },
         analysis: {
+          mode: exportedDraft.mode || 'complete',
           complete: true,
           counts: counts,
           criteria: criteria,
@@ -502,12 +515,16 @@
 
     function exportCurrent() {
       if (!context().result) return Promise.resolve(false);
-      if (answeredCount() !== data.criteria.length) {
+      if (!isComplete()) {
         open();
-        updateProgress('Complétez les neuf points, quitte à choisir « Non observé », avant l’export.');
-        var missing = data.criteria.find(function (criterion) { return !draft.ratings[criterion.id]; });
+        updateProgress(draft.mode === 'short'
+          ? 'Renseignez la synthèse et la première correction avant l’export.'
+          : 'Complétez les neuf points, quitte à choisir « Non observé », avant l’export.');
+        var missing = draft.mode === 'short' ? null
+          : data.criteria.find(function (criterion) { return !draft.ratings[criterion.id]; });
         var missingButton = missing && grid.querySelector('[data-criterion="' + missing.id + '"]');
         if (missingButton) missingButton.focus();
+        else if (draft.mode === 'short') (draft.synthesis ? correction : synthesis).focus();
         return Promise.resolve(false);
       }
       panelExport.disabled = true;
@@ -540,8 +557,17 @@
     }
 
     renderGrid();
-    synthesis.addEventListener('input', function () { if (draft) { draft.synthesis = synthesis.value.trim(); saveDraft(); } });
-    correction.addEventListener('input', function () { if (draft) { draft.firstCorrection = correction.value.trim(); saveDraft(); } });
+    synthesis.addEventListener('input', function () { if (draft) { draft.synthesis = synthesis.value.trim(); saveDraft(); updateProgress('Brouillon enregistré dans ce navigateur.'); } });
+    correction.addEventListener('input', function () { if (draft) { draft.firstCorrection = correction.value.trim(); saveDraft(); updateProgress('Brouillon enregistré dans ce navigateur.'); } });
+    Array.prototype.forEach.call(modeInputs, function (input) {
+      input.addEventListener('change', function () {
+        if (!draft || !input.checked) return;
+        draft.mode = input.value;
+        panel.dataset.mode = draft.mode;
+        saveDraft();
+        updateProgress(draft.mode === 'short' ? 'Mode court : deux réponses suffisent.' : 'Mode complet : neuf axes à renseigner.');
+      });
+    });
     closeButton.addEventListener('click', close);
     panelExport.addEventListener('click', exportCurrent);
     panel.addEventListener('keydown', function (event) {
