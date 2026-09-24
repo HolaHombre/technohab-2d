@@ -1,15 +1,14 @@
 # Profil de pièce — Bureau
 
-**`BUREAU` · pièce non générée · maturité `C2` · 26 août 2026**
+**`BUREAU` · pièce générable · maturité `C4` · 24 septembre 2026**
 
 Vague **C-P4**, et lot pilote **L1** du chantier 7. Gabarit :
 [`GABARIT_PIECE.md`](../GABARIT_PIECE.md). Source :
 [`agencement/bureau.md`](../agencement/bureau.md).
 
-**Premier profil d'une pièce que le moteur ne produit pas.** Le socle la
-décrit — rôle, agrément, deux équipements — mais ses planchers valent `null` et
-son `trigger` aussi : elle n'entre dans aucun programme. Ce profil décrit donc
-ce qu'elle devra être, et la principale difficulté n'est pas dimensionnelle.
+Le socle décrit son rôle, son agrément et ses équipements. L1 interprète son
+`trigger: count` et le questionnaire permet de demander une variante compacte
+ou convertible. La principale difficulté n'est pas dimensionnelle.
 
 ---
 
@@ -18,7 +17,7 @@ ce qu'elle devra être, et la principale difficulté n'est pas dimensionnelle.
 ```text
 ROOM_TYPE  BUREAU
 FAMILY     DAY_ROOM
-VARIANTS   à définir — voir ci-dessous
+VARIANTS   compact | convertible
 
 PRIMARY_FUNCTIONS
 - travailler assis à un poste fixe
@@ -40,14 +39,15 @@ géométrie, ni le même statut dans le programme :
 |---|---|---|
 | Bureau fermé | pièce autonome | ce profil |
 | Coin bureau dans le séjour | **zone** d'une pièce hôte | lot L2, capacité manquante |
-| Bureau dans une chambre | **équipement** de la chambre | `desk`, non activé en chambre |
+| Bureau dans une chambre | **équipement** de la chambre | `desk`, actif en chambre enfant dès 11 m² |
 | Chambre d'amis convertible | pièce **bivalente** | aucun mécanisme |
 
-C'est le même arbitrage que celui posé pour la salle à manger et le dressing —
-*pièce, zone ou équipement ?* — et il est ouvert depuis le 18 août comme
-condition d'entrée du chantier 7. Tant qu'il n'est pas rendu, ce profil ne peut
-pas dépasser `C2`, non par manque de données mais par indétermination de son
-objet.
+La décision du 26 août est appliquée : le bureau est une fonction. Elle peut
+être hébergée comme équipement d'une chambre, devenir plus tard une zone du
+séjour, ou émerger comme pièce autonome. Le présent profil C4 éprouve cette
+dernière forme, désormais activée dans le questionnaire et le générateur.
+La bivalence reste une variante d'enveloppe : les programmes travail et
+chambre sont vérifiés séparément, sans additionner simultanément leurs meubles.
 
 Un ou deux utilisateurs, rarement simultanés. Occupation longue et immobile,
 comme la chambre — d'où le poids de la lumière et de l'acoustique, que le plan
@@ -58,7 +58,7 @@ comme la chambre — d'où le poids de la lumière et de l'acoustique, que le pl
 | Équipement | Minimal | Moyen | Large | Nature | Emprise 2D |
 |---|---|---|---|---|---|
 | Plateau de travail | obligatoire | obligatoire | obligatoire | fonctionnel | **oui** |
-| Siège | obligatoire | obligatoire | obligatoire | fonctionnel | inclus dans le recul |
+| Chaise de bureau | obligatoire | obligatoire | obligatoire | fonctionnel | **oui** — 0,50 × 0,50 |
 | Rangement documents | recommandé | oui | oui | fonctionnel | **oui**, dès 7 m² |
 | Éclairage de poste | obligatoire | obligatoire | obligatoire | confort | non |
 | Prises et réseau | obligatoire | obligatoire | obligatoire | fonctionnel | non |
@@ -67,14 +67,17 @@ comme la chambre — d'où le poids de la lumière et de l'acoustique, que le pl
 | Couchage d'appoint | — | option | oui | fonctionnel | oui — voir §5 |
 | Fenêtre | souhaitable | souhaitable | souhaitable | confort | **contrainte de baie** |
 
-Le socle porte deux équipements : `desk` requis, `bookcase` optionnel dès 7 m².
-Le second est `assumed: true` — sa longueur est la convention `MODULE = 1,20`.
+Le socle porte trois équipements : `desk` et `office_chair` requis,
+`bookcase` optionnel dès 7 m². Le dernier est `assumed: true` — sa longueur est
+la convention `MODULE = 1,20`.
 
-**Le siège n'a pas d'emprise propre** : il est compris dans le recul de 0,90 m
-derrière le plateau, comme les chaises le sont dans la zone d'usage de la table
-à manger. C'est cohérent avec le traitement retenu ailleurs, et il faut le
-maintenir — matérialiser le siège en emprise **et** garder le recul serait un
-double comptage, exactement la réserve posée par `GAMMES_EQUIPEMENTS.md` §7.
+**Décision du 24 septembre : la chaise a sa propre emprise.** Le plateau ne
+porte plus une bande fictive contenant siège et mouvement. `office_chair`
+occupe 0,50 × 0,50 m et protège derrière elle 0,60 m au minimum, 0,80 m en
+cible et 0,90 m en confort. La chaise et le plateau forment un poste de travail
+indivisible : la chaise reste dans l'axe du plateau, lui fait face et conserve
+un écart maximal de 0,20 m. Cette relation et son recul arrière sont des
+contraintes dures.
 
 ## 3. Dimensions des équipements
 
@@ -91,23 +94,23 @@ distance œil–écran 0,50–0,70 m (`O4`), et la hauteur des rangements.
 ## 4. Enveloppes d'usage
 
 ```text
-PHYSICAL_FOOTPRINT     plateau, rangements
+PHYSICAL_FOOTPRINT     plateau, chaise, rangements
 EXCLUSIVE_USAGE_ZONE   aucune
-SHARED_USAGE_ZONE      recul derrière le plateau, devant les rangements
+SHARED_USAGE_ZONE      recul derrière la chaise, devant les rangements
 TEMPORARY_SWING_ZONE   débattement de porte
 ACCESS_ZONE            porte → poste
 ```
 
 | Dégagement | `HARD_MIN` | `TARGET` | `COMFORT` | Statut |
 |---|---:|---:|---:|---|
-| Recul derrière le plateau | **0,90** | 1,00 | 1,10 | `O2` `[S3]` ; **socle : 0,90** |
+| Recul derrière la chaise | **0,60** | 0,80 | 0,90 | décision C-P4b du 24 septembre |
 | Devant la bibliothèque | 0,60 | 0,70 | 1,00 | socle : 0,60 ; `G7` demande 0,70 |
 | Passage résiduel | 0,60 | 0,70 | 0,90 | `N3` |
 
-**L'écart de la fiche de sourcing est corrigé.** Elle relevait un recul de
-0,80 m, « sous la borne basse de `O2` », et demandait 0,90. Le socle porte
-aujourd'hui **0,90 m**. Comme la chambre et la salle d'eau, cette pièce a vu son
-écart principal résorbé sans que la fiche ait été mise à jour.
+**L'écart de la fiche de sourcing est explicité.** Elle relevait un recul de
+0,80 m et demandait 0,90. Le socle distingue désormais 0,60 m comme minimum
+dur, 0,80 m comme cible et 0,90 m comme confort. Ces trois niveaux sont portés
+par la chaise elle-même.
 
 Reste le dégagement de bibliothèque à 0,60 m, sous les 0,70 du coulissant — mais
 une bibliothèque **ouverte** n'a pas de zone de service propre du tout : on y
@@ -117,8 +120,7 @@ faudrait zéro plus un passage.
 
 ## 5. Trois classes dimensionnelles
 
-Emprises **dérivées** de la source, faute de mesure possible — la pièce n'étant
-pas générée, aucun domaine compilé n'existe :
+Emprises **dérivées** de la source, puis contrôlées dans le domaine compilé :
 
 | Configuration | Emprise | Calcul |
 |---|---|---|
@@ -391,24 +393,25 @@ ROLE         principale
 AGREMENT     0.6
 MIN_PROGRAM  5.00 / 1.80  ·  9.00 / 2.50 si convertible_en_chambre
 MAX_RATIO    ~2.0 × besoin                       # plafond doctrinal N3, ≈ 14 m²
-TRIGGER      option du questionnaire             # aujourd'hui null : pièce non générée
+TRIGGER      count(from: offices, variantFrom: officeVariant)
 SERVICES     electricite, reseau                 # `reseau` MANQUANT au socle
 
 REQUIRED_OBJECTS
 - desk        1.20 × 0.60 min · gamme 1.20 / 1.40 / 1.80
+- office_chair 0.50 × 0.50, requis avec le plateau
 OPTIONAL_OBJECTS
 - bookcase    minRoomArea 7, assumed
 - drawer_unit minRoomArea 9
 - sofa_bed    si convertible
 
 FUNCTIONAL_ZONES
-- desk_back      0.90 HARD / 1.00 TARGET / 1.10 COMFORT, shared
+- chair_back     0.60 HARD / 0.80 TARGET / 0.90 COMFORT, shared
 - shelf_front    0 propre + passage                 # cas-test du champ `passage`
 - door_swing     exclusive si battante              # MANQUANT
 
 HARD_CONSTRAINTS
-- plateau et son recul logés
-- S3 : le battant ne balaie pas le siège reculé
+- plateau, chaise et recul propre de la chaise logés
+- S3 : le battant ne balaie ni la chaise ni son recul
 - S4
 - non traversée par une circulation
 SOFT_CONSTRAINTS
@@ -422,9 +425,9 @@ PREFERRED_ADJACENCIES     circulation, entree, bedroom
 UNDESIRABLE_ADJACENCIES   living, kitchen, bath, wc
 FORBIDDEN_RELATIONS       traversee(bureau)
 
-OPEN_ARBITRATION
-- pièce, zone du séjour, équipement de chambre ou pièce bivalente ?
-- compte-t-il comme pièce principale ? (effet sur décence et débits)
+DECISIONS
+- fonction hébergée ou émergente selon `DECISIONS_PROGRAMME.md`
+- pièce autonome classée principale ; activation produit livrée par L1
 
 SIZE_CLASSES    MINIMAL | MEDIUM | LARGE
 ACCESSIBILITY   STANDARD | ADAPTABLE | ACCESSIBLE
@@ -435,9 +438,8 @@ QUALITY_EXTRA   daylight_orientation, convertibility, acoustic_isolation
 
 ## Annexe — écarts au moteur, au 26 août 2026
 
-**Corrigé depuis la fiche de sourcing :** le recul est passé de 0,80 à
-**0,90 m**, la borne basse de `O2`. Comme pour la chambre et la salle d'eau,
-l'écart principal a été résorbé sans que la fiche soit mise à jour.
+**Corrigé depuis la fiche de sourcing :** le recul est maintenant gradué en
+minimum 0,60 m, cible 0,80 m et confort 0,90 m, chacun attaché à la chaise.
 
 **Caduc :** l'écart n° 4 — « `O5` demande la géométrie des baies, à verser au
 dossier évolution structurelle » — **ne tient plus.** Le moteur pose des
@@ -445,22 +447,17 @@ fenêtres avec leur côté, leur position et leur réservation. La règle
 d'orientation du poste est calculable dès aujourd'hui. C'est le second cas du
 dossier, après le triangle d'activité de la cuisine.
 
-**Restent :**
+**Restent après C-P4b :**
 
-1. **la pièce n'est pas générée** — `trigger: null`, planchers `null`. C'est le
-   lot pilote L1 du chantier 7, dont la vNext fait dépendre le mécanisme
-   d'activation ;
-2. **son identité n'est pas tranchée** — pièce, zone, équipement ou pièce
-   bivalente. Arbitrage ouvert depuis le 18 août, et c'est lui, non les cotes,
-   qui bloque le passage en `C3` ;
-3. **le 9 m² hérité n'est pas justifié** — ce profil propose de le remplacer par
-   une contrainte explicite de convertibilité, qui dit *pourquoi* plutôt que
-   *combien* ;
-4. **le dégagement de bibliothèque à 0,60 m** — une bibliothèque ouverte ne
+1. **la zone de séjour n'est pas activée** — elle attend toujours F3 ;
+2. **la convertibilité reste une alternance de programmes** — le témoin C4
+   vérifie que la même enveloppe accepte séparément travail et chambre ; la
+   composition temporelle complète appartient à C-P5 ;
+3. **le dégagement de bibliothèque à 0,60 m** — une bibliothèque ouverte ne
    demande aucun dégagement propre, seulement un passage. Le socle lui donne une
    valeur là où il faudrait zéro ;
-5. **le service `reseau` n'existe pas** — seule pièce à le réclamer vraiment ;
-6. **compter le bureau comme pièce principale change les débits de ventilation
+4. **le service `reseau` n'existe pas** — seule pièce à le réclamer vraiment ;
+5. **compter le bureau comme pièce principale change les débits de ventilation
    de tout le logement** (`REF-009`) et le calcul de décence. Aucun autre type
    du socle n'a d'effet hors de lui-même ; ce couplage devra être explicite
    avant l'activation.

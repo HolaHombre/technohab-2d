@@ -221,10 +221,18 @@
         <path d="M9 47h102" stroke-dasharray="8 6" />
       </symbol>
 
-      <symbol id="furn-desk" viewBox="0 0 140 115" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Bureau avec assise" data-w="1.40" data-h="0.70" data-rotatable="true">
-        <path d="M1 1h138v68H1z" />
-        <rect x="45" y="75" width="50" height="38" rx="5" />
-        <path d="M45 103h50" />
+      <!-- Le siège appartient au recul d'usage de 0,90 m, pas à l'emprise du
+           meuble. Le dessiner dans ce symbole comprimait plateau et chaise dans
+           1,20 × 0,60 m alors que le solveur les traite séparément. -->
+      <symbol id="furn-desk" viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Bureau" data-w="1.20" data-h="0.60" data-rotatable="true">
+        <path d="M1 1h118v58H1z" />
+        <rect x="38" y="8" width="44" height="22" rx="2" />
+        <path d="M60 30v9M50 39h20M9 9h20v42H9z" />
+      </symbol>
+
+      <symbol id="furn-office_chair" viewBox="0 0 50 50" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-label="Chaise de bureau" data-w="0.50" data-h="0.50" data-rotatable="true">
+        <rect x="9" y="9" width="32" height="30" rx="5" />
+        <path d="M8 7c9-6 25-6 34 0M25 39v7M18 46h14" />
       </symbol>
 
       <symbol id="furn-bookcase" viewBox="0 0 120 35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Bibliothèque" data-w="1.20" data-h="0.35" data-stretch="x" data-rotatable="true">
@@ -438,6 +446,15 @@
               </label>
             </div>
 
+            <label class="field">
+              <span>Bureau indépendant</span>
+              <select name="officeType">
+                <option value="none" selected>Aucun</option>
+                <option value="compact">Compact · travail</option>
+                <option value="convertible">Convertible · travail et couchage possible</option>
+              </select>
+            </label>
+
             <fieldset class="field priority-field">
               <legend>Forme de l’enveloppe</legend>
               <label class="choice"><input type="radio" name="shape" value="rectangle" checked /><span><strong>Rectangle</strong><small>Quatre angles droits</small></span></label>
@@ -626,9 +643,36 @@
         </div>
       </section>
 
+      <section id="catalog-page" class="catalog-page" aria-labelledby="catalog-title" hidden>
+        <nav class="catalog-nav" aria-label="Navigation du catalogue">
+          <a class="brand" href="#atelier" aria-label="Revenir au laboratoire de plan">
+            <span class="brand-mark" aria-hidden="true">TH</span>
+            <span>TechnoHab</span>
+          </a>
+          <a class="catalog-return" href="#atelier">← Laboratoire de plan</a>
+        </nav>
+        <header class="catalog-heading">
+          <div>
+            <p class="eyebrow">Référentiel local</p>
+            <h2 id="catalog-title">Équipements et pièces disponibles</h2>
+            <p>Ce catalogue reprend les données utilisées par le moteur. <strong>Implémenté</strong> signifie atteignable dans un plan ; <strong>En cours</strong>, déclaré dans une pièce active mais pas encore servi par tout le parcours produit ; <strong>Prévu</strong>, réservé à une pièce future. L’édition depuis cette page sera ajoutée dans une prochaine étape.</p>
+          </div>
+          <span class="mode-badge"><i aria-hidden="true"></i> Catalogue local</span>
+        </header>
+        <section aria-labelledby="catalog-equipment-title">
+          <h3 id="catalog-equipment-title">Équipements</h3>
+          <div id="catalog-equipment-list" class="catalog-grid"></div>
+        </section>
+        <section aria-labelledby="catalog-room-title">
+          <h3 id="catalog-room-title">Pièces</h3>
+          <div id="catalog-room-list" class="catalog-grid catalog-grid--rooms"></div>
+        </section>
+      </section>
+
       <footer class="app-footer">
         <span class="footer-note">Plan de principe non contractuel · calcul local</span>
         <div class="footer-tools" aria-label="Outils du plan">
+          <a id="catalog-open" class="footer-tool" href="#catalogue">Équipements &amp; pièces</a>
           <details class="rules-section footer-rules">
             <summary class="rules-summary footer-tool">
               <span>Contrôles du plan</span>

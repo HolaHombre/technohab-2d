@@ -208,9 +208,10 @@ explorateur heuristique plutôt qu'un résolveur complet.
 
 ### 6.4 Le référentiel architectural est incomplet
 
-Chambre, séjour, cuisine, WC, circulation, entrée et rangement sont consolidés
-à C4 sur une portée déclarée. La salle d'eau autonome et le bureau restent à
-C2 ; d'autres fonctions domestiques ne sont pas encore instruites une à une.
+Chambre, séjour, cuisine, WC, circulation, entrée, rangement et bureau autonome
+sont consolidés à C4 sur une portée déclarée. Le bureau est générable en
+variante compacte ou convertible depuis L1. La salle d'eau autonome reste à C2 et
+d'autres fonctions domestiques ne sont pas encore instruites une à une.
 
 Même pour les profils C4, certaines relations fines restent ouvertes : ouvrants
 des équipements, réseaux, lumière, ventilation, mobilier dépendant, usages

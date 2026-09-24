@@ -6,10 +6,10 @@ Document de pilotage du générateur de plans 2D.
 
 **Statut : M0 à M5.2, dont M5.1 produit, M4c limité, C-P1.2 et C-P2 sont
 livrés et branchés. M5.3 est un prototype gelé, non accepté comme lot terminé.
-La reprise visuelle `V-MVP` est le chantier actif. Elle livre d'abord un parcours
-principal utilisable, puis une revue autorise sa correction avant le polish.
-M5.4 — audit amont piloté et refonte de la roadmap — reprend ensuite sur cette
-interface, avant la décision I1 d'intégration des autres pièces, puis M6.**
+Le parcours visuel est accepté sur ordinateur et sa revue mobile continue.
+M5.4 est clos sur huit plans et les matrices statiques du produit. **I1 est le
+chantier actif : sa première tranche ajoute le bureau comme équipement d'une
+chambre enfant assez grande, avant de consolider la pièce bureau autonome.**
 Le mobilier, la porte, le passage
 face-à-face, la longueur de desserte, les topologies explicites et le parcours meublé participent désormais à la génération. Trois audits techniques
 (26–27 août) sont au §6.1 bis ; l’audit d’émergence fonctionnelle du même jour
@@ -40,6 +40,9 @@ n'en dépend pas),
 `PLACEMENT_ET_ADJACENCES.md` (nature des adjacences, placement des pièces),
 `MURS_EPAIS.md` (murs dimensionnés, surfaces utiles et méthode MVP),
 `VEILLE_NORMATIVE.md` (sources, cotes tracées, matrice de contrôle),
+`AUDIT_REFERENTIEL_EXTERNE.md` (REF-1, trame de l'audit de complétude du référentiel),
+`DIFFERENTIEL_REFERENTIEL.md` (REF-1, livrable : verdicts ligne à ligne),
+`REFERENTIEL_ETENDU.md` (REF-1, domaines reportés décrits sans être ouverts),
 `DA_ICONES_PLAN.md` (icônes de pièces),
 `DA_CHEMINEMENT_PLAN.md` (parcours de desserte et accès),
 `DA_FORMES_ENVELOPPE.md` (vignettes de choix de forme),
@@ -59,19 +62,46 @@ seuls le travail actif et le todo immédiat suivent ce format.
 
 | Item courant | État | Gate de validation | Vérification | Documentation | Mis à jour |
 |---|---|---|---|---|---|
-| `V-MVP — parcours visuel principal utilisable` | `in_progress` | Un utilisateur peut ouvrir explicitement le worktree local, saisir un programme, générer, comparer, inspecter et exporter sans explication extérieure ; la version locale et la dernière version publique ne peuvent pas être confondues ; les états de concession et d'échec restent lisibles | Relecture manuelle du parcours sur ordinateur puis mobile ; accès local vérifié depuis le poste de pilotage ; commandes proportionnées aux fichiers touchés ; validation minimale du dépôt avant clôture | `ROADMAP.md` ; documentation d'interface seulement si le parcours retenu l'exige | 2026-09-24 |
+| `I1/C-P4a — bureau et chaise optionnels dans la chambre enfant` | `needs_review` | À partir de 11 m², une chambre enfant demande le couple plateau + chaise ; il n'est affiché que si le solveur place les deux et le recul propre de la chaise ; les chambres plus petites et parentales restent inchangées | Banc diagnostic de 8 graines : couple demandé 16 fois et conservé 7 fois, les 9 replis étant dus à la place réellement requise ; restitution visuelle du nouveau couple à confirmer par Théo | `ROADMAP.md` ; `SUIVI_REGLES_PIECES.md` ; socle, compilé, générateur et sprite | 2026-09-24 |
+| `I1/L1-bureau — bureau autonome activé` | `done` | Choix absent/compact/convertible → trigger déclaratif → plan complet avec plateau, chaise et recul propre → profil et export | `test-bureau-l1.mjs` : absence, deux variantes, refus surfacique et trois graines complètes ; tests C4 et définition verts | questionnaire, socle, compilé, générateur, profil et suivi | 2026-09-24 |
+| `CAT-1 — catalogue local` | `needs_review` | Le footer ouvre une page listant les équipements et pièces depuis le compilé, avec icônes, dimensions, circulation et disponibilité | Navigation par `#catalogue`, retour atelier, `test-catalog-ui.mjs` ; contrôle visuel attendu | `index.html`, `app.js`, `styles.css` | 2026-09-24 |
 
 ## Todo
 
 | Ordre | ID | Résultat attendu | Gate de validation | État |
 |---:|---|---|---|---|
-| 1 | `V-MVP` | Le parcours principal est utilisable de bout en bout dans une interface recentrée sur le plan | Sans explication extérieure : saisir un programme, générer, comparer les propositions, inspecter un plan et l'exporter ; les états de repli et d'échec restent compréhensibles ; fonctionnement local et statique conservé | `in_progress` (24 sept.) — direction visuelle et organisation validées par Théo ; reste à fermer les défauts du parcours et du dessin, dont l'enveloppe extérieure |
-| 2 | `V-REV` | Le MVP est relu en usage réel et adapté avant tout approfondissement graphique | Une revue courte sur ordinateur et mobile produit une décision explicite : accepter, corriger ou réduire chaque partie ; les défauts bloquant le parcours sont fermés, les finitions sont différées | `blocked` — attend `V-MVP` |
-| 3 | `M5.4` | Les plans sont audités en amont, les constats traduits en conséquences métier et la roadmap réordonnée | Le pilote qualité a rendu ses constats, chacun est rattaché à une conséquence écrite, et l'ordre des lots suivants est publié dans ce document | `blocked` — attend `V-REV` |
-| 4 | `I1` | Les vagues de pièces retenues sont intégrées ou leur report est explicite | Chaque vague est soit intégrée avec sa preuve, soit reportée avec sa raison écrite ; aucune ne reste sans statut | `blocked` — attend `M5.4` |
-| 5 | `C-P3` | Salle d'eau sans WC, cellier, buanderie et local technique atteignent la maturité C4 | Chaque profil expose canon, variantes ou proportions et preuves isolées, et le moteur les consomme | `todo` |
-| 6 | `F1` | Le socle porte les annotations `capabilities[]` / `requiredCapabilities` | `npm run technohab:validate` rend le même verdict qu'avant l'annotation : zéro changement de génération | `todo` |
-| 7 | `J0.7-TECHNOHAB` | Le dépôt possède un distant conforme à son niveau de diffusion | J0.4 et J0.5 de MetaProjet franchis ; distant vérifié projet par projet | `blocked` — attend `J0.4` et `J0.5` |
+| 1 | `V-REV-mobile` | Le parcours validé sur ordinateur reste utilisable sur mobile | La revue mobile produit une décision explicite et route chaque défaut bloquant vers le lot visuel | `in_progress` — validation ordinateur acquise |
+| 2 | `I1/C-P4a` | Une chambre enfant assez grande peut recevoir plateau et chaise | Témoin avec couple placé et recul accessible ; repli honnête si le couple ne tient pas ; chambre parentale sans bureau ; validation minimale verte | `needs_review` — chaise et recul propres ajoutés ; 7/16 couples tiennent sur le banc diagnostic, contrôle visuel attendu |
+| 3 | `I1/L1-bureau` | Le bureau C4 devient une pièce demandable et générable sans branche spéciale | Questionnaire → programme → topologie → plan meublé → verdict → icône → export ; cas passant, refus et plusieurs graines | `done` — interpréteur `count` générique, variantes compact/convertible et trois graines complètes |
+| 4 | `F1` | Le socle porte les annotations `capabilities[]` / `requiredCapabilities` | `npm run technohab:validate` rend le même verdict qu'avant l'annotation : zéro changement de génération | `todo` |
+| 5 | `REF-1` | Le différentiel de complétude du référentiel existe et est tranché ligne à ligne | `DIFFERENTIEL_REFERENTIEL.md` produit ; chaque ligne porte un verdict `couvert` / `à intégrer` / `écarté` et son motif ; aucune ligne « à intégrer » sans verdict moteur nommé ; aucun fichier du moteur modifié | `needs_review` — livrable produit le 24 septembre 2026 : neuf lignes `à intégrer`, une question ouverte sur les dégagements, aucun fichier du moteur touché ; lecture par Théo attendue |
+| 6 | `C-P3` | Salle d'eau sans WC, cellier, buanderie et local technique progressent profil par profil | Chaque profil retenu expose canon, variantes ou proportions et preuves isolées avant intégration | `todo` |
+
+**Décision de séquencement — 24 septembre 2026.** La revue ordinateur de
+`V-REV` est acceptée ; la revue mobile reste en cours. Le pilote M5.4 retient
+les huit exports transmis comme corpus suffisant pour ouvrir les décisions de
+travail, sans prétendre à une estimation statistique. La priorité exprimée est
+de rendre davantage de fonctions générables pour améliorer la couverture et
+la qualité utile ; les défauts observés sont consignés comme témoins à protéger
+et lots à ordonner, sans correction opportuniste avant la fin de l'audit.
+
+### Audit du référentiel externe — `REF-1`
+
+**Décision du 24 septembre 2026.** Un chantier d'analyse **fermé** est ouvert
+en parallèle : confronter les caractéristiques que notre modèle nomme à celles
+qu'un éditeur de plans manuel a été contraint de modéliser, pour reposer la
+limite écrite en `ETAT_MOTEUR_PROCEDURAL.md` §6.4 avec un étalon extérieur.
+
+Il ne produit **aucune modification du moteur** : son unique livrable est un
+différentiel tranché ligne à ligne. Sa gate gouverne tout le reste — *une
+caractéristique n'entre au modèle que si elle change un verdict* — sans quoi un
+catalogue de plusieurs centaines d'objets deviendrait une dette de travail.
+
+Rien du référentiel étudié n'est recopié : ni visuel, ni base, ni code. On en
+tire une structure, une nomenclature et des dimensions d'usage, réécrites dans
+notre vocabulaire ; toute cote retenue reçoit une source qui nous est propre.
+La trame fait foi : [`AUDIT_REFERENTIEL_EXTERNE.md`](AUDIT_REFERENTIEL_EXTERNE.md) ;
+le livrable est [`DIFFERENTIEL_REFERENTIEL.md`](DIFFERENTIEL_REFERENTIEL.md).
 
 ### Reprise visuelle — `V-MVP` puis `V-REV`
 
@@ -297,7 +327,7 @@ la suite de tests que les autres pièces réutilisent.
 - [x] graphe d'adjacences élémentaire ;
 - [x] contrôle des surfaces minimales, adjacences et accessibilité ;
 - [x] export JSON et SVG ;
-- [ ] audit humain standardisé lié à la graine et au rang — prototype M5.3
+- [x] audit humain standardisé lié à la graine et au rang — prototype M5.3
   implémenté et testé, puis **gelé avant acceptation** ; l'audit amont M5.4
   peut être mené avec des relevés manuels et les exports existants ;
 - [x] validation structurelle Wonderland et test navigateur sans erreur ;
@@ -324,8 +354,8 @@ la suite de tests que les autres pièces réutilisent.
 - [x] pictogrammes de pièces tracés, câblés au rendu et adaptatifs
   (`assets/icons/room-icons.svg`, 18 symboles) ;
 - [x] mobilier et équipements tracés à l'échelle, cotes alignées sur le socle
-  (`assets/icons/furniture.svg`, 34 symboles, `viewBox` en centimètres : les
-  32 identifiants du catalogue courant et 2 symboles en réserve) ;
+  (`assets/icons/furniture.svg`, 35 symboles, `viewBox` en centimètres : les
+  33 identifiants du catalogue courant et 2 symboles en réserve) ;
 - [x] socle d'agencement transcrit en donnée exécutable
   (`assets/socle.data.js`) ;
 - [x] domaines de faisabilité pré-calculés hors ligne et mesurés
@@ -3149,7 +3179,7 @@ puissent avancer en parallèle sans contaminer l'étalon.
 | **[x] M5.1 — comparaison dans le produit** | les trois propositions du moteur sont-elles réellement utilisables ? | `app.js` consomme `PlanSelection`, navigation clavier entre les rangs, compromis et statut PARTIAL/EMPTY visibles, une évaluation rattachée au plan effectivement affiché | trois plans distincts consultables sans perdre leur graine ni leur verdict ; aucune formulation d'agrément | M5 |
 | **[x] M5.2 — résolution graduée** | peut-on proposer un repli utile sans faire passer une concession pour la demande initiale ? | `ProgramResolution`, trois essais exacts par niveau, mutations versionnées, comparaison demande/résolution, consentement avant retrait de pièce | chaque concession est visible et rejouable ; aucun debug relaxé, aucun plan HARD, programme exact inchangé hors appel explicite | M5 ; M1 ; C-P2 ; F1 pour R3 |
 | **[ ] M5.3 — instrument d'audit atelier, prototype gelé** | le prototype de grille aide-t-il réellement l'observation sans alourdir ni masquer le plan ? | code et tests conservés, mais aucune revendication produit et aucun développement supplémentaire | reprise seulement après une nouvelle décision d'usage et d'ergonomie ; l'audit M5.4 ne dépend pas de cet outil | M5.1–M5.2 |
-| **[ ] M5.4 — audit amont piloté et refonte de la roadmap** | que réussissent réellement les plans, qu'est-ce qui est prometteur mais inabouti, et quelles lacunes du modèle expliquent les échecs ? | corpus atelier annoncé avant lecture, constats rejouables, conséquences métier, matrice réussites/limites/échecs, bilan exhaustif des icônes, coûts complets et roadmap réordonnée | chaque constat et chaque absence d'icône visible sont attribués ; les faux « terminé » sont corrigés ; les lots indispensables sont insérés avant M6 ; la version du moteur à évaluer est nommée | M5.1–M5.2 ; témoins et profils courants ; **indépendant de M5.3** |
+| **[x] M5.4 — audit amont piloté et refonte de la roadmap** | que réussissent réellement les plans, qu'est-ce qui est prometteur mais inabouti, et quelles lacunes du modèle expliquent les échecs ? | **clos le 24 septembre 2026** : huit plans rejouables, conséquences métier, matrices pièces/icônes et première vague I1 nommée | chaque constat et chaque absence d'icône visible sont attribués ; les faux « terminé » sont corrigés ; les lots indispensables sont insérés avant M6 ; la version du moteur à évaluer est nommée | M5.1–M5.2 ; témoins et profils courants ; **indépendant de M5.3** |
 | **[ ] I1 — intégration produit des autres pièces prévues** | quelles pièces déjà prévues entrent dans la version évaluée, et leur chaîne est-elle complète plutôt que seulement documentée ou dessinée ? | vagues retenues parmi C-P3 à C-P6 ; activation déclarative F/L ; mobilier, icônes, règles, interface, export et tests de plan complet | chaque pièce incluse est C4, générable, meublée, contrôlée et visible ; chaque pièce différée porte une raison et un horizon ; aucun type ne devient actif par cas spécial | M5.4 ; profils C ; F1–F3 et L1–L6 selon la vague |
 | **M6.0 — protocole pré-enregistré** | que va-t-on mesurer, sur qui et sans déplacer le but après résultat ? | protocole versionné : population, programmes, appariement, randomisation, métriques, seuils de décision, traitement des égalités et exclusions | protocole relu et gelé après M5.4 et la décision I1, avant toute mesure sur l'étalon ; un plan relaxé n'est comparable qu'à un plan humain portant le même programme résolu | **M5.4 clos ; périmètre I1 intégré ou différé explicitement ; lots pré-M6 fermés** ; décision d'inclusion M5.2 ; porte B |
 | **M6.1 — corpus licencié et séparé** | les plans humains sont-ils comparables et légalement réutilisables ? | manifeste de provenance/licence, critères d'inclusion, normalisation minimale, séparation irréversible `atelier` / `etalon` par programme et surface | aucun plan d'étalon vu pendant le réglage ; chaque plan porte programme, surface, source et licence | M6.0 |
@@ -3184,6 +3214,135 @@ de M6.0. Une fois l'étalon M6 engagé, toute livraison qui change les plans cr�
 une nouvelle version du moteur à évaluer.
 
 ### 6.1 nonies — M5.4 : audit amont piloté et refonte de la roadmap
+
+#### Corpus pilote du 24 septembre 2026
+
+Le pilote fourni comprend **8 plans**, chacun rang 1 d'une sélection unitaire,
+tous `VALID` et `EXACT`. Les demandes couvrent 55, 70 (×2), 80, 100, 110 (×2)
+et 170 m² ; 1 à 4 chambres ; formes carrée, rectangulaire, L et U ; priorités
+économie, compacte et lumière. Les graines, variantes, formes réellement
+retenues, paramètres complets, évaluations et durées sont conservés dans les
+exports `analyse.json` accompagnés de leurs `plan.png` d'origine, remis le
+24 septembre dans huit dossiers `technohab-audit-*-p1`.
+
+Ce corpus est exploratoire et non équilibré : deux demandes identiques à
+110 m² et quatre chambres ne constituent pas des répétitions indépendantes
+contrôlées, et les sélections unitaires ne permettent pas de comparer les
+rangs d'une même demande. Il suffit pour le triage des lots, pas pour estimer
+des taux de qualité ni prétendre que les défauts sont exhaustifs. Le pilote
+accepte de clore la lecture visuelle générale à huit plans en raison de la
+redondance perçue et donne priorité à la matière générable ; les cas ciblés
+resteront à rejouer comme témoins dans les lots concernés.
+
+| Graine / demande | Constat observé par le pilote | Suite proposée / témoin |
+|---|---|---|
+| `10N7WU2` — 110 m², 4 ch., L, économie | WC jugé trop profond ; lavabo proche de la douche dans les deux salles d'eau ; entrée perçue comme trop petite ; fenêtres jugées larges pour la priorité économie | Mesurer profondeur et agencement WC/SDE ; clarifier si l'entrée autonome est dans le périmètre ; vérifier cohérence entre priorité et baies |
+| `1P3HHFQ` — 70 m², 3 ch., L, compacte | Défaut déclaré de découpe de porte d'entrée aux arêtes ; parcours sinon jugé satisfaisant | Témoin géométrique des ouvertures de façade et de la jonction d'angle |
+| `0ZXQDPT` — 170 m², 3 ch., U, compacte | Circulation unifiée ; WC à double circulation apprécié comme suggestion, avec réserve sur son caractère non systématique | Préserver la diversité des accès ; contrôler lisibilité et acceptabilité du WC traversant |
+| `0ZW4MD6` — 110 m², 4 ch., carrée, économie | Plan jugé fonctionnel mais forme carrée demandée non respectée | Témoin bloquant de fidélité entre forme demandée et enveloppe construite |
+| `0KS00LV` — 100 m², 4 ch., rectangulaire, économie | Mobilier perçu comme obstruant le passage du séjour vers une autre porte ; emplacement du WC jugé perfectible près de la cuisine/circulation | Témoin de continuité du cheminement meublé et d'implantation WC |
+| `1LWED8H` — 80 m², 3 ch., rectangulaire, économie | Circulation perçue comme sans fonction et prenant de la place à la cuisine | Témoin de circulation parasite et de coût sur les fonctions adjacentes |
+| `020D1ZM` — 70 m², 3 ch., L, lumière | Circulation jugée « pas mal » ; note détaillée signale un lit bloquant la circulation et un lavabo de SDE problématique | Témoin de parcours meublé, incluant les pièces secondaires |
+| `0VVMG2H` — 55 m², 1 ch., carrée, lumière | Espaces morts derrière le couloir ; WC trop profond ; siège isolé et circulation impossible près de la table basse ; lumière jugée mal distribuée pour la priorité lumière | Témoins compacts de circulation, proportions WC, groupes d'assise et répartition des baies |
+
+**Lecture transversale.** Les constats convergent sur quatre familles :
+(1) circulation bâtie ou meublée qui devient une perte d'espace ou coupe un
+usage ; (2) dimensions et implantation des sanitaires, notamment la profondeur
+du WC et le rapport lavabo/douche ; (3) respect des contraintes de forme et
+cohérence des ouvertures avec la priorité ; (4) fidélité du dessin des portes
+aux angles. Une réussite à préserver est la capacité à proposer une circulation
+unifiée et parfois un WC à double accès, à condition de rendre ce dernier choix
+lisible et approprié au programme. Ces notes sont des observations humaines,
+pas encore des mesures de fréquence ni la preuve d'une cause technique.
+
+**Conséquence de roadmap proposée par le pilote et retenue pour le séquencement.**
+La demande d'augmenter la matière générable vise d'abord l'intégration des
+fonctions déjà prévues par I1, et non une hausse arbitraire du nombre de
+pièces dans chaque plan. I1 doit ouvrir par une vague limitée, ordonnée selon
+la maturité des profils et les dépendances fonctionnelles : bureau comme
+fonction hébergée (séjour, sinon chambre) avec possibilité d'émergence, puis
+les fonctions C-P3/C-P4 que l'audit des profils confirme prêtes. Le bureau
+est documenté au niveau C2 et ne peut pas être déclaré intégré avant C4 et une
+chaîne produit complète ; son équipement dans une chambre ne doit donc pas être
+confondu avec l'activation de la fonction bureau. `C-P3`, `F1` et la
+consolidation C peuvent avancer en parallèle comme le prévoit §6.3. L'ordre
+précis de la première vague I1 reste à décider après la clôture de la revue
+mobile et l'audit de chaîne fiche → données → génération → symbole → rendu.
+
+**Limites et compléments à la clôture de M5.4.** Les huit exports sont
+acceptés comme suffisants pour arrêter la lecture visuelle générale et ouvrir
+le triage des lots ; il n'est pas demandé de lire davantage de plans avant
+d'avancer. Ils ne documentent pas à eux seuls le bilan exhaustif des icônes,
+la matrice des fonctions C-P3 à C-P6 ni la traçabilité de chaque image à un
+export JSON/SVG complet. Ces volets restent à fermer par inspection statique
+et rapprochement des artefacts existants, sans nouvelle série générale. Les
+critères ont tous reçu une cote, mais plusieurs constats détaillés se trouvent
+dans `firstCorrection` ou dans les notes de critères plutôt que dans une
+synthèse ; conserver ces champs liés au JSON d'origine évite de perdre leur
+provenance.
+
+#### Bilan fiche → moteur → rendu et décision I1
+
+Le rapprochement statique ferme le volet « pièces » sans demander une nouvelle
+série générale. Le rendu cherche mécaniquement `icon-<type>` et
+`furn-<equipment>` ; un symbole de sens voisin sous un autre identifiant ne
+constitue donc pas un raccord actif.
+
+| Type du socle | Profil / maturité | Généré | Symbole exact source + page | Raccord générique | Observé dans les plans actuels | Décision |
+|---|---|---:|---:|---:|---:|---|
+| `living` | C4 | oui | oui | oui | oui | préserver |
+| `bedroom` | C4 | oui | oui | oui | oui | ouvrir le bureau hébergé C-P4a |
+| `kitchen` | C4 | oui | oui | oui | oui | préserver |
+| `bath` | C2 | oui | oui | oui | oui | consolider en C-P3 avant C5 |
+| `wc` | C4 | oui | oui | oui | oui | préserver, reprendre proportions |
+| `circulation` | C4 | oui | oui | oui | oui | rouvrir l'utilité et la continuité meublée |
+| `entree` | C4 hébergé | seuil seulement | oui | oui | pas comme pièce | différer la pièce autonome |
+| `dining` | socle seul | non | non (`salle_a_manger` existe) | non | non | corriger l'identifiant au lot C-P4 |
+| `bureau` | C4 isolé | non | oui | oui | non | ouvrir L1 après fermeture de C-P4a |
+| `buanderie` | socle seul | non | oui | oui | non | documenter en C-P3 |
+| `cellier` | socle seul | non | oui | oui | non | documenter en C-P3 |
+| `local_technique` | socle seul | non | oui | oui | non | documenter en C-P3 |
+| `garage` | socle seul | non | oui | oui | non | différer après la première vague I1 |
+
+Le catalogue mobilier compte **33 identifiants actifs, tailles de gamme
+comprises**. Chacun possède un symbole exact dans `furniture.svg`, recopié
+dans `index.html`, et le rendu générique sait l'utiliser. Les réserves `oven`
+et `double_washbasin` ont aussi un symbole mais aucune entrée active. Avant
+I1/C-P4a, les 14 symboles non observés se répartissaient ainsi : fonctions non
+générées (`closet`, `dining_table_4`, `desk`, `bookcase`, `washer`, `dryer`,
+`shelving`, `water_heater`, `electrical_panel`, `parking_space`), optionnels
+non enrôlés (`dishwasher`, `handbasin`, `towel_rail`) et variante inaccessible
+(`bathtub`). I1/C-P4a rend désormais `desk` et `office_chair` atteignables
+ensemble dans une chambre enfant d'au moins 11 m² ; leur apparition réelle
+reste la gate du lot.
+
+**Décision M5.4.** Le corpus de huit plans, la lecture transversale et les deux
+matrices ci-dessus suffisent à réordonner la suite. M5.4 est clos pour cette
+version : davantage de lecture générale n'est pas requis. La première vague
+I1 est limitée à (1) bureau hébergé dans la chambre enfant, encore ouvert sur
+sa restitution visuelle, (2) bureau autonome consolidé de C2 à C4 le
+24 septembre, puis (3) activation autonome après fermeture de C-P4a et par le
+mécanisme déclaratif L1. C-P3 et F1 restent les flux parallèles
+autorisés. Les défauts de circulation, sanitaires, forme et porte deviennent
+des témoins des lots concernés ; ils ne bloquent pas l'augmentation contrôlée
+de matière générable. La revue mobile reste un item visuel indépendant et
+route ses éventuels défauts vers `V-REV-mobile`.
+
+**C-P4b — bureau autonome C2 → C4 — livré le 24 septembre 2026.** La portée
+isolée distingue `compact` (5 m², côté 1,80 m) et `convertible` (9 m², côté
+2,50 m). Le plateau reçoit trois tailles 1,20 / 1,40 / 1,80 m ; une chaise
+0,50 × 0,50 m porte son recul minimum/cible/confort 0,60 / 0,80 / 0,90 m ; une bibliothèque optionnelle apparaît dès
+7 m². `test-bureau-c4.mjs` couvre les deux variantes, deux proportions, les
+gammes, un refus, porte, battant, fenêtre, S4 et le canon. La convertibilité
+vérifie alternativement les programmes bureau et chambre dans la même
+enveloppe ; elle ne cumule pas leurs meubles. L1 branche désormais son
+`trigger` déclaratif sur `offices` et sa variante sur `officeVariant`, sans
+condition dédiée au type de pièce dans le générateur. Les tests ciblés C-P4b,
+définition des pièces, canon,
+chambre et M4c passent. `icons:check` et `serve:test` passent. La validation
+globale reste interrompue par `test-analysis-export-ui.mjs`, qui détecte un
+`box-shadow` déjà présent dans les styles hors de ce lot ; son verdict global
+reste donc inconnu.
 
 **Autorité de l'audit.** Le pilote qualité observe et qualifie les plans. Les
 assistants traduisent ces observations en conséquences métier, hypothèses de
@@ -3246,12 +3405,12 @@ pas des corrections présupposées :
   banc, acceptation produit et état Git. Un prototype testé mais gelé, comme
   M5.3, n'est pas un lot terminé.
 
-**Point zéro des icônes, avant corpus M5.4.** Le relevé statique du 3 septembre
+**Point zéro des icônes, avant corpus pilote du 24 septembre.** Le relevé statique du 3 septembre
 donne 18 symboles de pièces — 13 dessins et 5 alias — dont les 6 types
-actuellement générés sont tous raccordés. Le sprite mobilier contient 34
-symboles : les 32 identifiants d'équipements et de gammes du socle courant ont
+actuellement générés sont tous raccordés. Le sprite mobilier contient 35
+symboles : les 33 identifiants d'équipements et de gammes du socle courant ont
 tous un dessin ; `oven` et `double_washbasin` sont deux réserves sans entrée de
-catalogue active. Les deux sprites, soit 52 symboles, sont recopiés dans
+catalogue active. Les deux sprites, soit 53 symboles, sont recopiés dans
 `index.html` et `icons:check` passe.
 
 Cette couverture de fichier n'est pas une couverture produit. Un balayage
@@ -3260,9 +3419,12 @@ symboles raccordés. Les 14 autres relèvent soit de pièces non générées
 (entrée autonome, salle à manger, bureau, buanderie, cellier, local technique,
 garage), soit d'optionnels non enrôlés dans le programme construit
 (`dishwasher`, `handbasin`, `towel_rail`), soit de la variante bain encore
-inaccessible (`bathtub`). M5.4 doit remplacer ce sondage par une mesure
-versionnée sur son corpus annoncé et distinguer, pour chaque absence, manque
-d'asset, manque de raccord ou fonction moteur inatteignable.
+inaccessible (`bathtub`). Le corpus pilote de huit plans du 24 septembre
+confirme que les symboles observés doivent être reliés aux fonctions réellement
+générables ; il ne contient pas encore de matrice exhaustive
+`catalogue → symbole → page → rendu → plan observé`. Cette mesure reste à
+fermer avant la clôture M5.4, en distinguant pour chaque absence le manque
+d'asset, de raccord ou l'inatteignabilité de la fonction moteur.
 
 **Condition de sortie.** M5.4 est clos lorsque chaque constat retenu possède
 une preuve rejouable et une conséquence métier, que les réussites importantes
@@ -3726,8 +3888,8 @@ C.
 12. **[x] M5.2f** — mesurer la résolution graduée et publier ses concessions ;
 13. **[ ] M5.3** — prototype technique conservé mais gelé ; ne pas le compter
     comme capacité produit ni le reprendre avant décision explicite ;
-14. **[ ] M5.4** — mener l'audit amont piloté, traduire les observations en
-    conséquences métier et refondre l'ordre de la roadmap ;
+14. **[x] M5.4** — audit amont piloté clos le 24 septembre ; huit plans,
+    conséquences métier, matrices pièces/icônes et première vague I1 consignés ;
 15. **[ ] I1** — intégrer les vagues de pièces retenues par M5.4 jusqu'au plan
     affiché et exporté, ou consigner explicitement leur report après M6 ;
 16. **[ ] M6.0** — pré-enregistrer le protocole externe après M5.4 et la
@@ -4538,11 +4700,11 @@ métadonnées SVG. Le banc M5.2f mesure 6 résultats exacts et 24 replis résolu
 zéro `HARD`, avec un coût moyen/p90/max de 4,23/7/8 appels. **M5.3 reste un
 prototype technique gelé** : la grille et l'archive existent et leurs tests
 passent, mais leur ergonomie et leur utilité n'ont pas été acceptées ; elles ne
-font donc pas partie des capacités livrées. **M5.4 est le prochain jalon.** Le
-pilote qualité examine les plans, les assistants traduisent les constats en
-conséquences métier et la roadmap est réordonnée. M5.4 ouvre ensuite I1 sur
-les vagues de pièces retenues ; leur intégration ou leur report explicite
-précède tout gel de M6.0. La collecte licenciée, la
+font donc pas partie des capacités livrées. **M5.4 est clos le 24 septembre
+2026 sur huit plans et un bilan statique des chaînes pièce/équipement.** Il
+ouvre I1 par le bureau hébergé dans une chambre enfant, puis par la
+consolidation C4 du bureau autonome. L'intégration ou le report explicite des
+autres vagues précède tout gel de M6.0. La collecte licenciée, la
 séparation atelier/étalon, l'étalonnage des poids provisoires et la comparaison
 à l'aveugle suivent l'ordre M6.1 à M6.5 du §6.1 octies ; c'est la seule chaîne
 autorisée à conclure sur la crédibilité externe.

@@ -18,11 +18,12 @@ une annexe d'écarts au moteur.
 | [entree](entree.md) | `ENTRY_THRESHOLD` — fonction hébergée | C-P2 | `C4` | oui |
 | [rangements](rangements.md) | `STORAGE` — transverse | C-P2 | `C4` limité | unités chambre + baies |
 | [salle-eau](salle-eau.md) | `BATHROOM` · eau/bain | C-P3 | `C2` | oui |
-| [bureau](bureau.md) | `BUREAU` | C-P4 | `C2` | **non** |
+| [bureau](bureau.md) | `BUREAU` | C-P4 / L1 | `C4` | **oui** — compact ou convertible |
 
 Les pilotes C-P0, C-P1.2 et C-P2 atteignent `C4` sur leur portée déclarée :
 canon structuré, domaines versionnés et cas isolés de variantes, refus, porte,
-accès et placements réels. Salle d'eau et bureau restent `C2`.
+accès et placements réels. Le bureau rejoint C4 sur sa portée isolée ; la
+salle d'eau autonome reste C2.
 
 **Audit C-P0.2 du 31 août 2026.** Le trajet construit des deux pilotes est
 prouvé par `scripts/test-profils-pilotes-integration.mjs`, mais aucun ne passe
@@ -56,7 +57,7 @@ de pièce et S3 sont désormais construites et évaluées ; le même mécanisme 
 |---|---|---|
 | `minimalRect: 0,90 × 1,30` | `wc` | **contredit par le socle lui-même** : le solveur refuse ce rectangle |
 | `facingClearance: 1.20` | `kitchen` | **lu depuis M2** par validation et classement ; sa doctrine reste à consolider en C-P1.2c |
-| `trigger` | les treize types | déclaré partout, interpréteur au lot L1 |
+| `trigger` | les treize types | déclaré partout ; `count` interprété pour les pièces additionnelles depuis L1 |
 
 Les deux premiers ont été découverts en écrivant les profils. La donnée est
 juste dans le second cas : **c'est le mécanisme qui manque, pas la valeur.**

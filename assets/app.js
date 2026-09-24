@@ -100,7 +100,7 @@
     return root.TechnoHabGenerator.normalizeOptions({
       surface: data.get('surface'), bedrooms: data.get('bedrooms'), bathrooms: data.get('bathrooms'),
       separateKitchen: data.get('separateKitchen') === 'on', includeWc: data.get('includeWc') === 'on',
-      priority: data.get('priority'), shape: data.get('shape')
+      officeType: data.get('officeType'), priority: data.get('priority'), shape: data.get('shape')
     });
   }
   function restoreForm() {
@@ -966,6 +966,7 @@
     return [
       bedrooms ? plural(bedrooms, 'chambre', 'chambres') : 'studio',
       plural(Number(options.bathrooms || 1), 'salle d’eau', 'salles d’eau'),
+      Number(options.offices || 0) ? 'bureau ' + (options.officeVariant === 'convertible' ? 'convertible' : 'compact') : 'sans bureau indépendant',
       options.separateKitchen ? 'cuisine séparée' : 'cuisine ouverte',
       options.includeWc ? 'WC indépendant' : 'WC intégré'
     ].join(' · ');
@@ -1704,10 +1705,137 @@
     furnitureToggle.addEventListener('change', function () { montrerMobilier(furnitureToggle.checked); });
   }
 
+  /* Catalogue — une seconde vue locale, alimentée par le compilé du socle.
+     Elle reste en lecture seule aujourd'hui ; sa structure en cartes prépare
+     l'édition future sans dupliquer les caractéristiques dans le HTML. */
+  var workspace = document.querySelector('.workspace');
+  var catalogPage = document.getElementById('catalog-page');
+  var catalogOpen = document.getElementById('catalog-open');
+  var catalogRendered = false;
+
+  function catalogElement(name, className, textValue) {
+    var element = document.createElement(name);
+    if (className) element.className = className;
+    if (textValue !== undefined) element.textContent = textValue;
+    return element;
+  }
+
+  function catalogIcon(symbolId, className) {
+    var svg = svgElement('svg', { viewBox: '0 0 64 64', class: className, 'aria-hidden': 'true' });
+    if (document.getElementById(symbolId)) svg.appendChild(svgElement('use', { href: '#' + symbolId }));
+    else svg.appendChild(svgElement('rect', { x: 12, y: 12, width: 40, height: 40, rx: 2 }));
+    return svg;
+  }
+
+  function formatMeters(value) {
+    return Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m';
+  }
+
+  function renderCatalog() {
+    if (catalogRendered || !root.TechnoHabFit) return;
+    var envelopes = root.TechnoHabFit.envelopes || {};
+    var equipmentList = document.getElementById('catalog-equipment-list');
+    var roomList = document.getElementById('catalog-room-list');
+    var equipments = {};
+    var resolvedCatalogTypes = { living: true, bedroom: true, bureau: true };
+    var statusRank = { planned: 1, progress: 2, implemented: 3 };
+
+    function equipmentDevelopmentStatus(type, entry, equipment) {
+      if (!entry.trigger) return 'planned';
+      if (resolvedCatalogTypes[type]) return 'implemented';
+      var firstVariant = Object.keys(entry.programs || {})[0];
+      var minimum = firstVariant && entry.programs[firstVariant];
+      return minimum && (minimum.equipments || []).some(function (item) { return item.id === equipment.id; })
+        ? 'implemented' : 'progress';
+    }
+
+    Object.keys(envelopes).forEach(function (type) {
+      var entry = envelopes[type];
+      Object.keys(entry.catalogs || {}).forEach(function (variant) {
+        (entry.catalogs[variant].equipments || []).forEach(function (equipment) {
+          var developmentStatus = equipmentDevelopmentStatus(type, entry, equipment);
+          if (!equipments[equipment.id]) {
+            equipments[equipment.id] = { equipment: equipment, rooms: [], variants: [], status: developmentStatus };
+          }
+          if (statusRank[developmentStatus] > statusRank[equipments[equipment.id].status]) {
+            equipments[equipment.id].status = developmentStatus;
+          }
+          if (equipments[equipment.id].rooms.indexOf(entry.label) === -1) equipments[equipment.id].rooms.push(entry.label);
+          (equipment.sizes || []).forEach(function (size) {
+            if (equipments[equipment.id].variants.indexOf(size.label) === -1) equipments[equipment.id].variants.push(size.label);
+          });
+        });
+      });
+    });
+
+    Object.keys(equipments).sort(function (left, right) {
+      return equipments[left].equipment.label.localeCompare(equipments[right].equipment.label, 'fr');
+    }).forEach(function (id) {
+      var record = equipments[id], equipment = record.equipment;
+      var card = catalogElement('article', 'catalog-card');
+      card.appendChild(catalogIcon('furn-' + id, 'catalog-icon catalog-icon--equipment'));
+      var body = catalogElement('div', 'catalog-card-body');
+      body.appendChild(catalogElement('h4', '', equipment.label));
+      var statusLabels = { implemented: 'Implémenté', progress: 'En cours', planned: 'Prévu' };
+      var status = catalogElement('p', 'catalog-card-status', statusLabels[record.status]);
+      status.dataset.status = record.status;
+      body.appendChild(status);
+      body.appendChild(catalogElement('p', 'catalog-card-meta',
+        formatMeters(equipment.footprint.w) + ' × ' + formatMeters(equipment.footprint.d) +
+        ' · ' + (equipment.required ? 'requis' : 'optionnel') +
+        ' · pose ' + (equipment.anchor === 'wall' ? 'murale' : equipment.anchor === 'corner' ? 'en angle' : 'libre')));
+      var clearance = (equipment.usage || []).map(function (usage) {
+        return formatMeters(usage.min) + ' libre (' + usage.face + ')';
+      }).join(' · ');
+      if (clearance) body.appendChild(catalogElement('p', '', 'Circulation : ' + clearance));
+      body.appendChild(catalogElement('p', '', 'Pièces : ' + record.rooms.join(', ')));
+      if (record.variants.length) body.appendChild(catalogElement('p', '', 'Tailles : ' + record.variants.join(', ')));
+      card.appendChild(body); equipmentList.appendChild(card);
+    });
+
+    Object.keys(envelopes).sort(function (left, right) {
+      return envelopes[left].label.localeCompare(envelopes[right].label, 'fr');
+    }).forEach(function (type) {
+      var entry = envelopes[type];
+      var card = catalogElement('article', 'catalog-card catalog-card--room');
+      card.appendChild(catalogIcon('icon-' + type, 'catalog-icon catalog-icon--room'));
+      var body = catalogElement('div', 'catalog-card-body');
+      body.appendChild(catalogElement('h4', '', entry.label));
+      var variants = Object.keys(entry.variants || {}).map(function (variant) {
+        return variant === 'base' ? 'standard' : variant;
+      });
+      var available = entry.trigger ? 'Disponible dans le moteur' : 'Défini, pas encore activable';
+      body.appendChild(catalogElement('p', 'catalog-card-status', available));
+      body.appendChild(catalogElement('p', 'catalog-card-meta',
+        'Rôle : ' + entry.role + ' · variante' + (variants.length > 1 ? 's' : '') + ' : ' + variants.join(', ')));
+      if (Number.isFinite(entry.minProgramArea)) {
+        body.appendChild(catalogElement('p', '', 'Plancher : ' + entry.minProgramArea.toLocaleString('fr-FR') +
+          ' m² · côté court ' + formatMeters(entry.minProgramSide)));
+      }
+      card.appendChild(body); roomList.appendChild(card);
+    });
+    catalogRendered = true;
+  }
+
+  function routePage() {
+    var catalogActive = location.hash === '#catalogue';
+    var appShell = document.getElementById('technohab-app');
+    document.documentElement.classList.toggle('catalog-route', catalogActive);
+    if (appShell) appShell.classList.toggle('catalog-mode', catalogActive);
+    if (workspace) workspace.hidden = catalogActive;
+    if (catalogPage) catalogPage.hidden = !catalogActive;
+    if (catalogOpen) catalogOpen.setAttribute('aria-current', catalogActive ? 'page' : 'false');
+    document.getElementById('page-title').textContent = catalogActive
+      ? 'Catalogue du moteur' : 'Laboratoire de plan';
+    if (catalogActive) renderCatalog();
+  }
+  window.addEventListener('hashchange', routePage);
+
   loadHistory(); restoreForm();
   clearActivePlan('Choisissez les paramètres du lieu, puis lancez la génération.');
   statusElement.textContent = 'Prêt à générer';
   statusElement.dataset.state = '';
+  routePage();
 
   /* Le chargeur est défini par un script qui suit celui-ci : on attend la fin
      de l'analyse du document pour honorer un choix retenu d'une visite

@@ -41,6 +41,7 @@
     circulation: { id: 'CIRCULATION', maturity: 'C4', version: '2026-09-01', source: 'profils/circulation.md' },
     entry: { id: 'ENTRY_THRESHOLD', maturity: 'C4', version: '2026-09-01', source: 'profils/entree.md' },
     storage: { id: 'STORAGE', maturity: 'C4', version: '2026-09-01', source: 'profils/rangements.md' },
+    bureau: { id: 'BUREAU', maturity: 'C4', version: '2026-09-24', source: 'profils/bureau.md' },
     bath_wc: { id: 'BATHROOM_WITH_TOILET', maturity: 'C4', version: '2026-08-26', source: 'profils/salle-eau-wc-integre.md' }
   });
 

@@ -5,9 +5,9 @@
   if (!socle) throw new Error('TechnoHabRoomModel exige TechnoHabSocle.');
 
   var ANCHORS = ['wall', 'corner', 'free'];
-  var USAGE_FACES = ['front', 'long', 'foot', 'around'];
+  var USAGE_FACES = ['front', 'back', 'long', 'foot', 'around'];
   var RELATION_KINDS = ['near', 'distance-range', 'gap-range', 'perimeter-max',
-    'same-wall', 'different-wall', 'between', 'faces'];
+    'same-wall', 'different-wall', 'between', 'faces', 'workstation'];
 
   // Ces règles portent sur la désignation d'une pièce, avant toute géométrie.
   // Elles sont génériques : un nouveau type de pièce profite du même contrôle

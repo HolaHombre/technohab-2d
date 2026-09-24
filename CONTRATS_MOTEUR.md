@@ -189,8 +189,9 @@ Chaque profil transporte :
 - le fichier source.
 
 Le plan prend la maturité minimale de la liste. WC séparé, salle d'eau avec WC
-intégré, chambre, séjour, cuisine, circulation, seuil d'entrée et noyau
-rangement sont C4 sur leur portée déclarée ; la salle d'eau autonome reste C2.
+intégré, chambre, séjour, cuisine, circulation, seuil d'entrée, noyau rangement
+et bureau autonome sont C4 sur leur portée déclarée ; le bureau n'est pas
+encore activé dans un programme généré et la salle d'eau autonome reste C2.
 Un plan courant peut donc encore annoncer `profileMaturity: "C2"`. Le contrat
 empêche qu'un profil éprouvé masque la maturité plus faible d'un autre profil.
 

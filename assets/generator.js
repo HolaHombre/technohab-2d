@@ -147,12 +147,23 @@
 
   function normalizeOptions(input) {
     input = input || {};
+    var officeVariant = ['compact', 'convertible'].indexOf(input.officeVariant) >= 0
+      ? input.officeVariant : 'compact';
+    var offices = Math.min(1, Math.max(0, Math.trunc(Number(input.offices) || 0)));
+    if (['compact', 'convertible'].indexOf(input.officeType) >= 0) {
+      offices = 1;
+      officeVariant = input.officeType;
+    } else if (input.officeType === 'none') {
+      offices = 0;
+    }
     return {
       surface: Math.min(250, Math.max(35, Number(input.surface) || 75)),
       bedrooms: Math.min(5, Math.max(0, Math.trunc(Number(input.bedrooms) || 0))),
       bathrooms: Math.min(2, Math.max(1, Math.trunc(Number(input.bathrooms) || 1))),
       separateKitchen: Boolean(input.separateKitchen),
       includeWc: input.includeWc !== false,
+      offices: offices,
+      officeVariant: officeVariant,
       // Chantier 1 — la forme de l'enveloppe est une donnée du projet, pas un
       // sous-produit de la surface. Trois familles : primitive (carré,
       // rectangle), soustractive (L, U, un quartier retiré du rectangle
@@ -162,15 +173,16 @@
     };
   }
 
-  function createRoom(type, index) {
+  function createRoom(type, index, explicitVariant) {
     var definition = definitionDe(type);
-    var variant = type === 'bedroom' ? (index === 1 ? 'parentale' : 'enfant') : null;
+    var variant = explicitVariant !== undefined ? explicitVariant
+      : type === 'bedroom' ? (index === 1 ? 'parentale' : 'enfant') : null;
     var plancher = plancherDe(type, variant);
     var fit = root.TechnoHabFit;
     var agrement = fit && fit.agrementOf ? fit.agrementOf(type) : 0.6;
     var maxRatio = fit && fit.maxRatioOf ? fit.maxRatioOf(type) : null;
     var besoin = coutReel(type);
-    var numbered = type === 'bedroom' || type === 'bath';
+    var numbered = type === 'bedroom' || type === 'bath' || (index !== undefined && index !== null && index > 1);
     var label = definition ? definition.label : type;
     return {
       id: numbered ? type + '_' + index : type,
@@ -366,6 +378,23 @@
     if (options.includeWc) rooms.push(createRoom('wc'));
     else composeInto(rooms.find(function (room) { return room.id === 'bath_1'; }), 'wc',
       options.bathrooms > 1 ? 'Salle d’eau 1 avec WC' : 'Salle d’eau avec WC');
+
+    /* L1 — les pièces additionnelles entrent par leur déclaration `trigger`.
+       Le générateur ne connaît ni le bureau ni les futurs types : un trigger
+       `count` nomme seulement le champ d'option et, si nécessaire, celui de
+       la variante. */
+    var coreTypes = { living: true, kitchen: true, bedroom: true, bath: true, wc: true, circulation: true };
+    var declaredRooms = root.TechnoHabSocle && root.TechnoHabSocle.rooms
+      ? root.TechnoHabSocle.rooms : {};
+    Object.keys(declaredRooms).forEach(function (type) {
+      var trigger = declaredRooms[type].trigger;
+      if (coreTypes[type] || !trigger || trigger.kind !== 'count') return;
+      var count = Math.max(0, Math.trunc(Number(options[trigger.from]) || 0));
+      var variant = trigger.variantFrom ? options[trigger.variantFrom] : undefined;
+      for (var triggeredIndex = 1; triggeredIndex <= count; triggeredIndex += 1) {
+        rooms.push(createRoom(type, triggeredIndex, variant));
+      }
+    });
 
     /* Les versements de la typologie viennent après la composition ordinaire :
        le séjour d'un studio porte déjà sa cuisine, il reçoit ensuite le
@@ -1407,15 +1436,16 @@
   var usageValidationCache = {};
 
   function roomVariant(room) {
+    if (room.variant) return room.variant;
     if (room.type === 'bedroom') return room.variant || (room.id === 'bedroom_1' ? 'parentale' : 'enfant');
     return null;
   }
 
-  /* M4c est volontairement borné aux deux profils C4 déjà consolidés. Les
+  /* M4c est volontairement borné aux profils C4 déjà consolidés. Les
      autres pièces continuent de consommer leur programme minimal compilé :
      déclarer un optionnel dans le socle ne suffit jamais à l'activer dans un
      profil encore C0-C3. */
-  var M4C_RESOLVED_TYPES = { living: true, bedroom: true };
+  var M4C_RESOLVED_TYPES = { living: true, bedroom: true, bureau: true };
 
   function resolvedArea(room) {
     return Number.isFinite(room.area) ? room.area
@@ -1519,6 +1549,24 @@
         maxNodes: enhancedAttempt ? 400 : undefined
       });
       var result = validation;
+      /* Une recherche rapide peut rater une pose pourtant réalisable. Avant
+         le dernier repli, qui retire tous les optionnels, confirmer donc
+         l'échec sur le même programme avec la recherche complète. Cette règle
+         est générique : un bureau de chambre, un fauteuil ou tout futur
+         optionnel ne disparaît plus sur le seul verdict du budget rapide. */
+      var nextProgram = programs[index + 1];
+      var removesOptionalsNext = nextProgram && program.resolution.includeOptional &&
+        !nextProgram.resolution.includeOptional;
+      if (!result.fits && enhancedAttempt && removesOptionalsNext) {
+        validation = placement.validate(program.equipments, rectangle, {
+          relations: program.relations,
+          context: options.context || null,
+          facingClearance: program.facingClearance,
+          s4: options.s4
+        });
+        result = validation;
+        enhancedAttempt = false;
+      }
       if (!validation.fits && options.optimizeS4 && !enhancedAttempt && validation.reason &&
           validation.reason.code === 'S4_CANNOT_BE_SATISFIED') {
         result = placement.optimize(program.equipments, rectangle, {

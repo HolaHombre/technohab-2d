@@ -36,14 +36,14 @@ quatre niveaux qui ne doivent plus être confondus : fiche documentaire,
 |---|---:|---:|---:|---:|---|
 | Séjour / salon | oui | oui | oui | générique + traversée/occupation | **Couvert en isolation · C4** — groupe canapé-table requis, média/fauteuil optionnels, focalité, conversation, occupation et traversée multi-accès à 0,70 m prouvés ; zones repas/bureau et preuve C5 restent différées |
 | Cuisine | oui | oui | oui | générique + relations | **Couvert en isolation · C4** — quatre pôles requis, séquence HARD, passage face-à-face 1,20 m, triangle GUIDELINE ≤ 6,50 m, ventilation et lave-vaisselle optionnel prouvés en cuisine séparée et ouverte ; linéaire résultant, four lié, accessibilité et preuve C5 restent différés |
-| Chambre | oui | oui | oui | générique | **Couvert en isolation · C4** — variantes enfant/parentale, pied et côtés, penderie coulissante, porte/fenêtre/S4 prouvés ; accessibilité, chevet lié et preuve C5 restent différés |
+| Chambre | oui | oui | oui | générique | **Couvert en isolation · C4** — variantes enfant/parentale, pied et côtés, penderie coulissante, porte/fenêtre/S4 prouvés ; bureau optionnel activé dans la variante enfant dès 11 m² ; accessibilité, chevet lié et preuve C5 restent différés |
 | Salle d'eau / bain | oui | oui | oui | générique | **Partiel · C2** — sanitaires et préférences de murs présents ; accessibilité, réseaux et ventilation non contrôlés |
 | WC | oui | oui | oui | générique + plafond dédié | **Partiel · C4 confirmé par C-P0.2** — BuiltPlan prouvé ; cinq blocages C5 restent attribués dans l'audit d'intégration |
 | Salle d'eau avec WC | oui | composition `bath + wc` | oui | générique | **Partiel · C4 confirmé par C-P0.2** — composition minimale prouvée ; sept blocages C5, dont variante bain et dépendance à `BATHROOM` C2 |
 | Circulation | transverse | oui | oui | dédié | **Couvert en isolation · C4** — largeur 0,90/1,20 m conditionnée à la desserte, mesure par branche, formes et battants S3 prouvés ; manœuvres accessibles et seuil externe de longueur restent différés |
 | Salle à manger | incluse dans salon | oui | non | non | **Socle seul** — décider pièce autonome ou zone du séjour, puis définir programme et déclencheurs |
 | Entrée | profil `ENTRY_THRESHOLD` | fonction hébergée | oui, sans pièce autonome | `ENTREE-001/002` | **Couvert en isolation · C4** — hôte circulation/séjour, porte extérieure et zone d'arrivée 1,20 × 1,20 m libres participent au verdict ; hall autonome et manœuvres accessibles restent différés |
-| Bureau | oui | oui | non | non | **Socle seul · C2** — fiche et mobilier prêts ; manque l'activation dans le programme et le générateur |
+| Bureau | oui | oui | oui | générique + mobilier | **Couvert en isolation · C4, activé par L1** — variantes compact/convertible, plateau, chaise et recul propre, gammes, refus, porte, fenêtre, S4 et trois plans complets éprouvés |
 | Buanderie | non | oui | non | non | **Socle seul** — créer fiche, règles de réseaux, dégagement de machine et relation avec cellier/local technique |
 | Cellier | rangement transverse | oui | non | non | **Socle seul** — créer fiche et règles d'adjacence cuisine, stockage et circulation |
 | Local technique | non | oui | non | non | **Socle seul** — créer fiche, accès de maintenance, réseaux et séparation des pièces sensibles |
@@ -140,8 +140,12 @@ Aucun lot ne démarre avant la correction de D1, D2, D3 et la première mesure
   de la pose, l'ouvrant lié du four, l'accessibilité, les relations de réseaux
   au plan complet et la preuve C5. L'enrôlement de ses optionnels dans M4c est
   un lot moteur distinct.
-- **Chambre** : C4 livré ; poursuivre par l'équipement lié (chevets), la
-  variante de penderie battante, le profil accessible et la preuve C5 en plan.
+- **Chambre** : C4 livré ; le bureau optionnel de la variante enfant entre dans
+  le programme mobilier dès 11 m² depuis I1/C-P4a. Le plateau occupe
+  1,20 × 0,60 m ; une chaise distincte de 0,50 × 0,50 m protège son propre
+  recul arrière de 0,60 m. Poursuivre par l'équipement
+  lié (chevets), la variante de penderie battante, le profil accessible et la
+  preuve C5 en plan.
 - **Salle d'eau** : expliciter douche ou baignoire, accès aux équipements,
   profil accessible et ventilation.
 - **WC** : ajouter dégagements latéraux, transfert accessible et interdiction
@@ -474,12 +478,12 @@ une forme mais la commande le rendu autant qu'elle.
 | 2026-08-27 | M2/O2 : programmes minimaux compilés dans `fit.data.js`, coût gradué de `placement.validate()` dans le classement | fait |
 | 2026-08-27 | M2/O3 : porte objet, ouverture résolue sans décret par type, passage face-à-face et `TH2D-DOOR-004` (`S3`) | fait |
 | 2026-08-27 | M2 rend visibles 34 invalidations tardives de meublabilité sur 360 plans, concentrées sur les programmes comprimés ; entrée de M4, non dette à masquer | mesuré |
-| — | Écrire l'interpréteur de `trigger` — c'est la mécanique d'activation du lot L1 | à faire |
+| 2026-09-24 | Interpréteur générique du `trigger: count`, activation L1 du bureau compact/convertible et test de trois plans complets | fait |
 | — | Calibrer `maxRatio` hors circulation, à partir de la mesure du chantier 6 | à faire |
 | — | Découpe : savoir tenir une adjacence demandée entre deux pièces — verrou des circulations multiples | à faire |
 | — | Première mesure de discrimination à l'aveugle — bloque la phase 12 b | à faire |
 | — | Réconciliation des documents devenus périmés après l'ajout des ouvertures et parcours | à faire |
-| — | Activation du bureau dans le programme | à faire |
+| 2026-09-24 | Activation du bureau dans le programme et le questionnaire | fait |
 | — | Première remontée des verdicts de placement par pièce | à faire |
 
 ## Chantier 6 — mesure de la qualité perçue (19 août 2026)

@@ -77,8 +77,8 @@
   //                 apparaît au programme. Transcription déclarative de ce que
   //                 generator.js::buildProgram fait aujourd'hui en dur. Voir
   //                 TRIGGER_KINDS. `null` = pièce non activable, en attente du
-  //                 chantier 7. Aucun interpréteur ne le lit encore : ce
-  //                 fichier décrit, il n'active pas.
+  //                 chantier 7. Depuis L1, le générateur interprète `count`
+  //                 pour les pièces additionnelles.
 
   var MODULE = 1.20; // longueur retenue pour les linéaires à longueur libre
   var STORAGE_BAY = {
@@ -196,10 +196,20 @@
             { id: 'bed_160', label: 'Lit queen 160', val: 'VAL-EQ-003', from: 12, footprint: { w: 1.60, d: 2.00 } },
             { id: 'bed_180', label: 'Lit king 180', val: 'VAL-EQ-004', from: 16, footprint: { w: 1.80, d: 2.00 } }
           ] },
-        { id: 'wardrobe', label: 'Penderie coulissante', opening: 'sliding', canonicalValues: { footprint: 'VAL-BED-WARDROBE-FOOTPRINT-001', usageMin: 'VAL-BED-WARDROBE-CLEARANCE-MIN-001', usageTarget: 'VAL-BED-WARDROBE-CLEARANCE-TARGET-001', usageComfort: 'VAL-BED-WARDROBE-CLEARANCE-COMFORT-001' }, required: true, assumed: true, footprint: { w: MODULE, d: 0.60 }, anchor: 'wall', usage: [{ face: 'front', min: 0.70, target: 0.70, comfort: 0.90 }] }
+        { id: 'wardrobe', label: 'Penderie coulissante', opening: 'sliding', canonicalValues: { footprint: 'VAL-BED-WARDROBE-FOOTPRINT-001', usageMin: 'VAL-BED-WARDROBE-CLEARANCE-MIN-001', usageTarget: 'VAL-BED-WARDROBE-CLEARANCE-TARGET-001', usageComfort: 'VAL-BED-WARDROBE-CLEARANCE-COMFORT-001' }, required: true, assumed: true, footprint: { w: MODULE, d: 0.60 }, anchor: 'wall', usage: [{ face: 'front', min: 0.70, target: 0.70, comfort: 0.90 }] },
+        // Première tranche I1/C-P4 : une chambre enfant assez grande peut
+        // porter la fonction de travail sans faire émerger une pièce bureau.
+        // Le seuil et les dégagements viennent du profil chambre C4 ; la pièce
+        // bureau autonome suit son activation L1 séparée.
+        { id: 'desk', label: 'Bureau', required: false, variant: 'enfant', minRoomArea: 11,
+          footprint: { w: 1.20, d: 0.60 }, anchor: 'wall', usage: [] },
+        { id: 'office_chair', label: 'Chaise de bureau', required: false, variant: 'enfant', minRoomArea: 11,
+          footprint: { w: 0.50, d: 0.50 }, anchor: 'free',
+          usage: [{ face: 'back', min: 0.60, target: 0.80, comfort: 0.90 }] }
       ],
       relations: [
-        { code: 'BED-STORAGE-001', kind: 'different-wall', subject: 'wardrobe', targetAny: ['bed_90', 'bed_140'], level: 'GUIDELINE', weight: 1.4, label: 'Le rangement libère le mur de tête du lit' }
+        { code: 'BED-STORAGE-001', kind: 'different-wall', subject: 'wardrobe', targetAny: ['bed_90', 'bed_140'], level: 'GUIDELINE', weight: 1.4, label: 'Le rangement libère le mur de tête du lit' },
+        { code: 'BED-OFFICE-STATION-001', kind: 'workstation', subject: 'office_chair', target: 'desk', min: 0, max: 0.20, maxOffset: 0.15, optional: true, level: 'HARD', weight: 2, label: 'La chaise forme un poste avec le plateau' }
       ]
     },
 
@@ -325,12 +335,39 @@
     },
 
     bureau: {
-      label: 'Bureau', mvp: false,
+      label: 'Bureau', mvp: false, variants: ['compact', 'convertible'],
       role: 'principale', agrement: 0.6,
-      minProgramArea: null, minProgramSide: null, maxRatio: null, trigger: null,
+      minProgramArea: 5, minProgramSide: 1.80, maxRatio: null,
+      trigger: { kind: 'count', from: 'offices', variantFrom: 'officeVariant' },
+      programFloors: {
+        compact: { area: 5, side: 1.80 },
+        convertible: { area: 9, side: 2.50 }
+      },
+      canonicalValues: {
+        compactArea: 'VAL-OFFICE-PROGRAM-AREA-MIN-COMPACT-001',
+        compactSide: 'VAL-OFFICE-PROGRAM-SIDE-MIN-COMPACT-001',
+        convertibleArea: 'VAL-OFFICE-PROGRAM-AREA-MIN-CONVERTIBLE-001',
+        convertibleSide: 'VAL-OFFICE-PROGRAM-SIDE-MIN-CONVERTIBLE-001'
+      },
       equipments: [
-        { id: 'desk', label: 'Plan de travail', required: true, footprint: { w: 1.20, d: 0.60 }, anchor: 'wall', usage: [{ face: 'front', min: 0.90 }] },
-        { id: 'bookcase', label: 'Bibliothèque', required: false, assumed: true, minRoomArea: 7, footprint: { w: MODULE, d: 0.35 }, anchor: 'wall', usage: [{ face: 'front', min: 0.60 }] }
+        { id: 'desk', label: 'Plan de travail', required: true,
+          canonicalValues: { footprint: 'VAL-OFFICE-DESK-FOOTPRINT-001' },
+          footprint: { w: 1.20, d: 0.60 }, anchor: 'wall',
+          usage: [],
+          sizes: [
+            { id: 'desk_140', label: 'Bureau standard 140', from: 7, footprint: { w: 1.40, d: 0.70 } },
+            { id: 'desk_180', label: 'Grand bureau 180', from: 10, footprint: { w: 1.80, d: 0.80 } }
+          ] },
+        { id: 'office_chair', label: 'Chaise de bureau', required: true,
+          canonicalValues: { footprint: 'VAL-OFFICE-CHAIR-FOOTPRINT-001', usageMin: 'VAL-OFFICE-CHAIR-CLEARANCE-BACK-MIN-001', usageTarget: 'VAL-OFFICE-CHAIR-CLEARANCE-BACK-TARGET-001', usageComfort: 'VAL-OFFICE-CHAIR-CLEARANCE-BACK-COMFORT-001' },
+          footprint: { w: 0.50, d: 0.50 }, anchor: 'free',
+          usage: [{ face: 'back', min: 0.60, target: 0.80, comfort: 0.90 }] },
+        { id: 'bookcase', label: 'Bibliothèque', required: false, assumed: true, minRoomArea: 7,
+          canonicalValues: { activationArea: 'VAL-OFFICE-BOOKCASE-ACTIVATION-AREA-001', footprint: 'VAL-OFFICE-BOOKCASE-FOOTPRINT-001', usageMin: 'VAL-OFFICE-BOOKCASE-PASSAGE-MIN-001' },
+          footprint: { w: MODULE, d: 0.35 }, anchor: 'wall', usage: [{ face: 'front', min: 0.60 }] }
+      ],
+      relations: [
+        { code: 'OFFICE-STATION-001', kind: 'workstation', subject: 'office_chair', target: 'desk', min: 0, max: 0.20, maxOffset: 0.15, level: 'HARD', weight: 2, label: 'La chaise forme un poste avec le plateau' }
       ]
     },
 

@@ -591,6 +591,11 @@
            `foot` garde un vocabulaire métier explicite tout en partageant la
            même géométrie que `front`. */
         fixed.push(front(foot, inward, minimum, spec.width ? cm(spec.width) : null));
+      } else if (spec.face === 'back') {
+        // Un siège regarde son poste de travail ; son recul de circulation se
+        // trouve donc derrière lui, à l'opposé de son vecteur d'orientation.
+        fixed.push(front(foot, { x: -inward.x, y: -inward.y }, minimum,
+          spec.width ? cm(spec.width) : null));
       } else if (spec.face === 'long') {
         var bands = longSides(foot, inward, minimum);
         if ((spec.sides || 1) >= 2) fixed.push.apply(fixed, bands);
@@ -889,6 +894,20 @@
     if (relation.kind === 'near') return distance(placementCenter(members.subject), placementCenter(members.target)) <= relation.max;
     if (relation.kind === 'distance-range') return rangeSatisfied(distance(placementCenter(members.subject), placementCenter(members.target)), relation);
     if (relation.kind === 'gap-range') return rangeSatisfied(footprintGap(members.subject, members.target), relation);
+    if (relation.kind === 'workstation') {
+      var chairCenter = placementCenter(members.subject);
+      var deskCenter = placementCenter(members.target);
+      var deskInward = members.target.inward;
+      var chairInward = members.subject.inward;
+      if (!deskInward || !chairInward) return false;
+      var along = (chairCenter.x - deskCenter.x) * deskInward.x +
+        (chairCenter.y - deskCenter.y) * deskInward.y;
+      var across = Math.abs((chairCenter.x - deskCenter.x) * -deskInward.y +
+        (chairCenter.y - deskCenter.y) * deskInward.x);
+      var facesDesk = chairInward.x * -deskInward.x + chairInward.y * -deskInward.y >= 0.99;
+      return along > 0 && across <= (relation.maxOffset || 0.15) + 0.005 &&
+        facesDesk && rangeSatisfied(footprintGap(members.subject, members.target), relation);
+    }
     if (relation.kind === 'faces') {
       var from = placementCenter(members.subject), to = placementCenter(members.target);
       var length = distance(from, to) || 1;
@@ -919,6 +938,7 @@
     }
     if (relation.kind === 'distance-range') return rangeQuality(distance(placementCenter(members.subject), placementCenter(members.target)), relation);
     if (relation.kind === 'gap-range') return rangeQuality(footprintGap(members.subject, members.target), relation);
+    if (relation.kind === 'workstation') return relationSatisfied(relation, indexed) ? 1 : 0;
     if (relation.kind === 'faces') {
       var from = placementCenter(members.subject), to = placementCenter(members.target);
       var length = distance(from, to) || 1;

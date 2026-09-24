@@ -6,8 +6,9 @@
   var CIRCULATION = ['CIRCULATION'];
   var ENTRY = ['ENTRY_THRESHOLD'];
   var STORAGE = ['STORAGE'];
+  var OFFICE = ['BUREAU'];
   var ALL_ROOMS = ['LIVING', 'KITCHEN', 'BEDROOM', 'BATHROOM',
-    'BATHROOM_WITH_TOILET', 'TOILET_SEPARATE', 'CIRCULATION', 'ENTRY_THRESHOLD', 'STORAGE'];
+    'BATHROOM_WITH_TOILET', 'TOILET_SEPARATE', 'CIRCULATION', 'ENTRY_THRESHOLD', 'STORAGE', 'BUREAU'];
   var CONTEXT = ['logement-collectif', 'maison-individuelle'];
 
   function scope(roomProfiles, variants) {
@@ -42,7 +43,7 @@
 
   root.TechnoHabCanonicalValueData = {
     schemaVersion: '1.0',
-    version: '2026-09-01',
+    version: '2026-09-24',
     values: [
       {
         id: 'VAL-USAGE-TARGET-MISS-WEIGHT-001', version: '1.0.0',
@@ -598,6 +599,42 @@
       },
       {
         id: 'VAL-LIVING-CONVERSATION-MAX-001', version: '1.0.0', label: 'Distance maximale de conversation entre assises', quantity: 'length', value: 3, unit: 'm', status: 'PROVISIONAL', ruleLevel: 'GUIDELINE', source: doctrine('profils/sejour.md §7', 'Au-delà de trois mètres, les assises ne composent plus un groupe de conversation crédible.'), scope: scope(['LIVING'])
+      },
+      {
+        id: 'VAL-OFFICE-PROGRAM-AREA-MIN-COMPACT-001', version: '1.0.0', label: 'Surface minimale du bureau compact', quantity: 'area', value: 5, unit: 'm2', status: 'PROVISIONAL', ruleLevel: 'HARD', source: doctrine('profils/bureau.md §5', 'Le plancher compact est dérivé du poste minimal et de son recul, puis arrondi pour préserver une circulation d’accès ; il ne promet aucune convertibilité en chambre.'), scope: scope(OFFICE, ['compact'])
+      },
+      {
+        id: 'VAL-OFFICE-PROGRAM-SIDE-MIN-COMPACT-001', version: '1.0.0', label: 'Côté court minimal du bureau compact', quantity: 'length', value: 1.8, unit: 'm', status: 'PROVISIONAL', ruleLevel: 'HARD', source: doctrine('profils/bureau.md §5', 'Un côté court de 1,80 m reçoit la profondeur de plateau de 0,60 m et le recul d’usage de 0,90 m sans réduire le local à cette seule bande.'), scope: scope(OFFICE, ['compact'])
+      },
+      {
+        id: 'VAL-OFFICE-PROGRAM-AREA-MIN-CONVERTIBLE-001', version: '1.0.0', label: 'Surface minimale du bureau convertible', quantity: 'area', value: 9, unit: 'm2', status: 'PROVISIONAL', ruleLevel: 'HARD', source: doctrine('profils/bureau.md §5', 'La variante convertible reprend explicitement le plancher de la chambre enfant ; ce nombre qualifie la convertibilité et non le seul travail au bureau.'), scope: scope(OFFICE, ['convertible'])
+      },
+      {
+        id: 'VAL-OFFICE-PROGRAM-SIDE-MIN-CONVERTIBLE-001', version: '1.0.0', label: 'Côté court minimal du bureau convertible', quantity: 'length', value: 2.5, unit: 'm', status: 'PROVISIONAL', ruleLevel: 'HARD', source: doctrine('profils/bureau.md §5', 'La variante convertible reprend le côté court minimal de la chambre enfant afin de ne pas revendiquer une future chambre sur la seule surface.'), scope: scope(OFFICE, ['convertible'])
+      },
+      {
+        id: 'VAL-OFFICE-DESK-FOOTPRINT-001', version: '1.0.0', label: 'Emprise du plateau de bureau compact', quantity: 'dimensions-2d', value: { width: 1.2, depth: 0.6 }, unit: 'm', status: 'PROVISIONAL', ruleLevel: 'HARD', source: professional('Compilation de catalogues de mobilier de bureau', 'DATASOURCE_EQUIPEMENTS.md — desk/office'), scope: scope(OFFICE)
+      },
+      {
+        id: 'VAL-OFFICE-CHAIR-FOOTPRINT-001', version: '1.0.0', label: 'Emprise de la chaise de bureau', quantity: 'dimensions-2d', value: { width: 0.5, depth: 0.5 }, unit: 'm', status: 'PROVISIONAL', ruleLevel: 'HARD', source: doctrine('profils/bureau.md §3', 'L’emprise rectangulaire rend la chaise visible et distincte du recul nécessaire pour la déplacer.'), scope: scope(OFFICE)
+      },
+      {
+        id: 'VAL-OFFICE-CHAIR-CLEARANCE-BACK-MIN-001', version: '1.0.0', label: 'Recul minimal derrière la chaise de bureau', quantity: 'length', value: 0.6, unit: 'm', status: 'PROVISIONAL', ruleLevel: 'HARD', source: doctrine('profils/bureau.md §4', 'La chaise possède sa propre emprise ; soixante centimètres derrière elle protègent le retrait minimal et la circulation immédiate.'), scope: scope(OFFICE)
+      },
+      {
+        id: 'VAL-OFFICE-CHAIR-CLEARANCE-BACK-TARGET-001', version: '1.0.0', label: 'Recul cible derrière la chaise de bureau', quantity: 'length', value: 0.8, unit: 'm', status: 'PROVISIONAL', ruleLevel: 'GUIDELINE', source: doctrine('profils/bureau.md §4', 'La cible permet de reculer le siège sans rendre ce confort obligatoire à la faisabilité.'), scope: scope(OFFICE)
+      },
+      {
+        id: 'VAL-OFFICE-CHAIR-CLEARANCE-BACK-COMFORT-001', version: '1.0.0', label: 'Recul confortable derrière la chaise de bureau', quantity: 'length', value: 0.9, unit: 'm', status: 'PROVISIONAL', ruleLevel: 'PREFERENCE', source: doctrine('profils/bureau.md §4', 'La borne de confort rejoint le recul historique du poste complet et sert uniquement au classement.'), scope: scope(OFFICE)
+      },
+      {
+        id: 'VAL-OFFICE-BOOKCASE-ACTIVATION-AREA-001', version: '1.0.0', label: 'Surface d’activation de la bibliothèque du bureau', quantity: 'area', value: 7, unit: 'm2', status: 'PROVISIONAL', ruleLevel: 'GUIDELINE', source: doctrine('profils/bureau.md §2', 'La bibliothèque complète le poste à partir du cas moyen ; elle reste optionnelle et peut être retirée par repli.'), scope: scope(OFFICE)
+      },
+      {
+        id: 'VAL-OFFICE-BOOKCASE-FOOTPRINT-001', version: '1.0.0', label: 'Emprise de la bibliothèque du bureau', quantity: 'dimensions-2d', value: { width: 1.2, depth: 0.35 }, unit: 'm', status: 'PROVISIONAL', ruleLevel: 'HARD', source: professional('Compilation de catalogues de rangement', 'DATASOURCE_EQUIPEMENTS.md — bureau/bookcase'), scope: scope(OFFICE)
+      },
+      {
+        id: 'VAL-OFFICE-BOOKCASE-PASSAGE-MIN-001', version: '1.0.0', label: 'Passage minimal devant la bibliothèque', quantity: 'length', value: 0.6, unit: 'm', status: 'PROVISIONAL', ruleLevel: 'HARD', source: doctrine('profils/bureau.md §4', 'La valeur représente le passage nécessaire devant le rangement ouvert ; le modèle courant l’exprime encore comme zone frontale.'), scope: scope(OFFICE)
       }
     ]
   };

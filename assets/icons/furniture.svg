@@ -189,10 +189,18 @@
     <path d="M9 47h102" stroke-dasharray="8 6" />
   </symbol>
 
-  <symbol id="furn-desk" viewBox="0 0 140 115" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Bureau avec assise" data-w="1.40" data-h="0.70" data-rotatable="true">
-    <path d="M1 1h138v68H1z" />
-    <rect x="45" y="75" width="50" height="38" rx="5" />
-    <path d="M45 103h50" />
+  <!-- Le siège appartient au recul d'usage de 0,90 m, pas à l'emprise du
+       meuble. Le dessiner dans ce symbole comprimait plateau et chaise dans
+       1,20 × 0,60 m alors que le solveur les traite séparément. -->
+  <symbol id="furn-desk" viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Bureau" data-w="1.20" data-h="0.60" data-rotatable="true">
+    <path d="M1 1h118v58H1z" />
+    <rect x="38" y="8" width="44" height="22" rx="2" />
+    <path d="M60 30v9M50 39h20M9 9h20v42H9z" />
+  </symbol>
+
+  <symbol id="furn-office_chair" viewBox="0 0 50 50" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-label="Chaise de bureau" data-w="0.50" data-h="0.50" data-rotatable="true">
+    <rect x="9" y="9" width="32" height="30" rx="5" />
+    <path d="M8 7c9-6 25-6 34 0M25 39v7M18 46h14" />
   </symbol>
 
   <symbol id="furn-bookcase" viewBox="0 0 120 35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Bibliothèque" data-w="1.20" data-h="0.35" data-stretch="x" data-rotatable="true">

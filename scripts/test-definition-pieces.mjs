@@ -110,11 +110,12 @@ assert.deepEqual(fit.typesByRole('principale').sort(),
 assert.equal(fit.roleOf('circulation'), 'distribution');
 assert.equal(fit.roleOf('inconnu'), null, 'Un type inconnu ne doit porter aucun rôle.');
 
-// Les six types générés déclarent tous leurs planchers ; les sept autres les
-// laissent à null tant qu'aucune mesure ne les fonde.
+// Les six types historiques déclarent tous leurs planchers. Le bureau C4 les
+// déclare aussi et L1 l'active par son trigger. Les autres types non générés
+// restent sans plancher.
 const declares = Object.keys(socle.rooms)
   .filter((type) => socle.programFloor(type).area !== null).sort();
-assert.deepEqual(declares, Object.keys(TABLE_HISTORIQUE).sort(),
+assert.deepEqual(declares, Object.keys(TABLE_HISTORIQUE).concat('bureau').sort(),
   'Un plancher de programme a été posé sur une pièce non générée, ou retiré d’une pièce générée.');
 
 console.log('definition-pieces : 13 types, 5 rôles, planchers et compilé conformes.');
