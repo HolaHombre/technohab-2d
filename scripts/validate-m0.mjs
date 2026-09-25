@@ -14,6 +14,10 @@ const tests = readdirSync(scripts)
 const stages = [
   ...tests.map((file) => ({ label: file.slice(scripts.length + 1), args: [file] })),
   {
+    label: 'audit icônes mobilier',
+    args: [join(scripts, 'audit-icons.mjs')]
+  },
+  {
     label: 'instrument O0',
     args: [join(scripts, 'measure-o0.mjs'), '--check', join(scripts, 'references', 'O0_REFERENCE.json')]
   },

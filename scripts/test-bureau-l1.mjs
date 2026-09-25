@@ -35,7 +35,9 @@ assert.deepEqual(
     // Cumul des modes, 24 septembre 2026 : `priorities` (tableau) fait foi,
     // `priority` (singulier) n'en reste que la primaire — voir
     // PONDERATION_AGENCEMENT.md et normalizeOptions() dans generator.js.
-    priorities: ['compact'], priority: 'compact'
+    priorities: ['compact'], priority: 'compact',
+    // DIVERS-1 : le repas suit la classe par défaut (75 m² : « moyen », hébergé).
+    diningMode: 'auto', separateDining: false
   }
 );
 assert.equal(G.normalizeOptions({ officeType: 'none', offices: 1 }).offices, 0);

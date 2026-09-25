@@ -15,7 +15,10 @@ const generator = globalThis.TechnoHabGenerator;
 const rules = globalThis.TechnoHabRules;
 
 const FORMES = { square: 1, rectangle: 1, lShape: 2, uShape: 3 };
-const base = { surface: 110, bedrooms: 3, bathrooms: 1, separateKitchen: true, includeWc: true, priority: 'compact' };
+// DIVERS-1 : le repas reste hébergé pour que les quatre formes portent le MÊME
+// programme — l'invariant testé ici est géométrique (l'encoche donne de la
+// façade), pas une comparaison de programmes que la classe rend différents.
+const base = { surface: 110, bedrooms: 3, bathrooms: 1, separateKitchen: true, includeWc: true, priority: 'compact', diningMode: 'hosted' };
 
 /* 1. Chaque forme produit ses volumes et rien qu'eux -------------------- */
 

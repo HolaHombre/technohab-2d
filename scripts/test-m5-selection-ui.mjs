@@ -18,8 +18,8 @@ assert.match(html, /id="plan-selection-tabs"[^>]*role="tablist"/,
   'la liste des propositions doit exposer sa sémantique comparative');
 assert.match(html, /id="plan-view"[^>]*role="tabpanel"/,
   'le plan actif doit être le panneau contrôlé par les rangs');
-assert.match(app, /resolveSelection\(options, variant, pendingSeed, 3\)/,
-  'M5.1 doit demander trois propositions au programme effectivement résolu');
+assert.match(app, /resolveSelection\(\s*options, variant, pendingSeed, requestedCount\)/,
+  'M5.1 doit demander le nombre de propositions choisi (1 ou 3) au programme effectivement résolu');
 assert.match(app, /selection\.status === 'COMPLETE'/);
 assert.match(app, /selection\.status === 'PARTIAL'/);
 assert.match(app, /selectionStatus === 'EMPTY'/,

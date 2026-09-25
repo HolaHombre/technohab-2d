@@ -2,6 +2,14 @@
   'use strict';
 
   var STEP = 10;
+  /* Plafond de nœuds par résolution quand l'appelant n'en fixe pas. Mesuré le
+     25 septembre 2026 sur 3 884 résolutions du banc : 99 % aboutissent en moins
+     de 750 nœuds, le maximum observé sous plafond est ~12 000. Un cas de 45 m²
+     en a demandé 30 millions (3 équipements, acceptation finale presque
+     jamais satisfaite) — 45 s, interface figée. Au-delà, la pose est déclarée
+     « ne tient pas » et `searchLimitReached` le dit : un refus borné plutôt
+     qu'un calcul sans fin. */
+  var DEFAULT_MAX_NODES = 250000;
   var MIN_SIDE = 70;
   var MAX_SIDE = 600;
   var S4_STEP = 0.05;
@@ -661,8 +669,40 @@
     var partialAbort = false;
     var partialRejections = 0;
 
+    /* Les poses d'un équipement ne dépendent ni des poses déjà posées ni de
+       la profondeur : elles ne changent pas d'un nœud à l'autre. Recalculées à
+       chaque visite (générateur relancé), elles dominaient le coût — mesuré
+       le 25 septembre 2026 : `usageSets` et `poses` = 40 s sur 45 s d'un cas
+       de 45 m² qui ne se terminait pas. Le tampon est rempli à la demande,
+       dans le MÊME ordre que le générateur : le premier échec ou succès de la
+       recherche est inchangé, seul son coût l'est. */
+    var lazyPoses = [];
+    function cachedPoses(index) {
+      if (!lazyPoses[index]) {
+        var buffer = [], source = null, exhausted = false;
+        lazyPoses[index] = {
+          [Symbol.iterator]: function () {
+            var position = 0;
+            return {
+              next: function () {
+                if (position < buffer.length) return { value: buffer[position++], done: false };
+                if (exhausted) return { value: undefined, done: true };
+                if (!source) source = poses(equipments[index], width, height, options.context);
+                var step = source.next();
+                if (step.done) { exhausted = true; return step; }
+                buffer.push(step.value);
+                position += 1;
+                return { value: step.value, done: false };
+              }
+            };
+          }
+        };
+      }
+      return lazyPoses[index];
+    }
+
     function candidates(index) {
-      if (!options.random && !options.family) return poses(equipments[index], width, height, options.context);
+      if (!options.random && !options.family) return cachedPoses(index);
       if (!candidateSets[index]) {
         candidateSets[index] = Array.from(poses(equipments[index], width, height, options.context));
         if (options.family) {
@@ -684,7 +724,7 @@
       }
       for (var pose of candidates(index)) {
         visited += 1;
-        if (visited > (options.maxNodes || Infinity)) return false;
+        if (visited > (options.maxNodes || DEFAULT_MAX_NODES)) return false;
         if (!inside(pose.foot, width, height)) continue;
         if (!rectangleInPolygon(pose.foot, options.context.usablePolygon)) continue;
         if (!pose.usage.every(function (usage) {
@@ -729,7 +769,8 @@
     var success = attempt(0);
     return {
       fits: success, placed: success ? placed.slice() : [], failure: deepestFailure,
-      relationRejected: relationRejected, searchLimitReached: visited > (options.maxNodes || Infinity)
+      relationRejected: relationRejected, searchLimitReached: visited > (options.maxNodes || DEFAULT_MAX_NODES),
+      visitedNodes: visited
     };
   }
 

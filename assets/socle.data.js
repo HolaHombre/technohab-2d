@@ -153,18 +153,45 @@
     },
 
     dining: {
-      label: 'Salle à manger', mvp: false,
-      /* `principale` reproduit exactement le comportement actuel de
-         TH2D-FACADE-001, qui la comptait déjà parmi les pièces à façade. Le
-         lot L2 tranchera « pièce ou zone » ; le jour où il choisit la zone,
-         c'est ce seul mot qui change. */
+      label: 'Salle à manger', mvp: false, variants: ['coin', 'coin4', 'salle'],
+      /* Deux formes de la même fonction (DECISIONS_PROGRAMME.md §2.1) :
+         `coin` est la zone hébergée par le séjour, `salle` la pièce autonome.
+         `principale` reproduit le comportement de TH2D-FACADE-001, qui la
+         comptait déjà parmi les pièces à façade. */
       role: 'principale', agrement: 0.6,
       minProgramArea: null, minProgramSide: null, maxRatio: null,
-      trigger: null,
+      // Plancher de la pièce autonome seulement : le coin repas n'a pas de
+      // plancher propre, il se paie dans celui du séjour qui l'héberge.
+      // Conventions provisoires N3 — 9 m² reçoivent une table 4 places
+      // (1,40 × 0,80) et son recul de 0,60 m, 2,60 m est le plus petit côté
+      // qui laisse ce recul de part et d'autre. À étalonner comme le reste.
+      programFloors: { salle: { area: 9, side: 2.60 } },
+      trigger: { kind: 'always', standaloneIf: 'separateDining', otherwiseInto: 'living' },
       equipments: [
-        // Les assises sont portées par la zone d'usage : c'est elle qui
-        // dimensionne la pièce, pas la table.
-        { id: 'dining_table_4', label: 'Table 4 places', required: true, footprint: { w: 1.40, d: 0.80 }, anchor: 'free', usage: [{ face: 'around', min: 0.80 }] }
+        // Coin repas ADOSSÉ (décision du 25 septembre 2026), variante `coin`.
+        { id: 'dining_table_2', label: 'Table adossée 2 places', variant: 'coin', required: false, minRoomArea: 0,
+          footprint: { w: 1.20, d: 0.60 }, anchor: 'wall',
+          // Deux places côte à côte, 0,60 m par convive (agencement/salon.md
+          // R1), recul de chaise 0,60–1,20 m sourcé (R3, [S2]). C'est le
+          // critère minimal du T1 : « au moins deux places praticables ».
+          usage: [{ face: 'front', min: 0.60, target: 0.80, comfort: 1.20 }],
+          sizes: [
+            // La table libre ne vient qu'avec la place, comme le canapé d'angle.
+            { id: 'dining_table_4', label: 'Table 4 places', from: 24, anchor: 'free',
+              footprint: { w: 1.40, d: 0.80 }, usage: [{ face: 'around', min: 0.60, target: 0.80, comfort: 1.20 }] }
+          ] },
+        // Coin repas HÉBERGÉ dès 25 m² (variante `coin4`) : « on fait passer la
+        // zone requise pour poser 4 chaises et une table » quand l'espace est
+        // inclus dans le séjour (Théo, 26 septembre 2026). Table requise.
+        { id: 'dining_table_4', label: 'Table 4 places', variant: 'coin4', required: true,
+          footprint: { w: 1.40, d: 0.80 }, anchor: 'free',
+          usage: [{ face: 'around', min: 0.60, target: 0.80, comfort: 1.20 }] },
+        // Salle autonome : la table est requise, le buffet vient avec la place.
+        { id: 'dining_table_4', label: 'Table 4 places', variant: 'salle', required: true,
+          footprint: { w: 1.40, d: 0.80 }, anchor: 'free',
+          usage: [{ face: 'around', min: 0.60, target: 0.80, comfort: 1.20 }] },
+        { id: 'sideboard', label: 'Buffet', variant: 'salle', required: false, minRoomArea: 12,
+          footprint: { w: 1.40, d: 0.45 }, anchor: 'wall', usage: [{ face: 'front', min: 0.60 }] }
       ]
     },
 

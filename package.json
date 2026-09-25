@@ -14,7 +14,9 @@
     "technohab:audit-circulation": "node scripts/audit-circulation-mobilier.mjs",
     "icons:inline": "node scripts/inline-sprite.mjs",
     "icons:check": "node scripts/inline-sprite.mjs --check",
-    "test:analysis": "node scripts/test-analysis-export-ui.mjs"
+    "icons:audit": "node scripts/audit-icons.mjs",
+    "icons:archlang": "npx --yes tsx scripts/archlang-sprite.mts && node scripts/inline-sprite.mjs",
+    "test:analysis": "node scripts/test-analysis-export-ui.mjs",
+    "catalogue:check": "node scripts/test-catalogue-mobilier.mjs && node scripts/test-catalog-ui.mjs"
   }
 }
-

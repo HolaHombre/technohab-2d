@@ -41,16 +41,18 @@
     dining: {
       label: "Salle à manger", mvp: false, role: "principale", agrement: 0.6,
       minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null,
-      programFloors: null,
-      trigger: null,
+      programFloors: {"salle":{"area":9,"side":2.6}},
+      trigger: {"kind":"always","standaloneIf":"separateDining","otherwiseInto":"living"},
       facingClearance: null,
       accessClearance: null,
       maxFurnitureRatio: null,
       variants: {
-        base: [[240, 300], [300, 240]]
+        coin: [[70, 70]],
+        coin4: [[200, 260], [260, 200]],
+        salle: [[200, 260], [260, 200]]
       },
-      programs: {"base":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.8}],"program":"dining"}],"relations":[]}},
-      catalogs: {"base":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.8}],"program":"dining"}],"relations":[]}}
+      programs: {"coin":{"equipments":[],"relations":[]},"coin4":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"coin4","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]},"salle":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"salle","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]}},
+      catalogs: {"coin":{"equipments":[{"id":"dining_table_2","label":"Table adossée 2 places","variant":"coin","required":false,"minRoomArea":0,"footprint":{"w":1.2,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.6,"target":0.8,"comfort":1.2}],"sizes":[{"id":"dining_table_4","label":"Table 4 places","from":24,"anchor":"free","footprint":{"w":1.4,"d":0.8},"usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}]}],"program":"dining"}],"relations":[]},"coin4":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"coin4","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]},"salle":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"salle","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"},{"id":"sideboard","label":"Buffet","variant":"salle","required":false,"minRoomArea":12,"footprint":{"w":1.4,"d":0.45},"anchor":"wall","usage":[{"face":"front","min":0.6}],"program":"dining"}],"relations":[]}}
     },
     bedroom: {
       label: "Chambre", mvp: true, role: "principale", agrement: 0.6,

@@ -30,7 +30,7 @@ assert.match(indexSource, /Survol : nom · L × l · surface/,
   'la légende doit annoncer l’interaction contextuelle');
 assert.match(indexSource, /contracts\.js[\s\S]*generator\.js/,
   'les contrats M1 doivent être chargés avant le générateur');
-assert.match(appSource, /TechnoHabGenerator\.resolveSelection\(options, variant, pendingSeed, 3\)/,
+assert.match(appSource, /TechnoHabGenerator\.resolveSelection\(\s*options, variant, pendingSeed, requestedCount\)/,
   'l’interface doit consommer la résolution graduée et sa sélection comparative');
 assert.match(appSource, /resolution\.status === 'UNRESOLVED'/,
   'une résolution sans résultat ne doit pas être présentée comme une proposition');

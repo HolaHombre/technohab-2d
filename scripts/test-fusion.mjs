@@ -35,8 +35,11 @@ assert.ok(!fusionne.rooms.some((room) => room.type === 'wc'),
 
 const sejour = fusionne.rooms.find((room) => room.id === 'living');
 const salleDEau = fusionne.rooms.find((room) => room.id === 'bath_1');
-assert.deepEqual(sejour.composedWith, ['kitchen'],
-  'la cuisine ouverte est absorbée par le séjour, pas supprimée');
+// DIVERS-1 (25 septembre 2026) : au-dessus de la classe « petit », le séjour
+// héberge aussi le coin repas — décision « obligatoire dans tout plan »
+// (DECISIONS_PROGRAMME.md §2.1), tenue dès 55 m². 75 m² est « moyen ».
+assert.deepEqual(sejour.composedWith, ['kitchen', 'dining'],
+  'la cuisine ouverte est absorbée par le séjour, pas supprimée, et le repas y est hébergé');
 assert.deepEqual(salleDEau.composedWith, ['wc'],
   'le WC intégré est absorbé par la salle d’eau, pas supprimé');
 assert.match(sejour.label, /cuisine/i, 'l’étiquette du séjour annonce la cuisine ouverte');

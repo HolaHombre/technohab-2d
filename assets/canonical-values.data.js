@@ -146,6 +146,26 @@
         scope: scope(ALL_ROOMS)
       },
       {
+        // TABLE_PROGRAMME_BANDES §4 — ancrage réglementaire de la pièce
+        // principale, vérifié sur Légifrance le 26 septembre 2026 et pris par
+        // Théo. GUIDELINE et non HARD : le décret définit la décence d'un
+        // logement loué, pas une contrainte de conception d'un plan de principe.
+        id: 'VAL-REG-MAIN-ROOM-AREA-MIN-001', version: '1.0.0',
+        label: 'Surface habitable minimale d’au moins une pièce principale (logement décent)',
+        quantity: 'area', value: 9, unit: 'm2', status: 'ADOPTED', ruleLevel: 'GUIDELINE',
+        source: regulatory('Décret n° 2002-120 du 30 janvier 2002, article 4',
+          'Légifrance LEGIARTI000043842463 — 9 m² et 2,20 m sous plafond, ou 20 m³ ; mesures au sens de l’article R. 156-1 du CCH'),
+        scope: scope(['LIVING', 'BEDROOM', 'BUREAU'])
+      },
+      {
+        id: 'VAL-REG-MAIN-ROOM-HEIGHT-MIN-001', version: '1.0.0',
+        label: 'Hauteur sous plafond minimale de la pièce principale de 9 m² (logement décent)',
+        quantity: 'length', value: 2.2, unit: 'm', status: 'ADOPTED', ruleLevel: 'GUIDELINE',
+        source: regulatory('Décret n° 2002-120 du 30 janvier 2002, article 4',
+          'Légifrance LEGIARTI000043842463 — couplée à la surface de 9 m² ; à défaut, volume habitable ≥ 20 m³'),
+        scope: scope(['LIVING', 'BEDROOM', 'BUREAU'])
+      },
+      {
         // CLASSIFICATION_LOGEMENT §2.2 — bandes de classe de taille.
         // Explicitement non sourcées : DATASOURCE_EQUIPEMENTS.md a déjà
         // renoncé à sourcer sa Table B pour la même raison. Publiées comme

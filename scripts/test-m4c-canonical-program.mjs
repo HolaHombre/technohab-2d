@@ -36,17 +36,28 @@ function assertCanonical(room) {
 }
 
 const generous = generator.generatePlan({
-  // C-P2 réserve désormais 1,20 × 1,20 m à l'arrivée. Ce témoin généreux
-  // prouve que la gamme haute survit encore après cette contrainte réelle.
+  // C-P2 réserve désormais 1,20 × 1,20 m à l'arrivée.
+  // DIVERS-1 : à 120 m² en L, le coin repas hébergé pèse sur la gamme haute du
+  // séjour — le canapé d'angle redevient canapé, la table est à 2 places. Ce
+  // témoin fixe le repas hébergé ; la gamme haute survit avec le repas dédié,
+  // plus bas (`generousDedicated`).
   surface: 120, bedrooms: 3, bathrooms: 1,
-  separateKitchen: true, includeWc: true, shape: 'lShape'
+  separateKitchen: true, includeWc: true, shape: 'lShape', diningMode: 'hosted'
 }, 1, 55);
 const living = generous.rooms.find((room) => room.type === 'living');
 assertCanonical(living);
 assert.deepEqual(living.equipmentProgram.resolved.map((item) => item.id),
+  ['sofa', 'coffee_table', 'tv_unit', 'armchair', 'dining_table_2']);
+const generousDedicated = generator.generatePlan({
+  surface: 140, bedrooms: 3, bathrooms: 1,
+  separateKitchen: true, includeWc: true, shape: 'lShape'
+}, 1, 55);
+const livingDedicated = generousDedicated.rooms.find((room) => room.type === 'living');
+assertCanonical(livingDedicated);
+assert.deepEqual(livingDedicated.equipmentProgram.resolved.map((item) => item.id),
   ['sofa', 'coffee_table', 'tv_unit', 'armchair']);
-assert.equal(living.equipmentProgram.resolved[0].sizeId, 'sofa_angle');
-const sofa = living.placements.find((pose) => pose.equipmentId === 'sofa');
+assert.equal(livingDedicated.equipmentProgram.resolved[0].sizeId, 'sofa_angle');
+const sofa = livingDedicated.placements.find((pose) => pose.equipmentId === 'sofa');
 assert.deepEqual(sofa.nominalFootprint, { w: 2.2, d: 2.2 },
   'le canapé d’angle participe avec sa vraie emprise');
 

@@ -18,6 +18,8 @@ assert.match(html, /class="catalog-nav"/);
 assert.match(html, /class="catalog-return" href="#atelier"/);
 assert.match(app, /root\.TechnoHabFit\.envelopes/);
 assert.match(app, /window\.addEventListener\('hashchange', routePage\)/);
+assert.match(app, /catalogOpen\.addEventListener\('click'/,
+  'le lien du catalogue doit ouvrir la page même si hashchange ne suffit pas en file://');
 assert.match(app, /classList\.toggle\('catalog-mode', catalogActive\)/);
 assert.match(app, /classList\.toggle\('catalog-route', catalogActive\)/);
 assert.match(app, /Défini, pas encore activable/);

@@ -132,6 +132,14 @@
 
   // La graine est une donnée du plan, affichée et réutilisable : une référence
   // courte suffit à rejouer une génération sans conserver le plan lui-même.
+  /* Révision du moteur — la graine ne suffit pas à rejouer un plan : il faut
+     aussi le programme et le code qui l'ont produit. Constaté le 25 septembre
+     2026 : l'ajout du coin repas a changé des plans déjà archivés pour une
+     même graine et les mêmes options. À incrémenter dès qu'un changement
+     modifie le plan issu d'une graine + options données ; l'archive la
+     conserve et signale toute divergence au rejeu, sans prétendre rejouer. */
+  var ENGINE_REVISION = 'moteur-2026-09-25.1';
+
   function encodeSeed(value) {
     return (value >>> 0).toString(36).toUpperCase().padStart(7, '0').slice(-7);
   }
@@ -173,8 +181,28 @@
     };
   }
 
+  /* Salle à manger autonome — DIVERS-1, décidé le 25 septembre 2026 :
+     « automatique » suit la classe (pièce dédiée dès « grand », soit
+     VAL-CLASSE-MOYEN-MIN-001), l'utilisateur peut forcer l'un ou l'autre. */
+  function diningModeOf(input) {
+    return ['auto', 'separate', 'hosted'].indexOf(input.diningMode) >= 0 ? input.diningMode : 'auto';
+  }
+  function separateDiningOf(input, surface) {
+    var mode = diningModeOf(input);
+    if (mode === 'separate') return true;
+    if (mode === 'hosted') return false;
+    /* Une aile d'L ou de U n'a pas la profondeur d'un corps de bâtiment :
+       mesuré le 25 septembre 2026, une salle dédiée à 110 m² rend le L
+       intenable (test-formes, repli sur le rectangle). Sur ces formes le
+       seuil monte d'une classe — hypothèse, à confirmer sur le moniteur. */
+    var restreinte = input.shape === 'lShape' || input.shape === 'uShape';
+    return surface >= valeurCanonique(restreinte ? 'VAL-CLASSE-GRAND-MIN-001' : 'VAL-CLASSE-MOYEN-MIN-001',
+      restreinte ? 140 : 90);
+  }
+
   function normalizeOptions(input) {
     input = input || {};
+    var surface = Math.min(250, Math.max(35, Number(input.surface) || 75));
     var officeVariant = ['compact', 'convertible'].indexOf(input.officeVariant) >= 0
       ? input.officeVariant : 'compact';
     var offices = Math.min(1, Math.max(0, Math.trunc(Number(input.offices) || 0)));
@@ -185,7 +213,7 @@
       offices = 0;
     }
     return {
-      surface: Math.min(250, Math.max(35, Number(input.surface) || 75)),
+      surface: surface,
       bedrooms: Math.min(5, Math.max(0, Math.trunc(Number(input.bedrooms) || 0))),
       bathrooms: Math.min(2, Math.max(1, Math.trunc(Number(input.bathrooms) || 1))),
       separateKitchen: Boolean(input.separateKitchen),
@@ -197,6 +225,8 @@
       // rectangle), soustractive (L, U, un quartier retiré du rectangle
       // englobant), additive — celle-ci pas encore servie.
       shape: ['square', 'rectangle', 'lShape', 'uShape'].indexOf(input.shape) >= 0 ? input.shape : 'rectangle',
+      diningMode: diningModeOf(input),
+      separateDining: separateDiningOf(input, surface),
       priorities: normalizePriorities(input),
       // Rétrocompatibilité et portée assumée : `priority` (singulier) reste
       // lu par l'enveloppe (`envelopeAspect`) et la découpe (`layout`), qui
@@ -416,7 +446,66 @@
     return null;
   }
 
+  /* PROGRAMME-BANDES étape 4 (TABLE_PROGRAMME_BANDES.md) — planchers par bande.
+     La table donne, pour une pièce ACTIVÉE, sa surface minimale cible selon la
+     surface du logement (assets/programme-bandes.data.js, marches). Un plancher
+     ne s'abaisse jamais ici : la table relève ce que le moteur ne tenait pas
+     (mesuré le 26 septembre 2026 : chambre à 12 m² et salle à manger à 10 m²).
+     Absente — tests qui ne la chargent pas — la fonction ne fait rien.
+
+     Repas hébergé : « cet espace est inclus dans le séjour » (Théo, 26 septembre
+     2026). La zone de la table à 4 places et de ses chaises devient une exigence
+     du séjour, qui doit donc offrir sa cible propre PLUS la zone. Lecture
+     additive, hypothèse à confirmer ; en dessous de 25 m² la table ne donne pas
+     de zone (le studio a une table à 2 places). */
+  var MARGE_SALLE_A_MANGER = 1.2;
+  var SEUIL_REPAS_4_PLACES = 50;
+
+  function appliquerPlanchersParBande(rooms, surface) {
+    var bandes = root.TechnoHabProgrammeBandes;
+    if (!bandes || !bandes.target) return;
+    rooms.forEach(function (room) {
+      var cible = null;
+      if (room.type === 'bedroom') cible = bandes.target('chambre', surface);
+      else if (room.type === 'dining') cible = bandes.target('salle_a_manger', surface);
+      else if (room.type === 'living') {
+        cible = bandes.target('sejour', surface);
+        if ((room.composedWith || []).indexOf('dining') >= 0) {
+          // Lecture ADDITIVE essayée puis écartée par la mesure (voir §11) :
+          // 45 m² tombait à 0/6 et les chambres à 10 m². La zone du repas
+          // hébergé est portée par la table 4 places requise, pas par la somme.
+
+        }
+      }
+      // La salle à manger perd ~20 % entre cible et surface utile (cloisons,
+      // cession de circulation) : mesuré, 0/8 sous la cible à 1,2, 7/8 à 1,0.
+      if (cible !== null && room.type === 'dining') cible = cible * MARGE_SALLE_A_MANGER;
+      if (cible !== null && cible > room.minArea) room.minArea = round(cible, 2);
+    });
+  }
+
+  /* Le repas suit le contrat chambre : « le moteur fait d'abord le strict
+     minimum, chambre en priorité » (Théo, 26 septembre 2026). En mode
+     automatique, la salle à manger ne se sépare que si les minima du programme
+     tiennent dans la surface. Mesuré : validité 6/6 jusqu'à 93 % de la surface,
+     3/6 à 97 % (90 m², 3 chambres) — d'où un seuil de 92 %, provisoire. Une
+     demande explicite de l'utilisateur (« séparée ») n'est jamais retirée. */
+  var RATIO_MINIMA_SALLE_A_MANGER = 0.92;
+
   function buildProgram(rawOptions) {
+    var program = buildProgramOnce(rawOptions);
+    var o = program.options;
+    if (o.diningMode === 'auto' && o.separateDining &&
+        program.minimumTotal > RATIO_MINIMA_SALLE_A_MANGER * o.surface) {
+      var replie = buildProgramOnce(Object.assign({}, rawOptions, { diningMode: 'hosted' }));
+      replie.options.diningMode = 'auto';
+      replie.options.diningFallback = 'minima-trop-serres';
+      return replie;
+    }
+    return program;
+  }
+
+  function buildProgramOnce(rawOptions) {
     var options = normalizeOptions(rawOptions);
     var typologie = typologieDe(options);
     if (typologie && typologie.impose) {
@@ -429,6 +518,23 @@
     var index;
     if (options.separateKitchen) rooms.push(createRoom('kitchen'));
     else composeInto(rooms[0], 'kitchen', 'Séjour avec cuisine ouverte');
+    /* DIVERS-1 — le repas est une fonction obligatoire de tout plan
+       (DECISIONS_PROGRAMME.md §2.1, y compris T1) : hébergée par le séjour
+       par défaut, « coin repas » tant qu'elle n'est pas autonome. Jusqu'au
+       24 septembre 2026 cette décision n'était tenue nulle part — `dining`
+       n'était généré dans aucun plan. */
+    if (options.separateDining) rooms.push(createRoom('dining', 1, 'salle'));
+    else {
+      composeInto(rooms[0], 'dining', options.separateKitchen ? 'Séjour avec coin repas'
+        : 'Séjour avec cuisine ouverte et coin repas');
+      // La table de programme demande la zone d'une table à 4 places dès
+      // 25 m². Mesuré le 26 septembre 2026 : requise, elle tient à 100 % dès
+      // 60 m² mais tue le studio de 35 m² (8/8 → 0/8) et le 45 m² (2/8 → 1/8).
+      // Elle n'est donc requise qu'à partir de la bande 50 m² ; en dessous, la
+      // table à 2 places reste — écart nommé, à fermer avec le mode studio.
+      rooms[0].hostedDiningVariant = root.TechnoHabProgrammeBandes && options.surface >= SEUIL_REPAS_4_PLACES
+        ? 'coin4' : 'coin';
+    }
     for (index = 1; index <= options.bedrooms; index += 1) rooms.push(createRoom('bedroom', index));
     for (index = 1; index <= options.bathrooms; index += 1) rooms.push(createRoom('bath', index));
     if (options.includeWc) rooms.push(createRoom('wc'));
@@ -439,7 +545,7 @@
        Le générateur ne connaît ni le bureau ni les futurs types : un trigger
        `count` nomme seulement le champ d'option et, si nécessaire, celui de
        la variante. */
-    var coreTypes = { living: true, kitchen: true, bedroom: true, bath: true, wc: true, circulation: true };
+    var coreTypes = { living: true, kitchen: true, dining: true, bedroom: true, bath: true, wc: true, circulation: true };
     var declaredRooms = root.TechnoHabSocle && root.TechnoHabSocle.rooms
       ? root.TechnoHabSocle.rooms : {};
     Object.keys(declaredRooms).forEach(function (type) {
@@ -514,6 +620,7 @@
       }
     }
 
+    appliquerPlanchersParBande(rooms, options.surface);
     var minimumTotal = rooms.reduce(function (sum, room) { return sum + room.minArea; }, 0);
     var allocated = allocateTargetAreas(rooms, options.surface);
 
@@ -534,6 +641,9 @@
     var circulations = allocated.filter(function (room) { return room.type === 'circulation'; });
     var desiredEdges = [];
     if (options.separateKitchen) desiredEdges.push(adjacency('living', 'kitchen', 'porte', 'obligatoire'));
+    // La salle à manger autonome ouvre sur le séjour, sans porte ; la cuisine
+    // à son contact reste souhaitable, jamais imposée.
+    var salleAManger = options.separateDining;
     if (circulations.length) {
       circulations.forEach(function (couloir) {
         desiredEdges.push(adjacency('living', couloir.id, 'ouverture', 'obligatoire'));
@@ -607,6 +717,10 @@
       });
     }
     var adjacencyRequirements = desiredEdges.slice();
+    if (salleAManger) {
+      adjacencyRequirements.push(adjacency('living', 'dining', 'ouverture', 'souhaitable'));
+      if (options.separateKitchen) adjacencyRequirements.push(adjacency('kitchen', 'dining', 'ouverture', 'souhaitable'));
+    }
     var wc = allocated.find(function (room) { return room.type === 'wc'; });
     if (wc && circulations.length) {
       adjacencyRequirements.push(adjacency('living', wc.id, 'porte', 'interdite'));
@@ -1579,7 +1693,7 @@
      autres pièces continuent de consommer leur programme minimal compilé :
      déclarer un optionnel dans le socle ne suffit jamais à l'activer dans un
      profil encore C0-C3. */
-  var M4C_RESOLVED_TYPES = { living: true, bedroom: true, bureau: true };
+  var M4C_RESOLVED_TYPES = { living: true, bedroom: true, bureau: true, dining: true };
 
   function resolvedArea(room) {
     return Number.isFinite(room.area) ? room.area
@@ -1603,7 +1717,7 @@
     if (!fit || !fit.programOf) return { equipments: [], relations: [], facingClearance: null, accessClearance: null, maxFurnitureRatio: null };
     var programs = [{ type: room.type, value: programForType(room.type, roomVariant(room), room, resolution) }];
     (room.composedWith || []).forEach(function (type) {
-      programs.push({ type: type, value: programForType(type, type === 'bedroom' ? 'enfant' : null, room, resolution) });
+      programs.push({ type: type, value: programForType(type, type === 'bedroom' ? 'enfant' : type === 'dining' ? (room.hostedDiningVariant || 'coin') : null, room, resolution) });
     });
     var equipments = [], relations = [], ids = {};
     programs.forEach(function (entry) {
@@ -3722,6 +3836,7 @@
         id: room.id, type: room.type, label: room.label,
         variant: roomVariant(room) || undefined,
         composedWith: room.composedWith ? room.composedWith.slice() : undefined,
+        hostedDiningVariant: room.hostedDiningVariant,
         minArea: room.minArea, minSide: room.minSide, targetArea: room.targetArea,
         area: usableGeometry.usableArea,
         usableArea: usableGeometry.usableArea,
@@ -3819,6 +3934,7 @@
           return { x0: v.x, y0: v.y, x1: round(v.x + v.width), y1: round(v.y + v.height) };
         })
       },
+      engineRevision: ENGINE_REVISION,
       options: program.options,
       classification: classificationLogement(program.options.surface, program.options.bedrooms),
       construction: construction.settings,
@@ -4428,6 +4544,7 @@
     circulationDesserteMetrics: circulationDesserteMetrics,
     normalizeOptions: normalizeOptions,
     classificationLogement: classificationLogement,
+    engineRevision: ENGINE_REVISION,
     // Chantier 6 §6.3 — un plan posé à la main passe par le même aval que
     // les plans générés, sinon le test de l'instrument ne teste rien.
     assemblerPlan: assemblerPlan,

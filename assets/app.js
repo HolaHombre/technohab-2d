@@ -35,6 +35,7 @@
   var analysisExportButton = document.getElementById('download-analysis');
   var svgExportButton = document.getElementById('download-svg');
   var dxfExportButton = document.getElementById('download-dxf');
+  var fluxVerdictButton = document.getElementById('flux-verdict');
   var fastSaveRoot = document.getElementById('fast-save');
   var fastSaveButton = document.getElementById('fast-save-current');
   var fastSaveExport = document.getElementById('fast-save-export');
@@ -120,6 +121,41 @@
     fastSaveExport.disabled = fastSaves.length === 0;
   }
 
+  /* Instantané compact du plan archivé : ce qu'il faut pour retracer un plan
+     que le moteur ne saurait plus rejouer (pièces, surfaces, mobilier, ouvertures).
+     Le plan complet pèse 74 à 118 Ko : 100 archives dépasseraient le quota du
+     navigateur, l'instantané en garde l'essentiel en quelques Ko. */
+  function compactSnapshot(plan) {
+    var r2 = function (v) { return Math.round(v * 100) / 100; };
+    return {
+      boundary: plan.boundary && { width: plan.boundary.width, height: plan.boundary.height,
+        shape: plan.boundary.shape, demandee: plan.boundary.demandee, degradee: plan.boundary.degradee },
+      classification: plan.classification || null,
+      score: plan.score,
+      rooms: plan.rooms.map(function (room) {
+        return {
+          id: room.id, type: room.type, label: room.label, variant: room.variant || null,
+          composedWith: room.composedWith || [],
+          x0: r2(room.x0), y0: r2(room.y0), x1: r2(room.x1), y1: r2(room.y1), area: r2(room.area || 0),
+          placements: (room.placements || []).map(function (pose) {
+            return { id: pose.equipmentId, size: pose.sizeId, label: pose.label,
+              x0: r2(pose.footprint.x0), y0: r2(pose.footprint.y0),
+              x1: r2(pose.footprint.x1), y1: r2(pose.footprint.y1), rotation: pose.rotation };
+          })
+        };
+      }),
+      portes: (plan.portes || []).map(function (d) { return { id: d.id, entre: d.entre, x: r2(d.x), y: r2(d.y), largeur: d.largeur }; }),
+      fenetres: (plan.fenetres || []).map(function (w) { return { id: w.id, room: w.room, x: r2(w.x), y: r2(w.y), largeur: w.largeur }; })
+    };
+  }
+
+  function snapshotSummary(snapshot) {
+    if (!snapshot) return 'aucun instantané conservé';
+    return snapshot.rooms.length + ' pièces (' + snapshot.rooms.map(function (room) {
+      return room.label + ' ' + room.area + ' m²';
+    }).join(', ') + ')';
+  }
+
   function archiveActivePlan() {
     if (!latestResult) return;
     var rank = latestResult.selectionIndex + 1;
@@ -135,6 +171,8 @@
       variant: latestResult.plan.variant,
       topology: latestResult.plan.topologyFamily,
       appVersion: APP_VERSION,
+      engineRevision: latestResult.plan.engineRevision || null,
+      snapshot: compactSnapshot(latestResult.plan),
       errorCount: report.summary.hard,
       verdict: report.summary,
       errors: report.violations.map(function (item) {
@@ -146,6 +184,9 @@
     };
     fastSaves = fastSaves.filter(function (saved) { return saved.key !== key; });
     fastSaves.unshift(entry);
+    // Les instantanés sont bornés : au-delà de 40 entrées, seuls les plus
+    // récents gardent le leur, pour rester sous le quota du navigateur.
+    fastSaves.forEach(function (saved, position) { if (position >= 40) delete saved.snapshot; });
     writeFastSaves();
     renderFastSaves();
     rulesMeta.textContent = 'Graine ' + entry.seed + ' archivée localement pour analyse.';
@@ -176,7 +217,7 @@
     return root.TechnoHabGenerator.normalizeOptions({
       surface: data.get('surface'), bedrooms: data.get('bedrooms'), bathrooms: data.get('bathrooms'),
       separateKitchen: data.get('separateKitchen') === 'on', includeWc: data.get('includeWc') === 'on',
-      officeType: data.get('officeType'),
+      officeType: data.get('officeType'), diningMode: data.get('diningMode'),
       // Cumulable depuis le 24 septembre 2026 : les trois cases partagent le
       // nom `priority`, `getAll()` en relève celles cochées.
       priorities: data.getAll('priority'), shape: data.get('shape')
@@ -199,6 +240,7 @@
           return;
         }
         if (key === 'priority') return;
+        if (key === 'shape' && saved.shape === 'uShape') return; // U gelé, voir index.html
         var field = form.elements.namedItem(key);
         if (!field) return;
         if (field.type === 'checkbox') field.checked = Boolean(saved[key]);
@@ -1040,8 +1082,9 @@
     });
   }
   function setText(id, text) { document.getElementById(id).textContent = text; }
+  var replayNotice = null;
   function renderMeta(report) {
-    rulesMeta.textContent = report.profile + ' · ' + report.evaluatedRules + ' règle(s) évaluée(s)' +
+    rulesMeta.textContent = (replayNotice ? replayNotice + ' · ' : '') + report.profile + ' · ' + report.evaluatedRules + ' règle(s) évaluée(s)' +
       (report.skippedRules ? ', ' + report.skippedRules + ' non applicable(s)' : '') +
       ' · ' + report.summary.hard + ' bloquante(s), ' + report.summary.guideline + ' conseil(s)' +
       (report.summary.limites ? ' · ' + report.summary.limites + ' relevant d’une limite du moteur' : '');
@@ -1059,6 +1102,7 @@
       plural(Number(options.bathrooms || 1), 'salle d’eau', 'salles d’eau'),
       Number(options.offices || 0) ? 'bureau ' + (options.officeVariant === 'convertible' ? 'convertible' : 'compact') : 'sans bureau indépendant',
       options.separateKitchen ? 'cuisine séparée' : 'cuisine ouverte',
+      options.separateDining ? 'salle à manger séparée' : 'coin repas',
       options.includeWc ? 'WC indépendant' : 'WC intégré'
     ].join(' · ');
   }
@@ -1237,6 +1281,7 @@
     if (fastSaveButton) fastSaveButton.disabled = !available;
     svgExportButton.disabled = !available;
     dxfExportButton.disabled = !available;
+    if (fluxVerdictButton) fluxVerdictButton.disabled = !available;
   }
 
   function clearActivePlan(message) {
@@ -1405,6 +1450,7 @@
 
   function queueGeneration() {
     if (generationBusy) return;
+    if (pendingSeed === null || typeof pendingSeed === 'undefined') replayNotice = null;
     var request = ++generationRequest;
     pendingResolution = null;
     setPlanAvailable(false);
@@ -1522,6 +1568,77 @@
         reject(new Error('Le module d’analyse n’a pas pu être chargé.'));
       }, { once: true });
       document.head.appendChild(script);
+    });
+  }
+
+
+  function fluxRoomType(type) {
+    var types = { living: 'sejour', kitchen: 'cuisine', bedroom: 'chambre', bath: 'salle-eau', wc: 'wc', circulation: 'circulation', office: 'bureau', storage: 'rangement' };
+    return types[type] || type || 'piece';
+  }
+
+  function fluxProposalFromPlan(plan) {
+    var boundary = plan.boundary || {};
+    return {
+      format: 'flux-proposal-v0',
+      source: 'technohab-' + APP_VERSION,
+      plan: {
+        areaM2: Math.round((plan.habitableArea || plan.area || 0) * 100) / 100,
+        levels: 1,
+        orientation: 'inconnue',
+        envelope: boundary.shape || boundary.demandee || 'inconnue',
+        rooms: (plan.rooms || []).map(function (room) {
+          return {
+            type: fluxRoomType(room.type),
+            areaM2: Math.round((room.area || 0) * 100) / 100,
+            facadeM: Math.round(Math.max(Math.abs((room.x1 || 0) - (room.x0 || 0)), Math.abs((room.y1 || 0) - (room.y0 || 0))) * 100) / 100
+          };
+        })
+      }
+    };
+  }
+
+  function fluxSvgFromCurrentPlan() {
+    var clone = planSvg.cloneNode(true);
+    clone.setAttribute('xmlns', SVG_NS);
+    var metadata = document.createElementNS(SVG_NS, 'metadata');
+    metadata.setAttribute('data-technohab', 'flux-handoff');
+    metadata.textContent = JSON.stringify({
+      source: 'technohab-' + APP_VERSION,
+      seed: latestResult && latestResult.plan ? latestResult.plan.seed : null,
+      selectionRank: latestResult ? latestResult.selectionIndex + 1 : null
+    });
+    clone.insertBefore(metadata, clone.firstChild);
+    return new XMLSerializer().serializeToString(clone);
+  }
+
+  function requestFluxVerdict() {
+    if (!latestResult || !fluxVerdictButton) return;
+    fluxVerdictButton.disabled = true;
+    fluxVerdictButton.textContent = 'Flux…';
+    fetch('http://127.0.0.1:3787/handoff', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        proposal: fluxProposalFromPlan(latestResult.plan),
+        svg: fluxSvgFromCurrentPlan()
+      })
+    }).then(function (response) {
+      if (!response.ok) throw new Error('Flux indisponible');
+      return response.json();
+    }).then(function (payload) {
+      if (!payload || !payload.url) throw new Error('Flux n’a pas renvoyé d’URL.');
+      window.open(payload.url, '_blank', 'noopener');
+      rulesMeta.textContent = 'Plan envoyé à Flux pour verdict local.';
+      statusElement.textContent = 'Flux ouvert';
+      statusElement.dataset.state = '';
+    }).catch(function () {
+      rulesMeta.textContent = 'Flux local indisponible : lancez npm run flux:serve dans ~/Developpement/Flux, puis réessayez.';
+      statusElement.textContent = 'Flux en construction';
+      statusElement.dataset.state = 'warning';
+    }).finally(function () {
+      fluxVerdictButton.disabled = !latestResult;
+      fluxVerdictButton.textContent = 'Flux';
     });
   }
 
@@ -1659,6 +1776,18 @@
     if (!entry) return;
     pendingSeed = root.TechnoHabGenerator.decodeSeed(entry.seed);
     if (pendingSeed !== null) {
+      // Rejouer, c'est aussi retrouver les options d'origine : la graine seule
+      // ne dit pas le programme. Sans cela, le rejeu tourne sur le formulaire
+      // du moment.
+      if (entry.options) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entry.options)); } catch (_) { /* facultatif */ }
+        restoreForm();
+      }
+      var currentRevision = root.TechnoHabGenerator.engineRevision;
+      replayNotice = entry.engineRevision === currentRevision ? null
+        : 'Archive ' + entry.seed + ' : produite par le moteur « ' + (entry.engineRevision || 'antérieur aux révisions') +
+          ' », rejoué par « ' + currentRevision + ' ». Le plan peut différer de l’original. Instantané archivé : ' +
+          snapshotSummary(entry.snapshot) + '.';
       if (fastSaveRoot) fastSaveRoot.open = false;
       queueGeneration();
     }
@@ -1680,6 +1809,7 @@
     download('technohab-plan-v' + variant + '-p' + (latestResult.selectionIndex + 1) + '.json',
       JSON.stringify(exported, null, 2), 'application/json');
   });
+  if (fluxVerdictButton) fluxVerdictButton.addEventListener('click', requestFluxVerdict);
   analysisOpenButton.addEventListener('click', function () {
     if (!latestResult) return;
     loadAnalysis().then(function (loaded) {
@@ -1849,14 +1979,286 @@
   }
 
   function catalogIcon(symbolId, className) {
-    var svg = svgElement('svg', { viewBox: '0 0 64 64', class: className, 'aria-hidden': 'true' });
-    if (document.getElementById(symbolId)) svg.appendChild(svgElement('use', { href: '#' + symbolId }));
+    var symbol = document.getElementById(symbolId);
+    var svg = svgElement('svg', { viewBox: symbol ? symbol.getAttribute('viewBox') || '0 0 64 64' : '0 0 64 64', class: className, 'aria-hidden': 'true' });
+    if (symbol) svg.appendChild(svgElement('use', { href: '#' + symbolId }));
     else svg.appendChild(svgElement('rect', { x: 12, y: 12, width: 40, height: 40, rx: 2 }));
     return svg;
   }
 
   function formatMeters(value) {
     return Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m';
+  }
+
+
+  /* Vues du catalogue : l'inventaire complet du mobilier (registre
+     TechnoHabCatalogue), mis en regard de ce que le moteur porte. Tout est
+     affiché, y compris ce qui n'a ni icône, ni cote, ni zone : le manque est
+     l'information. La cote, l'icône et la zone d'un équipement du socle sont
+     LUES du compilé ; le registre ne les redouble pas. */
+  var FACES_FR = { front: 'devant', long: 'de chaque côté', foot: 'au pied', back: 'derrière', around: 'tout autour' };
+  var ZONE_LABELS = {
+    declaree: 'Zone déclarée', portee: 'Portée par un autre équipement',
+    specifiee: 'Spécifiée, non portée', absente: 'Aucune zone', 'sans-objet': 'Sans objet'
+  };
+
+  function catalogueResoudre(entree, equipments) {
+    var records = (entree.moteur || []).map(function (id) { return equipments[id]; }).filter(Boolean);
+    var resolved = { entree: entree, records: records, moteur: null, dims: null, symbole: null, provenance: null, zone: 'sans-objet', usages: [] };
+    var iconProvenance = root.TechnoHabIconProvenance || null;
+    var provenanceBySymbol = {};
+    if (iconProvenance) {
+      (iconProvenance.icons || []).forEach(function (record) { provenanceBySymbol[record.symbolId] = record; });
+    }
+    var rank = { planned: 1, progress: 2, implemented: 3 };
+    records.forEach(function (record) {
+      if (!resolved.moteur || rank[record.status] > rank[resolved.moteur]) resolved.moteur = record.status;
+    });
+    if (records.length) resolved.dims = { w: records[0].equipment.footprint.w, d: records[0].equipment.footprint.d, niveau: null };
+    else if (entree.dims) resolved.dims = entree.dims;
+    (entree.moteur || []).some(function (id) {
+      if (document.getElementById('furn-' + id)) {
+        resolved.symbole = 'furn-' + id;
+        resolved.provenance = provenanceBySymbol[resolved.symbole] || null;
+        return true;
+      }
+      return false;
+    });
+    if (!resolved.symbole && entree.icone && document.getElementById('furn-' + entree.icone)) {
+      resolved.symbole = 'furn-' + entree.icone;
+      resolved.provenance = provenanceBySymbol[resolved.symbole] || null;
+    }
+    records.forEach(function (record) {
+      (record.equipment.usage || []).forEach(function (usage) {
+        resolved.usages.push(formatMeters(usage.min) + ' ' + (FACES_FR[usage.face] || usage.face));
+      });
+    });
+    if (entree.zone) resolved.zone = entree.zone;
+    else if (records.length) {
+      resolved.zone = records.every(function (record) { return (record.equipment.usage || []).length; }) ? 'declaree' : 'absente';
+    }
+    return resolved;
+  }
+
+  function cataloguePastille(texte, statut) {
+    var pastille = catalogElement('span', 'catalog-pill', texte);
+    pastille.dataset.statut = statut;
+    return pastille;
+  }
+
+  function catalogueBarre(comptes, total, statuts) {
+    var barre = catalogElement('div', 'catalog-bar');
+    barre.setAttribute('role', 'img');
+    barre.setAttribute('aria-label', statuts.map(function (st) { return st.court + ' ' + (comptes[st.id] || 0); }).join(', '));
+    statuts.forEach(function (st) {
+      if (!comptes[st.id]) return;
+      var part = catalogElement('span', 'catalog-bar-part');
+      part.dataset.statut = st.id;
+      part.style.flexGrow = String(comptes[st.id]);
+      part.title = st.label + ' : ' + comptes[st.id] + ' / ' + total;
+      barre.appendChild(part);
+    });
+    return barre;
+  }
+
+  function renderCatalogViews(registre, equipments) {
+    var statuts = registre.statuts, rubriques = registre.rubriques;
+    var libelleStatut = {}; statuts.forEach(function (st) { libelleStatut[st.id] = st; });
+    var libelleRubrique = {}; rubriques.forEach(function (ru) { libelleRubrique[ru.id] = ru.label; });
+    var lignes = registre.entrees.map(function (entree) { return catalogueResoudre(entree, equipments); });
+    var ecart = function (ligne) { return ligne.entree.statut === 'ecarte'; };
+    var etat = { rubrique: 'tous', statut: 'tous' };
+
+    function comptePar(liste) {
+      return liste.reduce(function (acc, ligne) { acc[ligne.entree.statut] = (acc[ligne.entree.statut] || 0) + 1; return acc; }, {});
+    }
+
+    /* Vue d'ensemble */
+    var apercu = document.getElementById('catalog-overview');
+    var enScope = lignes.filter(function (ligne) { return !ecart(ligne); });
+    var comptes = comptePar(lignes);
+    var chiffres = catalogElement('div', 'catalog-figures');
+    statuts.forEach(function (st) {
+      var carte = catalogElement('div', 'catalog-figure');
+      carte.dataset.statut = st.id;
+      carte.appendChild(catalogElement('strong', '', String(comptes[st.id] || 0)));
+      carte.appendChild(catalogElement('span', '', st.label));
+      chiffres.appendChild(carte);
+    });
+    apercu.appendChild(chiffres);
+    apercu.appendChild(catalogueBarre(comptes, lignes.length, statuts));
+    var atteignables = lignes.filter(function (l) { return l.moteur === 'implemented'; }).length;
+    var avecMoteur = lignes.filter(function (l) { return l.records.length; }).length;
+    apercu.appendChild(catalogElement('p', 'catalog-lede',
+      lignes.length + ' types d’équipements inventoriés. ' + avecMoteur + ' sont portés par le socle, dont ' +
+      atteignables + ' atteignables dans un plan aujourd’hui. Les ' + (comptes.ecarte || 0) +
+      ' écartés ne sont pas des oublis : le motif de chacun est écrit.'));
+
+    var completude = catalogElement('div', 'catalog-completeness');
+    function jauge(titre, fait, total, aide) {
+      var bloc = catalogElement('div', 'catalog-gauge');
+      bloc.appendChild(catalogElement('span', 'catalog-gauge-title', titre));
+      bloc.appendChild(catalogElement('strong', '', fait + ' / ' + total));
+      var piste = catalogElement('div', 'catalog-gauge-track');
+      var remplissage = catalogElement('i');
+      remplissage.style.width = (total ? Math.round(fait / total * 100) : 0) + '%';
+      piste.appendChild(remplissage); bloc.appendChild(piste);
+      bloc.appendChild(catalogElement('small', '', aide));
+      completude.appendChild(bloc);
+    }
+    jauge('Avec icône', enScope.filter(function (l) { return l.symbole; }).length, enScope.length, 'Hors écartés. Les autres affichent un gabarit vide.');
+    jauge('Avec cote', enScope.filter(function (l) { return l.dims; }).length, enScope.length, 'Cote du socle ou de la doctrine (N3) ; les autres sont à sourcer.');
+    var attendues = enScope.filter(function (l) { return l.zone !== 'sans-objet'; });
+    jauge('Zone d’usage déclarée', attendues.filter(function (l) { return l.zone === 'declaree'; }).length, attendues.length, 'Parmi les équipements qui s’utilisent depuis une face.');
+    apercu.appendChild(completude);
+
+    var tableau = catalogElement('div', 'catalog-rubrique-rows');
+    rubriques.forEach(function (ru) {
+      var dedans = lignes.filter(function (l) { return l.entree.rubriques.indexOf(ru.id) !== -1; });
+      if (!dedans.length) return;
+      var bouton = catalogElement('button', 'catalog-rubrique-row');
+      bouton.type = 'button';
+      bouton.appendChild(catalogElement('span', 'catalog-rubrique-name', ru.label));
+      bouton.appendChild(catalogueBarre(comptePar(dedans), dedans.length, statuts));
+      bouton.appendChild(catalogElement('span', 'catalog-rubrique-count', dedans.length + ' types'));
+      bouton.addEventListener('click', function () { etat.rubrique = ru.id; etat.statut = 'tous'; dessinerVignettes(); selectionnerVue('piece'); });
+      tableau.appendChild(bouton);
+    });
+    apercu.appendChild(tableau);
+
+    /* Par pièce — rubriques à gauche, vignettes à droite */
+    var navRubriques = document.getElementById('catalog-rubriques');
+    var filtre = document.getElementById('catalog-status-filter');
+    var vignettes = document.getElementById('catalog-thumbs');
+
+    function texteDims(ligne) {
+      if (!ligne.dims) return 'Cote à sourcer';
+      return Number(ligne.dims.w).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' × ' +
+        Number(ligne.dims.d).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' m' + (ligne.dims.niveau ? ' · ' + ligne.dims.niveau : '');
+    }
+
+    function vignette(ligne) {
+      var carte = catalogElement('article', 'catalog-thumb');
+      carte.dataset.statut = ligne.entree.statut;
+      var cadre = catalogElement('div', 'catalog-thumb-frame');
+      if (ligne.symbole) cadre.appendChild(catalogIcon(ligne.symbole, 'catalog-icon catalog-icon--equipment'));
+      else {
+        cadre.classList.add('is-empty');
+        cadre.appendChild(catalogElement('span', '', 'Sans icône'));
+      }
+      carte.appendChild(cadre);
+      carte.appendChild(catalogElement('h4', '', ligne.entree.label));
+      carte.appendChild(catalogElement('p', 'catalog-thumb-dims', texteDims(ligne)));
+      var etiquettes = catalogElement('div', 'catalog-thumb-tags');
+      etiquettes.appendChild(cataloguePastille(libelleStatut[ligne.entree.statut].court, ligne.entree.statut));
+      if (ligne.moteur) {
+        var moteurLabels = { implemented: 'Atteignable', progress: 'En cours', planned: 'Prévu' };
+        etiquettes.appendChild(cataloguePastille(moteurLabels[ligne.moteur], 'moteur-' + ligne.moteur));
+      }
+      if (ligne.zone === 'absente' || ligne.zone === 'specifiee') etiquettes.appendChild(cataloguePastille('Zone : ' + (ligne.zone === 'absente' ? 'aucune' : 'à porter'), 'zone-alerte'));
+      if (ligne.provenance) etiquettes.appendChild(cataloguePastille(ligne.provenance.status === 'adapted' ? 'ArchLang adapté' : ligne.provenance.archlangKind ? 'ArchLang lié' : 'Icône tracée', 'icone-source'));
+      carte.appendChild(etiquettes);
+      if (ligne.entree.note) carte.appendChild(catalogElement('p', 'catalog-thumb-note', ligne.entree.note));
+      return carte;
+    }
+
+    function dessinerVignettes() {
+      var visibles = lignes.filter(function (ligne) {
+        return (etat.rubrique === 'tous' || ligne.entree.rubriques.indexOf(etat.rubrique) !== -1) &&
+          (etat.statut === 'tous' || ligne.entree.statut === etat.statut);
+      });
+      vignettes.textContent = '';
+      visibles.forEach(function (ligne) { vignettes.appendChild(vignette(ligne)); });
+      if (!visibles.length) vignettes.appendChild(catalogElement('p', 'catalog-empty', 'Aucun équipement dans cette sélection.'));
+      Array.prototype.forEach.call(navRubriques.children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.rubrique === etat.rubrique)); });
+      Array.prototype.forEach.call(filtre.children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.statut === etat.statut)); });
+    }
+
+    function bouton(parent, valeur, texte, compte, cle) {
+      var b = catalogElement('button', cle === 'rubrique' ? 'catalog-rubrique' : 'catalog-chip');
+      b.type = 'button'; b.dataset[cle] = valeur;
+      b.appendChild(catalogElement('span', '', texte));
+      b.appendChild(catalogElement('small', '', String(compte)));
+      b.addEventListener('click', function () { etat[cle] = valeur; dessinerVignettes(); });
+      parent.appendChild(b);
+    }
+    bouton(navRubriques, 'tous', 'Tous les meubles', lignes.length, 'rubrique');
+    rubriques.forEach(function (ru) {
+      var n = lignes.filter(function (l) { return l.entree.rubriques.indexOf(ru.id) !== -1; }).length;
+      if (n) bouton(navRubriques, ru.id, ru.label, n, 'rubrique');
+    });
+    bouton(filtre, 'tous', 'Tous', lignes.length, 'statut');
+    statuts.forEach(function (st) { bouton(filtre, st.id, st.label, comptes[st.id] || 0, 'statut'); });
+    dessinerVignettes();
+
+    /* Zones d'usage — ce qui n'a pas de zone de circulation associée */
+    var zones = document.getElementById('catalog-zones');
+    zones.appendChild(catalogElement('p', 'catalog-lede',
+      'La zone d’usage est le dégagement requis devant, derrière ou autour d’un équipement ; le placement et les règles bloquantes l’opposent. ' +
+      'Elle est distincte de la circulation de la pièce. Sont listés ici les équipements qui s’utilisent depuis une face et n’ont pas de zone déclarée au socle.'));
+    var groupes = [
+      { zone: 'absente', titre: 'Aucune zone', aide: 'Ni au socle, ni en doctrine. Parmi les équipements déjà servis par le moteur, le fauteuil est un défaut ; le sèche-serviettes, mural, n’en est pas un.' },
+      { zone: 'specifiee', titre: 'Spécifiée en doctrine, non portée', aide: 'La cote existe ; c’est l’équipement lié qui manque.' },
+      { zone: 'portee', titre: 'Portée par un autre équipement', aide: 'Le recul du bureau est porté par sa chaise.' }
+    ];
+    groupes.forEach(function (groupe) {
+      var membres = lignes.filter(function (l) { return l.zone === groupe.zone; });
+      if (!membres.length) return;
+      var section = catalogElement('div', 'catalog-zone-group');
+      section.dataset.zone = groupe.zone;
+      section.appendChild(catalogElement('h4', '', groupe.titre + ' · ' + membres.length));
+      section.appendChild(catalogElement('p', 'catalog-zone-help', groupe.aide));
+      var liste = catalogElement('ul', 'catalog-zone-list');
+      membres.forEach(function (l) {
+        var li = catalogElement('li');
+        li.appendChild(catalogElement('strong', '', l.entree.label));
+        li.appendChild(cataloguePastille(libelleStatut[l.entree.statut].court, l.entree.statut));
+        var ou = l.entree.rubriques.map(function (id) { return libelleRubrique[id]; }).join(', ');
+        li.appendChild(catalogElement('span', 'catalog-zone-where', ou));
+        if (l.entree.note) li.appendChild(catalogElement('span', 'catalog-zone-note', l.entree.note));
+        liste.appendChild(li);
+      });
+      section.appendChild(liste); zones.appendChild(section);
+    });
+    var declarees = lignes.filter(function (l) { return l.zone === 'declaree'; });
+    var lues = catalogElement('div', 'catalog-zone-group');
+    lues.dataset.zone = 'declaree';
+    lues.appendChild(catalogElement('h4', '', 'Zone déclarée au socle · ' + declarees.length));
+    lues.appendChild(catalogElement('p', 'catalog-zone-help', 'Dégagement minimal par face, lu du compilé du moteur.'));
+    var listeDeclaree = catalogElement('ul', 'catalog-zone-list');
+    declarees.forEach(function (l) {
+      var li = catalogElement('li');
+      li.appendChild(catalogElement('strong', '', l.entree.label));
+      li.appendChild(catalogElement('span', 'catalog-zone-where', l.usages.filter(function (u, i, a) { return a.indexOf(u) === i; }).join(' · ')));
+      listeDeclaree.appendChild(li);
+    });
+    lues.appendChild(listeDeclaree); zones.appendChild(lues);
+  }
+
+  var CATALOG_VIEWS = ['ensemble', 'piece', 'zones', 'moteur', 'pieces'];
+  function selectionnerVue(nom) {
+    if (CATALOG_VIEWS.indexOf(nom) === -1) nom = 'ensemble';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-catalog-panel]'), function (panneau) {
+      panneau.hidden = panneau.dataset.catalogPanel !== nom;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-catalog-view]'), function (onglet) {
+      var actif = onglet.dataset.catalogView === nom;
+      onglet.setAttribute('aria-selected', String(actif));
+      onglet.tabIndex = actif ? 0 : -1;
+    });
+  }
+
+  function brancherOnglets() {
+    var onglets = Array.prototype.slice.call(document.querySelectorAll('[data-catalog-view]'));
+    onglets.forEach(function (onglet, index) {
+      onglet.addEventListener('click', function () { selectionnerVue(onglet.dataset.catalogView); });
+      onglet.addEventListener('keydown', function (event) {
+        var pas = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+        if (!pas) return;
+        var suivant = onglets[(index + pas + onglets.length) % onglets.length];
+        selectionnerVue(suivant.dataset.catalogView); suivant.focus(); event.preventDefault();
+      });
+    });
   }
 
   function renderCatalog() {
@@ -1942,6 +2344,8 @@
       }
       card.appendChild(body); roomList.appendChild(card);
     });
+    if (root.TechnoHabCatalogue) renderCatalogViews(root.TechnoHabCatalogue, equipments);
+    brancherOnglets();
     catalogRendered = true;
   }
 
@@ -1958,6 +2362,11 @@
     if (catalogActive) renderCatalog();
   }
   window.addEventListener('hashchange', routePage);
+  if (catalogOpen) {
+    catalogOpen.addEventListener('click', function () {
+      setTimeout(routePage, 0);
+    });
+  }
 
   loadHistory(); restoreForm();
   clearActivePlan('Choisissez les paramètres du lieu, puis lancez la génération.');
