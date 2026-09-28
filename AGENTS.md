@@ -22,6 +22,17 @@ pas à ce dépôt.
 - Ne pas versionner `.claude/`, `eval/` ni `House 2D plans dataset/`.
 - Suivre la méthode commune de `../MetaProjet/METHODE.md` pour tout nouvel item.
 
+## Serveur local
+
+L'aperçu statique est déclaré dans MetaProjet :
+
+```sh
+~/Developpement/MetaProjet/agents/dev-server technohab preview start
+~/Developpement/MetaProjet/agents/dev-server technohab preview status
+```
+
+Ne pas tuer manuellement un processus sur le port 8001 ; passer par `dev-server status|stop`. Le moteur doit rester utilisable localement sans transmission de données.
+
 ## Vérification minimale
 
 Exécuter les commandes proportionnées au changement, puis au minimum :
