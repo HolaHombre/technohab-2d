@@ -1,7 +1,35 @@
 {
   "name": "technohab",
-  "private": true,
+  "version": "3.3.0-alpha.1",
   "description": "Générateur procédural de plans de principe 2D sous contraintes, exécuté entièrement dans le navigateur — aucune dépendance d'exécution, aucune transmission de données.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Dargos (https://github.com/HolaHombre)",
+  "homepage": "https://technohab.theoseguret.fr",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HolaHombre/technohab-2d.git"
+  },
+  "bugs": {
+    "url": "https://github.com/HolaHombre/technohab-2d/issues"
+  },
+  "keywords": [
+    "procedural-generation",
+    "floor-plan",
+    "floor-plan-generator",
+    "architecture",
+    "space-planning",
+    "generative-design",
+    "constraint-solving",
+    "housing",
+    "local-first",
+    "offline-first",
+    "privacy",
+    "no-cloud",
+    "browser-based",
+    "javascript",
+    "canvas"
+  ],
+  "private": true,
   "scripts": {
     "serve": "node scripts/serve.mjs",
     "public:build": "node scripts/build-public.mjs",

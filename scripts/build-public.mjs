@@ -13,6 +13,12 @@ const OUTPUT = join(ROOT, 'dist-public');
 const ROOT_FILES = [
   'index.html',
   '_headers',
+  // La licence et les notices tierces accompagnent l'artefact, et non seulement
+  // le dépôt : l'AGPL veut que l'utilisateur servi par le réseau puisse la
+  // lire, et l'icône tierce est en MIT — sa notice de copyright doit voyager
+  // avec la copie qui l'embarque, or le sprite est inliné dans la page.
+  'LICENSE',
+  'THIRD_PARTY_NOTICES.md',
 ];
 
 const PUBLIC_TREES = new Map([

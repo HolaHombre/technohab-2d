@@ -92,3 +92,17 @@ La photographie de travail comprend 45 tests ciblés et 49 étapes : schéma 3.1
 allocation O0, bancs de circulation et de topologies, puis 360 tentatives
 historiques. Les essais produit interdisent la présentation d'un plan portant
 une violation bloquante.
+
+## Licence
+
+[GNU Affero General Public License v3.0 or later](./LICENSE).
+
+Vous pouvez l'utiliser, l'étudier, le modifier et le redistribuer. Si vous en
+servez une version modifiée à travers un réseau, vous devez en publier le code
+sous la même licence. C'est délibéré : un moteur dont la raison d'être est de
+calculer chez l'utilisateur, sans rien transmettre, ne doit pas pouvoir devenir
+un service fermé.
+
+Les ressources tierces et leurs licences sont relevées dans
+[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). La licence et ces notices
+accompagnent l'artefact public, et pas seulement le dépôt.
