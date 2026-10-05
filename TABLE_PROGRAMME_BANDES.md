@@ -265,8 +265,119 @@ mesurée ; ce sont des attendus à réaligner.
 3. Les seuils 50 m² (table 4 places), ×1,2 (salle) et 92 % (repli) sont des
    mesures d'un banc de 8 tirages : provisoires.
 
-## 11. Prochaine étape
+## 11. Étape 5 — le studio (25 septembre 2026, mesuré)
 
-Étape 5 — le studio sous 25 m², en coexistence : programme dédié (canapé
-convertible, espace repas 2 chaises, kitchenette), mode lit à deux états,
-plancher de surface abaissé pour lui seul. C'est aussi ce qui ferme l'écart 1.
+Fait : mode lit à deux états dans le solveur (`modes` d'un équipement), séjour
+en variante `studio` (canapé convertible, kitchenette, table 2 places),
+programme studio dans le générateur (`studioMode` : `bedrooms:0` sous 35 m²,
+plancher de surface 12 m²), champ de surface de l'interface abaissé à 12 m²,
+`test-studio.mjs`.
+
+Trois causes ont fait échouer la génération sous 18 m², toutes corrigées :
+
+1. **La typologie posait une bande de 1,9 m.** Sans couloir, rien ne départageait
+   les dimensionnements admissibles et le premier — le plus étroit — l'emportait.
+   Pour un séjour studio, on préfère l'enveloppe la plus proche du carré
+   (`typologie.js`, `poserEnBandes`).
+2. **Le cache d'enveloppes ignorait le mode nuit** : `fits` n'appelait pas
+   `solve`. Il le fait dès qu'un équipement porte des `modes`.
+3. **Les minima sans variante nommée comptaient le studio** : le plus petit
+   séjour de tous les séjours devenait celui du studio, et les logements
+   ordinaires perdaient leur plancher (`test-formes`, `test-m5-circulation-utility`).
+   `optInVariants` (socle) exclut les variantes qu'il faut demander.
+
+Relevé, 6 graines par surface : 12 à 14 m² → 0/6 ; 15 m² → 2/6 ; 16 à 34 m² → 6/6.
+Le plancher réglementaire de 12 m² n'est donc pas encore atteignable par le
+générateur : la fiabilité commence à 16 m² (à instruire : murs, zone d'arrivée,
+salle d'eau de 3 m²). `test-studio.mjs` ne parie pas sur la limite et part de 18 m².
+
+### Correction de forme du studio (25 septembre 2026, `moteur-2026-09-25.2`)
+
+Constat de Théo : le mode « carré » ne résolvait aucun carré, tous les studios
+étaient des rectangles très fins (2,4 × 8 m). Causes mesurées :
+
+- la typologie en bandes ignorait la forme demandée, et le squelette (tenté
+  d'abord) ne produisait que des lanières sans circulation à organiser ;
+- deux bandes empilées bornent la largeur commune par la plus petite pièce
+  (W ≤ aire / profondeur minimale ≈ 2,2 m), une bande unique gonfle la salle
+  d'eau : aucune de ces deux dispositions ne peut donner un carré.
+
+Correction : le studio a sa pose propre (`poserStudio`, `typologie.js`) — salle
+d'eau étroite dans un coin, séjour en L, rôle `main` pour les deux parties (un
+`notch` serait mesuré comme zone de rangement par TH2D-RANGEMENT-001), forme
+demandée lue, allongement toléré croissant avec la surface (1 à 16 m², 1,7 à
+24 m²). Le squelette est court-circuité, le repli en bandes interdit (un refus
+vaut mieux qu'une lanière), et le coin se retente avec des graines voisines.
+
+Mesuré : carré 20 m² → 4,5 × 4,5 m, 30 m² → 5,5 × 5,5 m ; rectangle 20 m² →
+4,8 × 4,2 m ; plus aucune lanière. Fiabilité : 16 m² 5 à 6 graines sur 6, 17 m²
+et au-dessus 6/6, 15 m² et moins 0/6 — le côté minimal du séjour (2,2 m) ne
+laisse plus de place à un coin d'eau de 1,8 m sous 3,9 m de côté. Le biais est
+générique : les autres programmes passent encore par le squelette et les
+bandes (rectangle à 1,4 visé, pesé faiblement).
+
+### Essai : plafonner la salle d'eau (25 septembre 2026, abandonné)
+
+Constat : une salle d'eau prend toute la profondeur de sa poche (1,7 × 7,4 m,
+12,5 m² pour 7,4 m² de cible, à 160 m²). Essai : `maxRatio` sur `bath` avec
+`agrement: 0`, pour que `transfererSurplusPlafonne` rende le surplus au voisin.
+Mesure sur 60 plans (5 surfaces × 3 nombres de chambres × 1-2 salles d'eau,
+2 graines), salle d'eau :
+
+| | Aire moy. / max | Longueur max | Allongement max | Plans générés |
+|---|---|---|---|---|
+| Sans plafond | 6,5 / 12,2 m² | 5,5 m | 2,8 | 45/60 |
+| Plafond 2,0 × besoin | 3,5 / 3,7 m² | 2,2 m | 1,2 | 27/60 |
+| Plafond 3,5 × besoin | 5,7 / 6,5 m² | 3,8 m | 2,0 | 44/60 |
+
+Le plafond règle la forme, mais au ratio 3,5 il fait tomber `test-formes` (le L
+de 110 m² se replie en rectangle), `test-composition-model` et
+`test-m4c-canonical-program` ; 4,0 et 5,0 échouent aussi, de façon non
+monotone (la recherche est bornée par budget). Il rend aussi la salle d'eau
+juste à son plancher, ce qui fait apparaître un plancher trop bas pour la salle
+d'eau avec WC (1,77 × 1,77 m ne reçoit pas cuvette et douche) ; le corriger
+seul dégrade le studio. **Rien n'est retenu.** Le WC, déjà plafonné à 3,5, reste
+une cabine de 0,9 × 3,6 m (26 plans sur 44 à 3:1 ou plus) : son plafond en m²
+ne borne pas l'allongement.
+
+Piste retenue pour la suite : borner l'allongement d'une pièce de service
+(rapport longueur / largeur) plutôt que sa surface, ou empiler bain et WC dans
+une colonne (empilement des poches du squelette).
+
+### Allongement maximal des pièces de service (25 septembre 2026, `moteur-2026-09-25.3`)
+
+Suite de l'essai précédent : la contrainte porte sur le rapport
+longueur / largeur, pas sur la surface. `maxAspect` (socle, `VAL-SERVICE-ASPECT-MAX-001`,
+PROVISIONAL, 3,0) pour `bath` et `wc` ; le générateur en tire une aire
+(côté minimal² × allongement) que `transfererSurplusPlafonne` applique, au plus
+strict de ce plafond et du plafond O1. C'est un mécanisme souple : il rend le
+surplus à la pièce voisine quand une disposition existe, et n'invalide aucun
+plan ni ne touche à l'allocation des cibles.
+
+Correction liée : un receveur déjà décroché (rangement ou réserve) passait à 8
+arêtes et faisait tomber TH2D-FORME-001 ; le transfert ne cible plus que les
+pièces à une seule partie.
+
+Mesuré sur les mêmes 60 plans :
+
+| WC | Avant | Après |
+|---|---|---|
+| Aire moy. / max | 3,2 / 3,5 m² | 2,2 / 2,3 m² |
+| Allongement moy. / max | 3,2 / 3,6 | 2,2 / 2,4 |
+| WC à 3:1 ou plus | 34 sur 45 | 0 sur 44 |
+| Plans générés | 45/60 | 44/60 |
+
+Suite complète verte. `test-m4c-canonical-program` : graine du témoin passée de
+55 à 40 (la parentale de la graine 55 n'avait plus la proportion qui refuse le
+lit king ; 40 tient la même propriété).
+
+**Limite** : la salle d'eau n'est presque pas touchée (allongement max 2,8, aire
+max 13,4 m² dans les grandes maisons à deux salles d'eau) — le surplus n'y
+trouve souvent aucun voisin à une seule partie qui borde la bonne arête. Un plan
+sur 60 est perdu (45 → 44).
+
+## 12. Prochaine étape
+
+Bloc « Composition » de l'interface, remplissage progressif aléatoire (le
+programme dépendra de la graine : `engineRevision` indispensable), zone à
+4 places pour T1 / studio ≤ 45 m², et instruction des 12 à 15 m².

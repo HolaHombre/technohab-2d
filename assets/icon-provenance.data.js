@@ -83,6 +83,7 @@
     { id: 'vanity', label: 'Coiffeuse', category: 'vanity', w: 100, d: 45 },
     { id: 'bidet', label: 'Bidet', category: 'bidet', w: 40, d: 60 },
     { id: 'island', label: 'Îlot central', category: 'island', w: 200, d: 90 },
+    { id: 'kitchenette', label: 'Kitchenette', category: 'counter', w: 120, d: 60 },
     { id: 'dining_table_6', label: 'Table 6 places', category: 'dining_table', w: 180, d: 90 }
   ];
   EXTRA_SYMBOLS.forEach(function (x) { ADAPTED[x.id] = x.category; });
@@ -118,6 +119,7 @@
     icon('sofa', 'Canapé', 'sofa'),
     icon('sofa_3', 'Canapé 3 places', 'sofa'),
     icon('sofa_angle', 'Canapé d’angle', 'corner_sofa'),
+    icon('sofa_bed', 'Canapé convertible', 'sofa'),
     icon('coffee_table', 'Table basse', 'coffee_table'),
     icon('tv_unit', 'Meuble bas', 'tv_unit'),
     icon('dining_table_2', 'Table adossée 2 places', 'dining_table'),
@@ -153,7 +155,7 @@
     icon('towel_rail', 'Sèche-serviettes', 'radiator', { limit: 'Dessin TechnoHab mural ; correspondance ArchLang radiator proche mais non importée.' }),
     icon('parking_space', 'Emplacement véhicule', 'car')
   ].concat(EXTRA_SYMBOLS.map(function (x) {
-    return icon(x.id, x.label, x.category, { scope: 'catalogue' });
+    return icon(x.id, x.label, x.category, x.id === 'kitchenette' ? { limit: 'Plan de travail ArchLang : pas de glyphe kitchenette dédié.' } : { scope: 'catalogue' });
   }));
 
   var SHARED_SYMBOLS = [

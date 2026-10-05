@@ -29,6 +29,7 @@
     <script defer src="./assets/dxf.js"></script>
     <script defer src="./assets/catalogue.data.js"></script>
     <script defer src="./assets/icon-provenance.data.js"></script>
+    <script defer src="./assets/flux.js"></script>
     <script defer src="./assets/app.js"></script>
     <script defer src="./assets/composition-loader.js"></script>
   </head>
@@ -61,6 +62,13 @@
         <path class="outline" d="M82.13 16.2L82.13 81"/>
         <path class="outline" d="M137.87 16.2L137.87 81"/>
         <path class="outline" d="M26.4 81L193.6 81"/>
+      </symbol>
+
+      <symbol id="furn-sofa_bed" viewBox="0 0 190 95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Canapé convertible" data-w="1.90" data-h="0.95" data-rotatable="true">
+        <path d="M1 1h188v93H1z" />
+        <path d="M24 1v93M166 1v93" />
+        <path d="M24 26h142" />
+        <path d="M24 60h142" stroke-dasharray="6 5" />
       </symbol>
 
       <symbol id="furn-sofa_angle" viewBox="0 0 220 220" data-label="Canapé d’angle" data-w="2.20" data-h="2.20" data-rotatable="true">
@@ -451,6 +459,12 @@
         <path class="outline" d="M126.88 75.65L127.9 75.85L128.77 76.43L129.35 77.3L129.56 78.32L129.56 81.88L129.35 82.9L128.77 83.77L127.9 84.35L126.88 84.56L123.32 84.56L122.3 84.35L121.43 83.77L120.85 82.9L120.65 81.88L120.65 78.32L120.85 77.3L121.43 76.43L122.3 75.85L123.32 75.65z"/>
       </symbol>
 
+      <symbol id="furn-kitchenette" viewBox="0 0 120 60" data-label="Kitchenette" data-w="1.20" data-h="0.60" data-rotatable="true">
+        <path class="outline" d="M0 0L120 0L120 60L0 60z"/>
+        <path class="outline" d="M0 49.2L120 49.2"/>
+        <path class="outline" d="M60 0L60 49.2"/>
+      </symbol>
+
     </svg>
     <!-- furniture:end -->
     <!-- room-icons:start — généré depuis assets/icons/room-icons.svg, ne pas éditer ici -->
@@ -600,7 +614,7 @@
           <form id="plan-form">
             <label class="field">
               <span>Surface totale</span>
-              <span class="input-with-unit"><input name="surface" type="number" min="35" max="250" step="1" value="75" required /><em>m²</em></span>
+              <span class="input-with-unit"><input name="surface" type="number" min="12" max="250" step="1" value="75" required /><em>m²</em></span>
             </label>
 
             <div class="field-grid">

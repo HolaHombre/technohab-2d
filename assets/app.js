@@ -1577,30 +1577,8 @@
   }
 
 
-  function fluxRoomType(type) {
-    var types = { living: 'sejour', kitchen: 'cuisine', bedroom: 'chambre', bath: 'salle-eau', wc: 'wc', circulation: 'circulation', office: 'bureau', storage: 'rangement' };
-    return types[type] || type || 'piece';
-  }
-
   function fluxProposalFromPlan(plan) {
-    var boundary = plan.boundary || {};
-    return {
-      format: 'flux-proposal-v0',
-      source: 'technohab-' + APP_VERSION,
-      plan: {
-        areaM2: Math.round((plan.habitableArea || plan.area || 0) * 100) / 100,
-        levels: 1,
-        orientation: 'inconnue',
-        envelope: boundary.shape || boundary.demandee || 'inconnue',
-        rooms: (plan.rooms || []).map(function (room) {
-          return {
-            type: fluxRoomType(room.type),
-            areaM2: Math.round((room.area || 0) * 100) / 100,
-            facadeM: Math.round(Math.max(Math.abs((room.x1 || 0) - (room.x0 || 0)), Math.abs((room.y1 || 0) - (room.y0 || 0))) * 100) / 100
-          };
-        })
-      }
-    };
+    return globalThis.TechnoHabFlux.proposalFromPlan(plan, APP_VERSION);
   }
 
   function fluxSvgFromCurrentPlan() {
@@ -1619,6 +1597,10 @@
 
   function requestFluxVerdict() {
     if (!latestResult || !fluxVerdictButton) return;
+    if (!globalThis.TechnoHabFlux.isLocal(window.location)) {
+      rulesMeta.textContent = 'Flux est un outil local : ouvrez TechnoHab sur votre machine pour calculer.';
+      return;
+    }
     fluxVerdictButton.disabled = true;
     fluxVerdictButton.textContent = 'Flux…';
     fetch('http://127.0.0.1:3787/handoff', {
@@ -1634,7 +1616,7 @@
     }).then(function (payload) {
       if (!payload || !payload.url) throw new Error('Flux n’a pas renvoyé d’URL.');
       window.open(payload.url, '_blank', 'noopener');
-      rulesMeta.textContent = 'Plan envoyé à Flux pour verdict local.';
+      rulesMeta.textContent = 'Polygones utiles envoyés à Flux pour contrôle GEOS local.';
       statusElement.textContent = 'Flux ouvert';
       statusElement.dataset.state = '';
     }).catch(function () {

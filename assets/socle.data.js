@@ -66,12 +66,18 @@
   // programFloors   surcharge ces deux valeurs par variante lorsque leurs
   //                 fonctions imposent réellement des planchers différents.
   //                 Le scalaire reste le repli pour les consommateurs anciens.
+  // optInVariants  variantes qui ne comptent que si on les demande : sans
+  //                 variante nommée, les minima ignorent le studio.
   //
   // maxRatio        plafond de surface, exprimé en multiple du besoin calculé
   //                 — jamais en m² absolus, qui ne survivraient pas au
   //                 changement de programme. Une valeur peut être mesurée
   //                 (circulation) ou doctrinale N3, identifiée, justifiée et
   //                 bornée à un profil (WC, O1). Pas de nombre muet.
+  //
+  // maxAspect       allongement maximal (longueur / largeur) d'une pièce de
+  //                 service : au-delà, la disposition rend le surplus à la
+  //                 voisine. Indicatif — n'invalide aucun plan.
   //
   // trigger         critère d'existence de la PIÈCE — à quelle condition elle
   //                 apparaît au programme. Transcription déclarative de ce que
@@ -110,6 +116,13 @@
   var ROOMS = {
     living: {
       label: 'Séjour', mvp: true, freeRect: { w: 1.20, d: 1.20 },
+      // `sejour` est le programme d'origine ; `studio` (STUDIO, 12 à 34 m²) le
+      // remplace par un canapé convertible à deux états — TABLE_PROGRAMME_BANDES.md §6.
+      variants: ['sejour', 'studio'],
+      // Plancher de dignité du studio : 9 m², la pièce principale du décret
+      // 2002-120 (VAL-REG-MAIN-ROOM-AREA-MIN-001) ; côté 2,20 m, N3.
+      programFloors: { studio: { area: 9, side: 2.2 } },
+      optInVariants: ['studio'],
       role: 'principale', agrement: 1.4,
       minProgramArea: 20, minProgramSide: 3.00, targetProgramArea: 24, maxRatio: null,
       accessClearance: 0.70, maxFurnitureRatio: 0.50,
@@ -122,7 +135,16 @@
       },
       trigger: { kind: 'always' },
       equipments: [
-        { id: 'sofa', label: 'Canapé', required: true,
+        /* Studio : le couchage EST le canapé. Deux états, un seul meuble — le
+           lit se déplie de 0,45 m vers l'avant (canapé 1,90 × 0,95 → couchage
+           1,90 × 1,40). Règle de Théo : en mode nuit, les dégagements de la
+           cuisine et du repas sont désactivés « tant qu'un accès au lit reste
+           accessible » (0,60 m sur un côté ou au pied). Cotes N3, à sourcer. */
+        { id: 'sofa_bed', label: 'Canapé convertible', variant: 'studio', required: true, assumed: true,
+          footprint: { w: 1.90, d: 0.95 }, anchor: 'wall',
+          usage: [{ face: 'front', min: 0.50, target: 0.50, comfort: 0.60 }],
+          modes: [{ id: 'nuit', label: 'Lit déplié', extend: 0.45, access: 0.60 }] },
+        { variant: 'sejour', id: 'sofa', label: 'Canapé', required: true,
           canonicalValues: { footprint: 'VAL-LIVING-SOFA-FOOTPRINT-001', usageMin: 'VAL-LIVING-SOFA-CLEARANCE-MIN-001', usageTarget: 'VAL-LIVING-SOFA-CLEARANCE-TARGET-001', usageComfort: 'VAL-LIVING-SOFA-CLEARANCE-COMFORT-001' },
           footprint: { w: 1.80, d: 0.90 }, anchor: 'wall', usage: [{ face: 'front', min: 0.50, target: 0.50, comfort: 0.60 }],
           sizes: [
@@ -131,13 +153,13 @@
             // soit pas qu'un allongement.
             { id: 'sofa_angle', label: 'Canapé d’angle', from: 30, footprint: { w: 2.20, d: 2.20 }, anchor: 'corner' }
           ] },
-        { id: 'coffee_table', label: 'Table basse', required: true,
+        { variant: 'sejour', id: 'coffee_table', label: 'Table basse', required: true,
           canonicalValues: { footprint: 'VAL-LIVING-COFFEE-TABLE-FOOTPRINT-001', usageMin: 'VAL-LIVING-COFFEE-TABLE-CLEARANCE-MIN-001', usageTarget: 'VAL-LIVING-COFFEE-TABLE-CLEARANCE-TARGET-001', usageComfort: 'VAL-LIVING-COFFEE-TABLE-CLEARANCE-COMFORT-001' },
           footprint: { w: 1.10, d: 0.60 }, anchor: 'free', usage: [{ face: 'front', min: 0.45, target: 0.50, comfort: 0.60, accessRequired: false }] },
-        { id: 'tv_unit', label: 'Meuble bas', required: false, minRoomArea: 22,
+        { variant: 'sejour', id: 'tv_unit', label: 'Meuble bas', required: false, minRoomArea: 22,
           canonicalValues: { activationArea: 'VAL-LIVING-MEDIA-ACTIVATION-AREA-001', footprint: 'VAL-LIVING-TV-FOOTPRINT-001', usageMin: 'VAL-LIVING-TV-CLEARANCE-MIN-001' },
           footprint: { w: MODULE, d: 0.40 }, anchor: 'wall', usage: [{ face: 'front', min: 0.60 }] },
-        { id: 'armchair', label: 'Fauteuil', required: false, minRoomArea: 22,
+        { variant: 'sejour', id: 'armchair', label: 'Fauteuil', required: false, minRoomArea: 22,
           canonicalValues: { activationArea: 'VAL-LIVING-ARMCHAIR-ACTIVATION-AREA-001', footprint: 'VAL-LIVING-ARMCHAIR-FOOTPRINT-001' },
           footprint: { w: 0.90, d: 0.85 }, anchor: 'free', usage: [] }
       ],
@@ -153,7 +175,7 @@
     },
 
     dining: {
-      label: 'Salle à manger', mvp: false, variants: ['coin', 'coin4', 'salle'],
+      label: 'Salle à manger', mvp: false, variants: ['coin', 'coin4', 'salle', 'studio'],
       /* Deux formes de la même fonction (DECISIONS_PROGRAMME.md §2.1) :
          `coin` est la zone hébergée par le séjour, `salle` la pièce autonome.
          `principale` reproduit le comportement de TH2D-FACADE-001, qui la
@@ -186,6 +208,10 @@
         { id: 'dining_table_4', label: 'Table 4 places', variant: 'coin4', required: true,
           footprint: { w: 1.40, d: 0.80 }, anchor: 'free',
           usage: [{ face: 'around', min: 0.60, target: 0.80, comfort: 1.20 }] },
+        // Studio : « espace manger (table 2 chaises) », requis, contre un mur.
+        { id: 'dining_table_2', label: 'Table adossée 2 places', variant: 'studio', required: true,
+          footprint: { w: 1.20, d: 0.60 }, anchor: 'wall',
+          usage: [{ face: 'front', min: 0.60, target: 0.80, comfort: 1.20 }] },
         // Salle autonome : la table est requise, le buffet vient avec la place.
         { id: 'dining_table_4', label: 'Table 4 places', variant: 'salle', required: true,
           footprint: { w: 1.40, d: 0.80 }, anchor: 'free',
@@ -242,6 +268,9 @@
 
     kitchen: {
       label: 'Cuisine', mvp: true, facingClearance: 1.20,
+      // `cuisine` est le programme d'origine ; `kitchenette` sert le STUDIO (TABLE_PROGRAMME_BANDES.md §6).
+      variants: ['cuisine', 'kitchenette'],
+      optInVariants: ['kitchenette'],
       services: ['ventilation'],
       role: 'principale', agrement: 0.6,
       minProgramArea: 7, minProgramSide: 1.85, maxRatio: null,
@@ -254,23 +283,30 @@
       // demande, sinon versée au séjour — c'est la cuisine ouverte.
       trigger: { kind: 'always', standaloneIf: 'separateKitchen', otherwiseInto: 'living' },
       equipments: [
-        { id: 'sink', label: 'Évier', val: 'VAL-EQ-010', required: true,
+        /* Kitchenette du studio : un seul bloc de 1,20 m — évier, deux feux,
+           petit réfrigérateur — sans plan de travail séparé ni passage
+           face-à-face. Cote N3 à sourcer ; le registre du mobilier la range
+           comme « Kitchenette compacte ». */
+        { id: 'kitchenette', label: 'Kitchenette', variant: 'kitchenette', required: true, assumed: true,
+          footprint: { w: 1.20, d: 0.60 }, anchor: 'wall', usage: [{ face: 'front', min: 0.60 }],
+          services: ['eau', 'evacuation', 'electricite'] },
+        { variant: 'cuisine', id: 'sink', label: 'Évier', val: 'VAL-EQ-010', required: true,
           canonicalValues: { footprint: 'VAL-KITCHEN-SINK-FOOTPRINT-001', usageMin: 'VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001' },
           footprint: { w: 0.60, d: 0.60 }, anchor: 'wall', usage: [{ face: 'front', min: 0.90 }], services: ['eau', 'evacuation'] },
-        { id: 'hob', label: 'Plaque de cuisson', val: 'VAL-EQ-010', required: true,
+        { variant: 'cuisine', id: 'hob', label: 'Plaque de cuisson', val: 'VAL-EQ-010', required: true,
           canonicalValues: { footprint: 'VAL-KITCHEN-HOB-FOOTPRINT-001', usageMin: 'VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001' },
           footprint: { w: 0.60, d: 0.60 }, anchor: 'wall', usage: [{ face: 'front', min: 0.90 }], services: ['electricite'] },
         // Le plan de travail entre évier et plaque n'est pas négociable :
         // sans lui la cuisine est géométriquement valide et inutilisable.
-        { id: 'worktop', label: 'Plan de travail', val: 'VAL-EQ-012', required: true,
+        { variant: 'cuisine', id: 'worktop', label: 'Plan de travail', val: 'VAL-EQ-012', required: true,
           canonicalValues: { footprint: 'VAL-KITCHEN-WORKTOP-FOOTPRINT-MIN-001', usageMin: 'VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001' },
           footprint: { w: 0.60, d: 0.60 }, anchor: 'wall', usage: [{ face: 'front', min: 0.90 }], between: ['sink', 'hob'] },
         // Un réfrigérateur encastrable s'aligne sur le plan de travail : la
         // profondeur de 0,65 relevée auparavant surdimensionnait la cuisine.
-        { id: 'fridge', label: 'Réfrigérateur', val: 'VAL-EQ-016', required: true,
+        { variant: 'cuisine', id: 'fridge', label: 'Réfrigérateur', val: 'VAL-EQ-016', required: true,
           canonicalValues: { footprint: 'VAL-KITCHEN-FRIDGE-FOOTPRINT-001', usageMin: 'VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001' },
           footprint: { w: 0.60, d: 0.60 }, anchor: 'wall', usage: [{ face: 'front', min: 0.90 }] },
-        { id: 'dishwasher', label: 'Lave-vaisselle', val: 'VAL-EQ-015', required: false, minRoomArea: 9,
+        { variant: 'cuisine', id: 'dishwasher', label: 'Lave-vaisselle', val: 'VAL-EQ-015', required: false, minRoomArea: 9,
           canonicalValues: { activationArea: 'VAL-KITCHEN-DISHWASHER-ACTIVATION-AREA-001', footprint: 'VAL-KITCHEN-DISHWASHER-FOOTPRINT-001', usageMin: 'VAL-KITCHEN-DISHWASHER-SWING-CLEARANCE-MIN-001' },
           footprint: { w: 0.60, d: 0.60 }, anchor: 'wall', usage: [{ face: 'front', min: 1.20 }], services: ['eau', 'evacuation'] }
       ],
@@ -288,8 +324,8 @@
     bath: {
       label: 'Salle d’eau', mvp: true, variants: ['eau', 'bain'], services: ['ventilation'],
       role: 'service', agrement: 0.6,
-      minProgramArea: 3, minProgramSide: 1.70, maxRatio: null,
-      canonicalValues: { minProgramArea: 'VAL-BATH-PROGRAM-AREA-MIN-001', minProgramSide: 'VAL-BATH-PROGRAM-SIDE-MIN-001' },
+      minProgramArea: 3, minProgramSide: 1.70, maxRatio: null, maxAspect: 3.0,
+      canonicalValues: { minProgramArea: 'VAL-BATH-PROGRAM-AREA-MIN-001', minProgramSide: 'VAL-BATH-PROGRAM-SIDE-MIN-001', maxAspect: 'VAL-SERVICE-ASPECT-MAX-001' },
       trigger: { kind: 'count', from: 'bathrooms' },
       equipments: [
         { id: 'shower', label: 'Douche', val: 'VAL-EQ-031', canonicalValues: { footprint: 'VAL-EQ-031', usageMin: 'VAL-BATH-SHOWER-CLEARANCE-MIN-001', usageTarget: 'VAL-BATH-SHOWER-CLEARANCE-TARGET-001', usageComfort: 'VAL-BATH-SHOWER-CLEARANCE-COMFORT-001' }, required: true, variant: 'eau', footprint: { w: 0.90, d: 0.90 }, anchor: 'corner', usage: [{ face: 'front', min: 0.60, target: 0.70, comfort: 0.80 }], services: ['eau', 'evacuation'] },
@@ -307,8 +343,9 @@
     wc: {
       label: 'WC', mvp: true, services: ['ventilation'],
       role: 'service', agrement: 0,   // servi au plancher puis fermé : O1
-      minProgramArea: 1.5, minProgramSide: 0.90, maxRatio: 3.5,
+      minProgramArea: 1.5, minProgramSide: 0.90, maxRatio: 3.5, maxAspect: 3.0,
       canonicalValues: {
+        maxAspect: 'VAL-SERVICE-ASPECT-MAX-001',
         minProgramArea: 'VAL-WC-PROGRAM-AREA-MIN-001',
         minProgramSide: 'VAL-WC-PROGRAM-SIDE-MIN-001',
         maxRatio: 'VAL-WC-PROGRAM-AREA-MAX-RATIO-001'
@@ -497,6 +534,11 @@
     };
   }
 
+  function maxAspectOf(type) {
+    var room = socle.rooms[type];
+    return room && Number.isFinite(room.maxAspect) ? room.maxAspect : null;
+  }
+
   function maxRatioOf(type) {
     var room = ROOMS[type];
     return room && Number.isFinite(room.maxRatio) ? room.maxRatio : null;
@@ -525,6 +567,7 @@
     agrementOf: agrementOf,
     programFloor: programFloor,
     maxRatioOf: maxRatioOf,
+    maxAspectOf: maxAspectOf,
     malformedRooms: malformedRooms,
     storageBay: STORAGE_BAY,
     module: MODULE

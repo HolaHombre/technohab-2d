@@ -94,7 +94,8 @@ for (const [type, room] of Object.entries(socle.rooms)) {
     minProgramArea: room.minProgramArea, minProgramSide: room.minProgramSide,
     targetProgramArea: room.targetProgramArea,
     programFloors: room.programFloors || null,
-    maxRatio: room.maxRatio, trigger: room.trigger,
+    optInVariants: room.optInVariants || null,
+    maxRatio: room.maxRatio, maxAspect: room.maxAspect || null, trigger: room.trigger,
     facingClearance: room.facingClearance,
     accessClearance: room.accessClearance,
     maxFurnitureRatio: room.maxFurnitureRatio,
@@ -111,8 +112,9 @@ const body = Object.entries(result).map(([type, data]) =>
   `      minProgramArea: ${nombre(data.minProgramArea)},` +
   ` minProgramSide: ${nombre(data.minProgramSide)},` +
   ` targetProgramArea: ${nombre(data.targetProgramArea)},` +
-  ` maxRatio: ${nombre(data.maxRatio)},\n` +
+  ` maxRatio: ${nombre(data.maxRatio)}, maxAspect: ${nombre(data.maxAspect)},\n` +
   `      programFloors: ${data.programFloors ? JSON.stringify(data.programFloors) : 'null'},\n` +
+  `      optInVariants: ${data.optInVariants ? JSON.stringify(data.optInVariants) : 'null'},\n` +
   `      trigger: ${data.trigger ? JSON.stringify(data.trigger) : 'null'},\n` +
   `      facingClearance: ${nombre(data.facingClearance)},\n` +
   `      accessClearance: ${nombre(data.accessClearance)},\n` +
@@ -153,12 +155,20 @@ const out = `(function (root) {
 ${body}
   };
 
+  // Sans variante nommée, on ne compte pas les variantes qu'il faut demander :
+  // le plus petit séjour de tous les séjours n'est pas celui d'un studio.
+  function defaultVariants(entry) {
+    return Object.keys(entry.variants).filter(function (name) {
+      return !(entry.optInVariants && entry.optInVariants.indexOf(name) !== -1);
+    });
+  }
+
   function fits(type, widthMeters, heightMeters, variant) {
     var entry = ENVELOPES[type];
     if (!entry) return true; // type sans exigence connue : ne rien interdire
     var w = Math.round(widthMeters * 100);
     var h = Math.round(heightMeters * 100);
-    var names = variant ? [variant] : Object.keys(entry.variants);
+    var names = variant ? [variant] : defaultVariants(entry);
     return names.some(function (name) {
       var pairs = entry.variants[name] || [];
       return pairs.some(function (pair) {
@@ -171,7 +181,7 @@ ${body}
   function smallest(type, variant) {
     var entry = ENVELOPES[type];
     if (!entry) return null;
-    var names = variant ? [variant] : Object.keys(entry.variants);
+    var names = variant ? [variant] : defaultVariants(entry);
     var best = null;
     names.forEach(function (name) {
       (entry.variants[name] || []).forEach(function (pair) {
@@ -186,7 +196,7 @@ ${body}
   function narrowest(type, variant) {
     var entry = ENVELOPES[type];
     if (!entry) return null;
-    var names = variant ? [variant] : Object.keys(entry.variants);
+    var names = variant ? [variant] : defaultVariants(entry);
     var best = null;
     names.forEach(function (name) {
       (entry.variants[name] || []).forEach(function (pair) {
@@ -209,6 +219,11 @@ ${body}
   function agrementOf(type) {
     var entry = ENVELOPES[type];
     return entry && Number.isFinite(entry.agrement) ? entry.agrement : 0.6;
+  }
+
+  function maxAspectOf(type) {
+    var entry = ENVELOPES[type];
+    return entry && Number.isFinite(entry.maxAspect) ? entry.maxAspect : null;
   }
 
   function maxRatioOf(type) {
@@ -306,7 +321,7 @@ ${body}
   root.TechnoHabFit = {
     envelopes: ENVELOPES, fits: fits, smallest: smallest, narrowest: narrowest,
     roleOf: roleOf, typesByRole: typesByRole, agrementOf: agrementOf,
-    maxRatioOf: maxRatioOf, floorOf: floorOf, programOf: programOf,
+    maxRatioOf: maxRatioOf, maxAspectOf: maxAspectOf, floorOf: floorOf, programOf: programOf,
     resolveProgram: resolveProgram,
     geometryScope: 'rectangle-only'
   };

@@ -26,22 +26,25 @@
   var ENVELOPES = {
     living: {
       label: "Séjour", mvp: true, role: "principale", agrement: 1.4,
-      minProgramArea: 20, minProgramSide: 3, targetProgramArea: 24, maxRatio: null,
-      programFloors: null,
+      minProgramArea: 20, minProgramSide: 3, targetProgramArea: 24, maxRatio: null, maxAspect: null,
+      programFloors: {"studio":{"area":9,"side":2.2}},
+      optInVariants: ["studio"],
       trigger: {"kind":"always"},
       facingClearance: null,
       accessClearance: 0.7,
       maxFurnitureRatio: 0.5,
       variants: {
-        base: [[140, 290], [180, 200], [200, 180], [290, 140]]
+        sejour: [[140, 290], [180, 200], [200, 180], [290, 140]],
+        studio: [[150, 250], [190, 200], [200, 190], [250, 150]]
       },
-      programs: {"base":{"equipments":[{"id":"sofa","label":"Canapé","required":true,"canonicalValues":{"footprint":"VAL-LIVING-SOFA-FOOTPRINT-001","usageMin":"VAL-LIVING-SOFA-CLEARANCE-MIN-001","usageTarget":"VAL-LIVING-SOFA-CLEARANCE-TARGET-001","usageComfort":"VAL-LIVING-SOFA-CLEARANCE-COMFORT-001"},"footprint":{"w":1.8,"d":0.9},"anchor":"wall","usage":[{"face":"front","min":0.5,"target":0.5,"comfort":0.6}],"sizes":[{"id":"sofa_3","label":"Canapé 3 places","from":24,"footprint":{"w":2.2,"d":0.9}},{"id":"sofa_angle","label":"Canapé d’angle","from":30,"footprint":{"w":2.2,"d":2.2},"anchor":"corner"}],"program":"living"},{"id":"coffee_table","label":"Table basse","required":true,"canonicalValues":{"footprint":"VAL-LIVING-COFFEE-TABLE-FOOTPRINT-001","usageMin":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-MIN-001","usageTarget":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-TARGET-001","usageComfort":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-COMFORT-001"},"footprint":{"w":1.1,"d":0.6},"anchor":"free","usage":[{"face":"front","min":0.45,"target":0.5,"comfort":0.6,"accessRequired":false}],"program":"living"}],"relations":[{"code":"LIVING-TABLE-001","kind":"gap-range","subject":"coffee_table","target":"sofa","min":0.45,"max":0.65,"canonicalValues":{"min":"VAL-LIVING-TABLE-GAP-MIN-001","max":"VAL-LIVING-TABLE-GAP-MAX-001"},"level":"GUIDELINE","weight":1.8,"label":"La table basse reste à portée du canapé"}]}},
-      catalogs: {"base":{"equipments":[{"id":"sofa","label":"Canapé","required":true,"canonicalValues":{"footprint":"VAL-LIVING-SOFA-FOOTPRINT-001","usageMin":"VAL-LIVING-SOFA-CLEARANCE-MIN-001","usageTarget":"VAL-LIVING-SOFA-CLEARANCE-TARGET-001","usageComfort":"VAL-LIVING-SOFA-CLEARANCE-COMFORT-001"},"footprint":{"w":1.8,"d":0.9},"anchor":"wall","usage":[{"face":"front","min":0.5,"target":0.5,"comfort":0.6}],"sizes":[{"id":"sofa_3","label":"Canapé 3 places","from":24,"footprint":{"w":2.2,"d":0.9}},{"id":"sofa_angle","label":"Canapé d’angle","from":30,"footprint":{"w":2.2,"d":2.2},"anchor":"corner"}],"program":"living"},{"id":"coffee_table","label":"Table basse","required":true,"canonicalValues":{"footprint":"VAL-LIVING-COFFEE-TABLE-FOOTPRINT-001","usageMin":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-MIN-001","usageTarget":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-TARGET-001","usageComfort":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-COMFORT-001"},"footprint":{"w":1.1,"d":0.6},"anchor":"free","usage":[{"face":"front","min":0.45,"target":0.5,"comfort":0.6,"accessRequired":false}],"program":"living"},{"id":"tv_unit","label":"Meuble bas","required":false,"minRoomArea":22,"canonicalValues":{"activationArea":"VAL-LIVING-MEDIA-ACTIVATION-AREA-001","footprint":"VAL-LIVING-TV-FOOTPRINT-001","usageMin":"VAL-LIVING-TV-CLEARANCE-MIN-001"},"footprint":{"w":1.2,"d":0.4},"anchor":"wall","usage":[{"face":"front","min":0.6}],"program":"living"},{"id":"armchair","label":"Fauteuil","required":false,"minRoomArea":22,"canonicalValues":{"activationArea":"VAL-LIVING-ARMCHAIR-ACTIVATION-AREA-001","footprint":"VAL-LIVING-ARMCHAIR-FOOTPRINT-001"},"footprint":{"w":0.9,"d":0.85},"anchor":"free","usage":[],"program":"living"}],"relations":[{"code":"LIVING-FOCAL-001","kind":"faces","subject":"sofa","target":"tv_unit","optional":true,"level":"GUIDELINE","weight":1.8,"label":"Le canapé fait face au meuble média"},{"code":"LIVING-TABLE-001","kind":"gap-range","subject":"coffee_table","target":"sofa","min":0.45,"max":0.65,"canonicalValues":{"min":"VAL-LIVING-TABLE-GAP-MIN-001","max":"VAL-LIVING-TABLE-GAP-MAX-001"},"level":"GUIDELINE","weight":1.8,"label":"La table basse reste à portée du canapé"},{"code":"LIVING-CONVERSATION-001","kind":"distance-range","subject":"armchair","target":"sofa","min":1,"targetDistance":1.8,"max":3,"optional":true,"canonicalValues":{"min":"VAL-LIVING-CONVERSATION-MIN-001","target":"VAL-LIVING-CONVERSATION-TARGET-001","max":"VAL-LIVING-CONVERSATION-MAX-001"},"level":"GUIDELINE","weight":1.5,"label":"Les assises restent à distance de conversation"}]}}
+      programs: {"sejour":{"equipments":[{"variant":"sejour","id":"sofa","label":"Canapé","required":true,"canonicalValues":{"footprint":"VAL-LIVING-SOFA-FOOTPRINT-001","usageMin":"VAL-LIVING-SOFA-CLEARANCE-MIN-001","usageTarget":"VAL-LIVING-SOFA-CLEARANCE-TARGET-001","usageComfort":"VAL-LIVING-SOFA-CLEARANCE-COMFORT-001"},"footprint":{"w":1.8,"d":0.9},"anchor":"wall","usage":[{"face":"front","min":0.5,"target":0.5,"comfort":0.6}],"sizes":[{"id":"sofa_3","label":"Canapé 3 places","from":24,"footprint":{"w":2.2,"d":0.9}},{"id":"sofa_angle","label":"Canapé d’angle","from":30,"footprint":{"w":2.2,"d":2.2},"anchor":"corner"}],"program":"living"},{"variant":"sejour","id":"coffee_table","label":"Table basse","required":true,"canonicalValues":{"footprint":"VAL-LIVING-COFFEE-TABLE-FOOTPRINT-001","usageMin":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-MIN-001","usageTarget":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-TARGET-001","usageComfort":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-COMFORT-001"},"footprint":{"w":1.1,"d":0.6},"anchor":"free","usage":[{"face":"front","min":0.45,"target":0.5,"comfort":0.6,"accessRequired":false}],"program":"living"}],"relations":[{"code":"LIVING-TABLE-001","kind":"gap-range","subject":"coffee_table","target":"sofa","min":0.45,"max":0.65,"canonicalValues":{"min":"VAL-LIVING-TABLE-GAP-MIN-001","max":"VAL-LIVING-TABLE-GAP-MAX-001"},"level":"GUIDELINE","weight":1.8,"label":"La table basse reste à portée du canapé"}]},"studio":{"equipments":[{"id":"sofa_bed","label":"Canapé convertible","variant":"studio","required":true,"assumed":true,"footprint":{"w":1.9,"d":0.95},"anchor":"wall","usage":[{"face":"front","min":0.5,"target":0.5,"comfort":0.6}],"modes":[{"id":"nuit","label":"Lit déplié","extend":0.45,"access":0.6}],"program":"living"}],"relations":[]}},
+      catalogs: {"sejour":{"equipments":[{"variant":"sejour","id":"sofa","label":"Canapé","required":true,"canonicalValues":{"footprint":"VAL-LIVING-SOFA-FOOTPRINT-001","usageMin":"VAL-LIVING-SOFA-CLEARANCE-MIN-001","usageTarget":"VAL-LIVING-SOFA-CLEARANCE-TARGET-001","usageComfort":"VAL-LIVING-SOFA-CLEARANCE-COMFORT-001"},"footprint":{"w":1.8,"d":0.9},"anchor":"wall","usage":[{"face":"front","min":0.5,"target":0.5,"comfort":0.6}],"sizes":[{"id":"sofa_3","label":"Canapé 3 places","from":24,"footprint":{"w":2.2,"d":0.9}},{"id":"sofa_angle","label":"Canapé d’angle","from":30,"footprint":{"w":2.2,"d":2.2},"anchor":"corner"}],"program":"living"},{"variant":"sejour","id":"coffee_table","label":"Table basse","required":true,"canonicalValues":{"footprint":"VAL-LIVING-COFFEE-TABLE-FOOTPRINT-001","usageMin":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-MIN-001","usageTarget":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-TARGET-001","usageComfort":"VAL-LIVING-COFFEE-TABLE-CLEARANCE-COMFORT-001"},"footprint":{"w":1.1,"d":0.6},"anchor":"free","usage":[{"face":"front","min":0.45,"target":0.5,"comfort":0.6,"accessRequired":false}],"program":"living"},{"variant":"sejour","id":"tv_unit","label":"Meuble bas","required":false,"minRoomArea":22,"canonicalValues":{"activationArea":"VAL-LIVING-MEDIA-ACTIVATION-AREA-001","footprint":"VAL-LIVING-TV-FOOTPRINT-001","usageMin":"VAL-LIVING-TV-CLEARANCE-MIN-001"},"footprint":{"w":1.2,"d":0.4},"anchor":"wall","usage":[{"face":"front","min":0.6}],"program":"living"},{"variant":"sejour","id":"armchair","label":"Fauteuil","required":false,"minRoomArea":22,"canonicalValues":{"activationArea":"VAL-LIVING-ARMCHAIR-ACTIVATION-AREA-001","footprint":"VAL-LIVING-ARMCHAIR-FOOTPRINT-001"},"footprint":{"w":0.9,"d":0.85},"anchor":"free","usage":[],"program":"living"}],"relations":[{"code":"LIVING-FOCAL-001","kind":"faces","subject":"sofa","target":"tv_unit","optional":true,"level":"GUIDELINE","weight":1.8,"label":"Le canapé fait face au meuble média"},{"code":"LIVING-TABLE-001","kind":"gap-range","subject":"coffee_table","target":"sofa","min":0.45,"max":0.65,"canonicalValues":{"min":"VAL-LIVING-TABLE-GAP-MIN-001","max":"VAL-LIVING-TABLE-GAP-MAX-001"},"level":"GUIDELINE","weight":1.8,"label":"La table basse reste à portée du canapé"},{"code":"LIVING-CONVERSATION-001","kind":"distance-range","subject":"armchair","target":"sofa","min":1,"targetDistance":1.8,"max":3,"optional":true,"canonicalValues":{"min":"VAL-LIVING-CONVERSATION-MIN-001","target":"VAL-LIVING-CONVERSATION-TARGET-001","max":"VAL-LIVING-CONVERSATION-MAX-001"},"level":"GUIDELINE","weight":1.5,"label":"Les assises restent à distance de conversation"}]},"studio":{"equipments":[{"id":"sofa_bed","label":"Canapé convertible","variant":"studio","required":true,"assumed":true,"footprint":{"w":1.9,"d":0.95},"anchor":"wall","usage":[{"face":"front","min":0.5,"target":0.5,"comfort":0.6}],"modes":[{"id":"nuit","label":"Lit déplié","extend":0.45,"access":0.6}],"program":"living"}],"relations":[]}}
     },
     dining: {
       label: "Salle à manger", mvp: false, role: "principale", agrement: 0.6,
-      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null,
+      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null, maxAspect: null,
       programFloors: {"salle":{"area":9,"side":2.6}},
+      optInVariants: null,
       trigger: {"kind":"always","standaloneIf":"separateDining","otherwiseInto":"living"},
       facingClearance: null,
       accessClearance: null,
@@ -49,15 +52,17 @@
       variants: {
         coin: [[70, 70]],
         coin4: [[200, 260], [260, 200]],
-        salle: [[200, 260], [260, 200]]
+        salle: [[200, 260], [260, 200]],
+        studio: [[120, 120]]
       },
-      programs: {"coin":{"equipments":[],"relations":[]},"coin4":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"coin4","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]},"salle":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"salle","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]}},
-      catalogs: {"coin":{"equipments":[{"id":"dining_table_2","label":"Table adossée 2 places","variant":"coin","required":false,"minRoomArea":0,"footprint":{"w":1.2,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.6,"target":0.8,"comfort":1.2}],"sizes":[{"id":"dining_table_4","label":"Table 4 places","from":24,"anchor":"free","footprint":{"w":1.4,"d":0.8},"usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}]}],"program":"dining"}],"relations":[]},"coin4":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"coin4","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]},"salle":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"salle","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"},{"id":"sideboard","label":"Buffet","variant":"salle","required":false,"minRoomArea":12,"footprint":{"w":1.4,"d":0.45},"anchor":"wall","usage":[{"face":"front","min":0.6}],"program":"dining"}],"relations":[]}}
+      programs: {"coin":{"equipments":[],"relations":[]},"coin4":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"coin4","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]},"salle":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"salle","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]},"studio":{"equipments":[{"id":"dining_table_2","label":"Table adossée 2 places","variant":"studio","required":true,"footprint":{"w":1.2,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]}},
+      catalogs: {"coin":{"equipments":[{"id":"dining_table_2","label":"Table adossée 2 places","variant":"coin","required":false,"minRoomArea":0,"footprint":{"w":1.2,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.6,"target":0.8,"comfort":1.2}],"sizes":[{"id":"dining_table_4","label":"Table 4 places","from":24,"anchor":"free","footprint":{"w":1.4,"d":0.8},"usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}]}],"program":"dining"}],"relations":[]},"coin4":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"coin4","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]},"salle":{"equipments":[{"id":"dining_table_4","label":"Table 4 places","variant":"salle","required":true,"footprint":{"w":1.4,"d":0.8},"anchor":"free","usage":[{"face":"around","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"},{"id":"sideboard","label":"Buffet","variant":"salle","required":false,"minRoomArea":12,"footprint":{"w":1.4,"d":0.45},"anchor":"wall","usage":[{"face":"front","min":0.6}],"program":"dining"}],"relations":[]},"studio":{"equipments":[{"id":"dining_table_2","label":"Table adossée 2 places","variant":"studio","required":true,"footprint":{"w":1.2,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.6,"target":0.8,"comfort":1.2}],"program":"dining"}],"relations":[]}}
     },
     bedroom: {
       label: "Chambre", mvp: true, role: "principale", agrement: 0.6,
-      minProgramArea: 9, minProgramSide: 2.5, targetProgramArea: null, maxRatio: null,
+      minProgramArea: 9, minProgramSide: 2.5, targetProgramArea: null, maxRatio: null, maxAspect: null,
       programFloors: {"enfant":{"area":9,"side":2.5},"parentale":{"area":11,"side":2.7}},
+      optInVariants: null,
       trigger: {"kind":"count","from":"bedrooms"},
       facingClearance: null,
       accessClearance: null,
@@ -71,22 +76,25 @@
     },
     kitchen: {
       label: "Cuisine", mvp: true, role: "principale", agrement: 0.6,
-      minProgramArea: 7, minProgramSide: 1.85, targetProgramArea: null, maxRatio: null,
+      minProgramArea: 7, minProgramSide: 1.85, targetProgramArea: null, maxRatio: null, maxAspect: null,
       programFloors: null,
+      optInVariants: ["kitchenette"],
       trigger: {"kind":"always","standaloneIf":"separateKitchen","otherwiseInto":"living"},
       facingClearance: 1.2,
       accessClearance: null,
       maxFurnitureRatio: null,
       variants: {
-        base: [[120, 210], [180, 180], [210, 120]]
+        cuisine: [[120, 210], [180, 180], [210, 120]],
+        kitchenette: [[120, 120]]
       },
-      programs: {"base":{"equipments":[{"id":"sink","label":"Évier","val":"VAL-EQ-010","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-SINK-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"services":["eau","evacuation"],"program":"kitchen"},{"id":"hob","label":"Plaque de cuisson","val":"VAL-EQ-010","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-HOB-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"services":["electricite"],"program":"kitchen"},{"id":"worktop","label":"Plan de travail","val":"VAL-EQ-012","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-WORKTOP-FOOTPRINT-MIN-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"between":["sink","hob"],"program":"kitchen"},{"id":"fridge","label":"Réfrigérateur","val":"VAL-EQ-016","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-FRIDGE-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"program":"kitchen"}],"relations":[{"code":"KITCHEN-SEQUENCE-001","kind":"between","subject":"worktop","targets":["sink","hob"],"level":"HARD","weight":4,"label":"Le plan de travail sépare l’évier de la plaque"},{"code":"KITCHEN-ALIGN-001","kind":"same-wall","subject":"sink","target":"worktop","level":"GUIDELINE","weight":1.5,"label":"L’évier et la préparation forment un linéaire"},{"code":"KITCHEN-ALIGN-002","kind":"same-wall","subject":"hob","target":"worktop","level":"GUIDELINE","weight":1.5,"label":"La plaque et la préparation forment un linéaire"},{"code":"KITCHEN-COLD-001","kind":"near","subject":"fridge","target":"worktop","max":2.4,"level":"GUIDELINE","weight":1,"label":"Le froid reste proche de la zone de préparation"},{"code":"KITCHEN-TRIANGLE-001","kind":"perimeter-max","subject":"sink","targets":["hob","fridge"],"max":6.5,"canonicalValues":{"max":"VAL-KITCHEN-TRIANGLE-PERIMETER-MAX-001"},"level":"GUIDELINE","weight":1.4,"label":"Le triangle d’activité reste compact"}]}},
-      catalogs: {"base":{"equipments":[{"id":"sink","label":"Évier","val":"VAL-EQ-010","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-SINK-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"services":["eau","evacuation"],"program":"kitchen"},{"id":"hob","label":"Plaque de cuisson","val":"VAL-EQ-010","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-HOB-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"services":["electricite"],"program":"kitchen"},{"id":"worktop","label":"Plan de travail","val":"VAL-EQ-012","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-WORKTOP-FOOTPRINT-MIN-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"between":["sink","hob"],"program":"kitchen"},{"id":"fridge","label":"Réfrigérateur","val":"VAL-EQ-016","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-FRIDGE-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"program":"kitchen"},{"id":"dishwasher","label":"Lave-vaisselle","val":"VAL-EQ-015","required":false,"minRoomArea":9,"canonicalValues":{"activationArea":"VAL-KITCHEN-DISHWASHER-ACTIVATION-AREA-001","footprint":"VAL-KITCHEN-DISHWASHER-FOOTPRINT-001","usageMin":"VAL-KITCHEN-DISHWASHER-SWING-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":1.2}],"services":["eau","evacuation"],"program":"kitchen"}],"relations":[{"code":"KITCHEN-SEQUENCE-001","kind":"between","subject":"worktop","targets":["sink","hob"],"level":"HARD","weight":4,"label":"Le plan de travail sépare l’évier de la plaque"},{"code":"KITCHEN-ALIGN-001","kind":"same-wall","subject":"sink","target":"worktop","level":"GUIDELINE","weight":1.5,"label":"L’évier et la préparation forment un linéaire"},{"code":"KITCHEN-ALIGN-002","kind":"same-wall","subject":"hob","target":"worktop","level":"GUIDELINE","weight":1.5,"label":"La plaque et la préparation forment un linéaire"},{"code":"KITCHEN-COLD-001","kind":"near","subject":"fridge","target":"worktop","max":2.4,"level":"GUIDELINE","weight":1,"label":"Le froid reste proche de la zone de préparation"},{"code":"KITCHEN-TRIANGLE-001","kind":"perimeter-max","subject":"sink","targets":["hob","fridge"],"max":6.5,"canonicalValues":{"max":"VAL-KITCHEN-TRIANGLE-PERIMETER-MAX-001"},"level":"GUIDELINE","weight":1.4,"label":"Le triangle d’activité reste compact"}]}}
+      programs: {"cuisine":{"equipments":[{"variant":"cuisine","id":"sink","label":"Évier","val":"VAL-EQ-010","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-SINK-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"services":["eau","evacuation"],"program":"kitchen"},{"variant":"cuisine","id":"hob","label":"Plaque de cuisson","val":"VAL-EQ-010","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-HOB-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"services":["electricite"],"program":"kitchen"},{"variant":"cuisine","id":"worktop","label":"Plan de travail","val":"VAL-EQ-012","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-WORKTOP-FOOTPRINT-MIN-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"between":["sink","hob"],"program":"kitchen"},{"variant":"cuisine","id":"fridge","label":"Réfrigérateur","val":"VAL-EQ-016","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-FRIDGE-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"program":"kitchen"}],"relations":[{"code":"KITCHEN-SEQUENCE-001","kind":"between","subject":"worktop","targets":["sink","hob"],"level":"HARD","weight":4,"label":"Le plan de travail sépare l’évier de la plaque"},{"code":"KITCHEN-ALIGN-001","kind":"same-wall","subject":"sink","target":"worktop","level":"GUIDELINE","weight":1.5,"label":"L’évier et la préparation forment un linéaire"},{"code":"KITCHEN-ALIGN-002","kind":"same-wall","subject":"hob","target":"worktop","level":"GUIDELINE","weight":1.5,"label":"La plaque et la préparation forment un linéaire"},{"code":"KITCHEN-COLD-001","kind":"near","subject":"fridge","target":"worktop","max":2.4,"level":"GUIDELINE","weight":1,"label":"Le froid reste proche de la zone de préparation"},{"code":"KITCHEN-TRIANGLE-001","kind":"perimeter-max","subject":"sink","targets":["hob","fridge"],"max":6.5,"canonicalValues":{"max":"VAL-KITCHEN-TRIANGLE-PERIMETER-MAX-001"},"level":"GUIDELINE","weight":1.4,"label":"Le triangle d’activité reste compact"}]},"kitchenette":{"equipments":[{"id":"kitchenette","label":"Kitchenette","variant":"kitchenette","required":true,"assumed":true,"footprint":{"w":1.2,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.6}],"services":["eau","evacuation","electricite"],"program":"kitchen"}],"relations":[]}},
+      catalogs: {"cuisine":{"equipments":[{"variant":"cuisine","id":"sink","label":"Évier","val":"VAL-EQ-010","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-SINK-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"services":["eau","evacuation"],"program":"kitchen"},{"variant":"cuisine","id":"hob","label":"Plaque de cuisson","val":"VAL-EQ-010","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-HOB-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"services":["electricite"],"program":"kitchen"},{"variant":"cuisine","id":"worktop","label":"Plan de travail","val":"VAL-EQ-012","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-WORKTOP-FOOTPRINT-MIN-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"between":["sink","hob"],"program":"kitchen"},{"variant":"cuisine","id":"fridge","label":"Réfrigérateur","val":"VAL-EQ-016","required":true,"canonicalValues":{"footprint":"VAL-KITCHEN-FRIDGE-FOOTPRINT-001","usageMin":"VAL-KITCHEN-APPLIANCE-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.9}],"program":"kitchen"},{"variant":"cuisine","id":"dishwasher","label":"Lave-vaisselle","val":"VAL-EQ-015","required":false,"minRoomArea":9,"canonicalValues":{"activationArea":"VAL-KITCHEN-DISHWASHER-ACTIVATION-AREA-001","footprint":"VAL-KITCHEN-DISHWASHER-FOOTPRINT-001","usageMin":"VAL-KITCHEN-DISHWASHER-SWING-CLEARANCE-MIN-001"},"footprint":{"w":0.6,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":1.2}],"services":["eau","evacuation"],"program":"kitchen"}],"relations":[{"code":"KITCHEN-SEQUENCE-001","kind":"between","subject":"worktop","targets":["sink","hob"],"level":"HARD","weight":4,"label":"Le plan de travail sépare l’évier de la plaque"},{"code":"KITCHEN-ALIGN-001","kind":"same-wall","subject":"sink","target":"worktop","level":"GUIDELINE","weight":1.5,"label":"L’évier et la préparation forment un linéaire"},{"code":"KITCHEN-ALIGN-002","kind":"same-wall","subject":"hob","target":"worktop","level":"GUIDELINE","weight":1.5,"label":"La plaque et la préparation forment un linéaire"},{"code":"KITCHEN-COLD-001","kind":"near","subject":"fridge","target":"worktop","max":2.4,"level":"GUIDELINE","weight":1,"label":"Le froid reste proche de la zone de préparation"},{"code":"KITCHEN-TRIANGLE-001","kind":"perimeter-max","subject":"sink","targets":["hob","fridge"],"max":6.5,"canonicalValues":{"max":"VAL-KITCHEN-TRIANGLE-PERIMETER-MAX-001"},"level":"GUIDELINE","weight":1.4,"label":"Le triangle d’activité reste compact"}]},"kitchenette":{"equipments":[{"id":"kitchenette","label":"Kitchenette","variant":"kitchenette","required":true,"assumed":true,"footprint":{"w":1.2,"d":0.6},"anchor":"wall","usage":[{"face":"front","min":0.6}],"services":["eau","evacuation","electricite"],"program":"kitchen"}],"relations":[]}}
     },
     bath: {
       label: "Salle d’eau", mvp: true, role: "service", agrement: 0.6,
-      minProgramArea: 3, minProgramSide: 1.7, targetProgramArea: null, maxRatio: null,
+      minProgramArea: 3, minProgramSide: 1.7, targetProgramArea: null, maxRatio: null, maxAspect: 3,
       programFloors: null,
+      optInVariants: null,
       trigger: {"kind":"count","from":"bathrooms"},
       facingClearance: null,
       accessClearance: null,
@@ -100,8 +108,9 @@
     },
     wc: {
       label: "WC", mvp: true, role: "service", agrement: 0,
-      minProgramArea: 1.5, minProgramSide: 0.9, targetProgramArea: null, maxRatio: 3.5,
+      minProgramArea: 1.5, minProgramSide: 0.9, targetProgramArea: null, maxRatio: 3.5, maxAspect: 3,
       programFloors: null,
+      optInVariants: null,
       trigger: {"kind":"always","standaloneIf":"includeWc","otherwiseInto":"bath_1"},
       facingClearance: null,
       accessClearance: null,
@@ -114,8 +123,9 @@
     },
     circulation: {
       label: "Circulation", mvp: true, role: "distribution", agrement: 0.6,
-      minProgramArea: 3, minProgramSide: 0.9, targetProgramArea: null, maxRatio: 1.6,
+      minProgramArea: 3, minProgramSide: 0.9, targetProgramArea: null, maxRatio: 1.6, maxAspect: null,
       programFloors: null,
+      optInVariants: null,
       trigger: {"kind":"derived","from":"desserte","minRooms":4},
       facingClearance: null,
       accessClearance: null,
@@ -128,8 +138,9 @@
     },
     entree: {
       label: "Entrée", mvp: false, role: "distribution", agrement: 0.6,
-      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null,
+      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null, maxAspect: null,
       programFloors: null,
+      optInVariants: null,
       trigger: null,
       facingClearance: null,
       accessClearance: null,
@@ -142,8 +153,9 @@
     },
     bureau: {
       label: "Bureau", mvp: false, role: "principale", agrement: 0.6,
-      minProgramArea: 5, minProgramSide: 1.8, targetProgramArea: null, maxRatio: null,
+      minProgramArea: 5, minProgramSide: 1.8, targetProgramArea: null, maxRatio: null, maxAspect: null,
       programFloors: {"compact":{"area":5,"side":1.8},"convertible":{"area":9,"side":2.5}},
+      optInVariants: null,
       trigger: {"kind":"count","from":"offices","variantFrom":"officeVariant"},
       facingClearance: null,
       accessClearance: null,
@@ -157,8 +169,9 @@
     },
     buanderie: {
       label: "Buanderie", mvp: false, role: "service", agrement: 0.6,
-      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null,
+      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null, maxAspect: null,
       programFloors: null,
+      optInVariants: null,
       trigger: null,
       facingClearance: null,
       accessClearance: null,
@@ -171,8 +184,9 @@
     },
     cellier: {
       label: "Cellier", mvp: false, role: "annexe", agrement: 0.6,
-      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null,
+      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null, maxAspect: null,
       programFloors: null,
+      optInVariants: null,
       trigger: null,
       facingClearance: null,
       accessClearance: null,
@@ -185,8 +199,9 @@
     },
     local_technique: {
       label: "Local technique", mvp: false, role: "service", agrement: 0.6,
-      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null,
+      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null, maxAspect: null,
       programFloors: null,
+      optInVariants: null,
       trigger: null,
       facingClearance: null,
       accessClearance: null,
@@ -199,8 +214,9 @@
     },
     garage: {
       label: "Garage", mvp: false, role: "annexe", agrement: 0.6,
-      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null,
+      minProgramArea: null, minProgramSide: null, targetProgramArea: null, maxRatio: null, maxAspect: null,
       programFloors: null,
+      optInVariants: null,
       trigger: null,
       facingClearance: null,
       accessClearance: null,
@@ -213,12 +229,20 @@
     }
   };
 
+  // Sans variante nommée, on ne compte pas les variantes qu'il faut demander :
+  // le plus petit séjour de tous les séjours n'est pas celui d'un studio.
+  function defaultVariants(entry) {
+    return Object.keys(entry.variants).filter(function (name) {
+      return !(entry.optInVariants && entry.optInVariants.indexOf(name) !== -1);
+    });
+  }
+
   function fits(type, widthMeters, heightMeters, variant) {
     var entry = ENVELOPES[type];
     if (!entry) return true; // type sans exigence connue : ne rien interdire
     var w = Math.round(widthMeters * 100);
     var h = Math.round(heightMeters * 100);
-    var names = variant ? [variant] : Object.keys(entry.variants);
+    var names = variant ? [variant] : defaultVariants(entry);
     return names.some(function (name) {
       var pairs = entry.variants[name] || [];
       return pairs.some(function (pair) {
@@ -231,7 +255,7 @@
   function smallest(type, variant) {
     var entry = ENVELOPES[type];
     if (!entry) return null;
-    var names = variant ? [variant] : Object.keys(entry.variants);
+    var names = variant ? [variant] : defaultVariants(entry);
     var best = null;
     names.forEach(function (name) {
       (entry.variants[name] || []).forEach(function (pair) {
@@ -246,7 +270,7 @@
   function narrowest(type, variant) {
     var entry = ENVELOPES[type];
     if (!entry) return null;
-    var names = variant ? [variant] : Object.keys(entry.variants);
+    var names = variant ? [variant] : defaultVariants(entry);
     var best = null;
     names.forEach(function (name) {
       (entry.variants[name] || []).forEach(function (pair) {
@@ -269,6 +293,11 @@
   function agrementOf(type) {
     var entry = ENVELOPES[type];
     return entry && Number.isFinite(entry.agrement) ? entry.agrement : 0.6;
+  }
+
+  function maxAspectOf(type) {
+    var entry = ENVELOPES[type];
+    return entry && Number.isFinite(entry.maxAspect) ? entry.maxAspect : null;
   }
 
   function maxRatioOf(type) {
@@ -366,7 +395,7 @@
   root.TechnoHabFit = {
     envelopes: ENVELOPES, fits: fits, smallest: smallest, narrowest: narrowest,
     roleOf: roleOf, typesByRole: typesByRole, agrementOf: agrementOf,
-    maxRatioOf: maxRatioOf, floorOf: floorOf, programOf: programOf,
+    maxRatioOf: maxRatioOf, maxAspectOf: maxAspectOf, floorOf: floorOf, programOf: programOf,
     resolveProgram: resolveProgram,
     geometryScope: 'rectangle-only'
   };

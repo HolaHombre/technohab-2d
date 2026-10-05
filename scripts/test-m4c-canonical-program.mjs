@@ -43,7 +43,11 @@ const generous = generator.generatePlan({
   // plus bas (`generousDedicated`).
   surface: 120, bedrooms: 3, bathrooms: 1,
   separateKitchen: true, includeWc: true, shape: 'lShape', diningMode: 'hosted'
-}, 1, 55);
+  // Graine 40 depuis le 25 septembre 2026 : le plafond d'allongement des pièces
+  // de service a redistribué la géométrie de la graine 55, dont la chambre
+  // parentale n'avait plus une proportion qui refuse le lit king. Le témoin
+  // vaut pour cette propriété, pas pour la graine (cinq graines sur les dix premières de 40 à 50 la tiennent aussi).
+}, 1, 40);
 const living = generous.rooms.find((room) => room.type === 'living');
 assertCanonical(living);
 assert.deepEqual(living.equipmentProgram.resolved.map((item) => item.id),

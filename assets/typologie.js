@@ -430,7 +430,15 @@
       if (!sC) return { pieces: null, motif: 'pas de séjour pour desservir sans couloir' };
       const autres = desservies.filter((p) => p !== sC);
       if (!autres.length) return { pieces: null, motif: 'rien à desservir' };
-      bandes = [[sC], random ? melange(autres, random) : autres];
+      /* Un studio n'a qu'une pièce à desservir : la salle d'eau. Deux bandes
+         empilées bornaient la largeur commune par la plus petite pièce
+         (W ≤ aire / profondeur minimale, soit 2,2 m) et ne laissaient que
+         des lanières de 2,4 × 8 m. Côte à côte dans UNE bande, la profondeur
+         est libre et toute proportion, jusqu'au carré, redevient possible. */
+      const studio = sC.type === 'living' && sejour && sejour.variant === 'studio';
+      bandes = studio && autres.length === 1
+        ? [[sC, autres[0]]]
+        : [[sC], random ? melange(autres, random) : autres];
     } else {
       bandes = repartir(desservies, nbBandes, random);
     }
@@ -483,7 +491,18 @@
     const ecartMin = Math.min(...candidats.map((c) => c.ecart));
     const marge = Math.max(0.5, cible * (tolerance || TOLERANCE_SURFACE));
     const acceptables = candidats.filter((c) => c.ecart <= Math.max(ecartMin, marge));
-    acceptables.sort((a, b) => a.circulation - b.circulation);
+    /* Le séjour d'un studio porte le lit, la cuisine et la table : une bande
+       de 1,9 m ne les loge pas, même si sa surface est juste. Sans couloir la
+       circulation ne départage plus rien — le premier candidat était alors le
+       plus étroit. On préfère ici l'enveloppe la plus proche du carré. */
+    const studio = !!(sejour && sejour.variant === 'studio');
+    /* La forme demandée est lue ici aussi : un carré se juge sur le rapport
+       de l'enveloppe, quelle que soit la disposition. */
+    const carre = !!(programme.options && programme.options.shape === 'square');
+    const forme = (c) => Math.abs(Math.log(c.W / (c.surface / c.W)));
+    acceptables.sort((a, b) => (studio || carre)
+      ? forme(a) - forme(b)
+      : a.circulation - b.circulation);
     // Tirage biaisé vers le début : la moitié la plus économe est privilégiée,
     // sans que l'autre soit exclue.
     const meilleur = random
@@ -503,6 +522,71 @@
     });
     if (random && random() < 0.5) pieces = transposer(pieces);
     return { pieces, motif: null, largeur: W, hauteur: y, surface: meilleur.surface, cible };
+  }
+
+  /* --- Studio : la salle d'eau en coin, le séjour en L ----------------------
+     Deux bandes empilées ne laissaient au studio que des lanières : la largeur
+     commune était bornée par la petite pièce (W ≤ aire / profondeur minimale)
+     et une bande unique gonflait la salle d'eau dès qu'on approchait du carré
+     (sa largeur minimale × la profondeur commune). La salle d'eau garde donc
+     sa propre emprise, dans un coin, et le séjour prend le reste — un L. Toutes
+     les proportions d'enveloppe, du carré au 1,7, deviennent possibles, et la
+     forme demandée est lue ici. Rend `null` quand le coin ne tient pas : les
+     bandes restent en repli. */
+  function poserStudio(programme, cibleForcee, random, relache) {
+    const couloirs = programme.rooms.filter((r) => r.type === 'circulation');
+    const autres = programme.rooms.filter((r) => r.type !== 'circulation' && r.type !== 'living');
+    const sejour = programme.rooms.find((r) => r.type === 'living');
+    if (couloirs.length || !sejour || sejour.variant !== 'studio' || autres.length !== 1) {
+      return { pieces: null, motif: 'pas un studio à une pièce d’eau' };
+    }
+    const eau = contraintes(autres[0], relache);
+    const vie = contraintes(sejour, relache);
+    const cibleProgramme = programme.rooms.reduce((s, r) => s + r.targetArea, 0);
+    const cible = Number.isFinite(cibleForcee) && cibleForcee > 0 ? cibleForcee : cibleProgramme;
+    const facteur = cible / cibleProgramme;
+    const aireEau = autres[0].targetArea * facteur;
+
+    const carre = programme.options && programme.options.shape === 'square';
+    /* Plus la surface est juste, moins le séjour supporte un rectangle allongé :
+       le coin d'eau ne laisse alors qu'une bande étroite au lit déplié. Mesuré
+       le 25 septembre 2026 : à 16-17 m², un rapport de 1,15 à 1,7 échoue, le
+       carré passe ; à 18 m² tout passe. L'allongement toléré croît donc avec
+       la surface, de 1 (16 m²) à 1,7 (24 m²). */
+    const allonge = Math.min(0.7, Math.max(0.1, (cible - 16) / 8 * 0.7));
+    // Un carré au centimètre près n'a aucun jeu ; 6 % d'écart reste un carré.
+    const aspect = 1 + (random ? random() : 0.5) * (carre ? 0.06 : allonge);
+    const W = Math.sqrt(cible * aspect);
+    const H = cible / W;
+
+    /* Étroite d'abord : chaque centimètre pris à la salle d'eau en largeur
+       manque au séjour, dont le côté minimal est déjà tendu. On ne l'élargit
+       que si la profondeur en devenait disproportionnée. */
+    let bw = eau.minLargeur;
+    if (aireEau / bw > H * 0.6) bw = Math.max(bw, aireEau / (H * 0.6));
+    let bd = Math.max(eau.minProfondeur, aireEau / bw);
+    // Un reste de séjour trop mince pour servir ne vaut pas un décrochement.
+    if (H - bd < 0.6) bd = H;
+    if (bw > W - vie.minLargeur || bd > H + 1e-9 || H < vie.minProfondeur) {
+      return { pieces: null, motif: 'le coin de la salle d’eau ne laisse pas de séjour' };
+    }
+    // Deux parties `main` : le rôle `notch` est un décrochement à ranger, que
+    // TH2D-RANGEMENT-001 mesurerait comme une bande.
+    const partsVie = [{ role: 'main', x0: bw, y0: 0, x1: W, y1: H }];
+    if (H - bd > 0.05) partsVie.push({ role: 'main', x0: 0, y0: bd, x1: bw, y1: H });
+    let pieces = [
+      { id: sejour.id, parts: partsVie },
+      { id: autres[0].id, parts: [{ role: 'main', x0: 0, y0: 0, x1: bw, y1: bd }] }
+    ];
+    // Le coin est tiré : miroirs et transposition, sans changer la proportion.
+    if (random && random() < 0.5) {
+      pieces = pieces.map((p) => ({ id: p.id, parts: p.parts.map((q) => ({ role: q.role, x0: W - q.x1, y0: q.y0, x1: W - q.x0, y1: q.y1 })) }));
+    }
+    if (random && random() < 0.5) {
+      pieces = pieces.map((p) => ({ id: p.id, parts: p.parts.map((q) => ({ role: q.role, x0: q.x0, y0: H - q.y1, x1: q.x1, y1: H - q.y0 })) }));
+    }
+    if (random && random() < 0.5) pieces = transposer(pieces);
+    return { pieces, motif: null, largeur: W, hauteur: H, surface: W * H, cible };
   }
 
   /* Une répartition qui échoue n'est pas un programme impossible.
@@ -586,6 +670,8 @@
 
   function couloirsDesservants(programme, cibleForcee, graine) {
     if (!Number.isFinite(graine)) {
+      const studio = poserStudio(programme, cibleForcee, null, false);
+      if (studio.pieces) return studio;
       const direct = poserUneFois(programme, cibleForcee, null, false, TOLERANCES[0]);
       if (direct.pieces) return direct;
       return poserEnBandes(programme, cibleForcee, null, false, TOLERANCES[0]);
@@ -602,7 +688,17 @@
       return null;
     };
 
-    let pose = tenter(poserUneFois, 8, 0x9E3779B1, false, TOLERANCES[0]);
+    let pose = tenter(poserStudio, 4, 0x7F4A7C15, false, TOLERANCES[0]);
+    if (pose) return pose;
+    /* Un studio n'a pas de repli en bandes : elles n'y donnent que des
+       lanières de 2,3 × 7 m, valides mais fausses. Un refus honnête vaut mieux
+       qu'une forme que le moteur ne sait pas défendre. */
+    const estStudio = programme.rooms.some((r) => r.type === 'living' && r.variant === 'studio');
+    if (estStudio && !programme.rooms.some((r) => r.type === 'circulation') &&
+        programme.rooms.filter((r) => r.type !== 'living').length === 1) {
+      return { pieces: null, motif };
+    }
+    pose = tenter(poserUneFois, 8, 0x9E3779B1, false, TOLERANCES[0]);
     if (pose) return pose;
     pose = tenter(poserEnBandes, 8, 0x85EBCA6B, false, TOLERANCES[0]);
     if (pose) return pose;

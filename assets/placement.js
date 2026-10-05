@@ -775,6 +775,12 @@
   }
 
   function fits(equipments, width, height) {
+    /* Un équipement à modes (canapé convertible) doit tenir dans tous ses
+       états : seule `solve` les vérifie, et l'enveloppe ne doit pas être plus
+       optimiste que le solveur qui la consomme. */
+    if (equipments.some(function (equipment) { return equipment.modes && equipment.modes.length; })) {
+      return solve(equipments, { w: width / 100, h: height / 100 }).fits;
+    }
     return solveCentimeters(equipments, width, height).fits;
   }
 
@@ -1149,12 +1155,74 @@
     var s4Enabled = options.s4 === true || (options.s4 !== false &&
       (publicContext.openings || []).some(function (opening) { return opening.kind !== 'window'; }));
     var finalS4 = null;
-    var accept = (hardRelations.length || Number.isFinite(options.facingClearance)) ? function (placed) {
+    /* MODES — STUDIO (TABLE_PROGRAMME_BANDES.md §6). Un équipement à deux états
+       (le canapé convertible) déclare `modes: [{ id, extend, access }]` : dans
+       le mode, son emprise s'étend de `extend` m vers l'avant et doit rester
+       libre de tout autre MEUBLE ; les zones d'usage des autres équipements,
+       elles, sont désactivées (la cuisine et le repas ne servent pas la nuit).
+       Tolérance décrite par Théo : « tant qu'un accès au lit reste
+       accessible » — au moins un côté de `access` m, libre de meuble. La pose
+       du jour reste jugée avec ses zones d'usage, comme avant. */
+    var moded = [];
+    var roomWidth = cm(rectangle.w), roomHeight = cm(rectangle.h);
+    ordered.forEach(function (equipment, index) {
+      (equipment.modes || []).forEach(function (mode) { moded.push({ index: index, mode: mode }); });
+    });
+    function extendedFoot(foot, inward, extension) {
+      if (inward.y === 1) return { x0: foot.x0, y0: foot.y0, x1: foot.x1, y1: foot.y1 + extension };
+      if (inward.y === -1) return { x0: foot.x0, y0: foot.y0 - extension, x1: foot.x1, y1: foot.y1 };
+      if (inward.x === 1) return { x0: foot.x0, y0: foot.y0, x1: foot.x1 + extension, y1: foot.y1 };
+      return { x0: foot.x0 - extension, y0: foot.y0, x1: foot.x1, y1: foot.y1 };
+    }
+    function modeSideStrips(extended, inward, width) {
+      var vertical = inward.y !== 0;
+      var strips = vertical ? [
+        { x0: extended.x0 - width, y0: extended.y0, x1: extended.x0, y1: extended.y1 },
+        { x0: extended.x1, y0: extended.y0, x1: extended.x1 + width, y1: extended.y1 }
+      ] : [
+        { x0: extended.x0, y0: extended.y0 - width, x1: extended.x1, y1: extended.y0 },
+        { x0: extended.x0, y0: extended.y1, x1: extended.x1, y1: extended.y1 + width }
+      ];
+      // L'extrémité avant : le pied du lit déplié.
+      if (inward.y === 1) strips.push({ x0: extended.x0, y0: extended.y1, x1: extended.x1, y1: extended.y1 + width });
+      else if (inward.y === -1) strips.push({ x0: extended.x0, y0: extended.y0 - width, x1: extended.x1, y1: extended.y0 });
+      else if (inward.x === 1) strips.push({ x0: extended.x1, y0: extended.y0, x1: extended.x1 + width, y1: extended.y1 });
+      else strips.push({ x0: extended.x0 - width, y0: extended.y0, x1: extended.x0, y1: extended.y1 });
+      return strips;
+    }
+    function modesSatisfied(placed, complete) {
+      for (var m = 0; m < moded.length; m += 1) {
+        var entry = moded[m];
+        var pose = placed[entry.index];
+        if (!pose) continue;
+        var extended = extendedFoot(pose.foot, pose.inward, cm(entry.mode.extend || 0));
+        if (!inside(extended, roomWidth, roomHeight)) return false;
+        if (context.usablePolygon && !rectangleInPolygon(extended, context.usablePolygon)) return false;
+        var blockedByFurniture = placed.some(function (other, otherIndex) {
+          return otherIndex !== entry.index && overlaps(other.foot, extended);
+        }) || (context.blocked || []).some(function (blocked) { return overlaps(blocked, extended); });
+        if (blockedByFurniture) return false;
+        if (complete && entry.mode.access) {
+          var free = modeSideStrips(extended, pose.inward, cm(entry.mode.access)).some(function (strip) {
+            if (!inside(strip, roomWidth, roomHeight)) return false;
+            if (context.usablePolygon && !rectangleInPolygon(strip, context.usablePolygon)) return false;
+            return !placed.some(function (other, otherIndex) {
+              return otherIndex !== entry.index && overlaps(other.foot, strip);
+            });
+          });
+          if (!free) return false;
+        }
+      }
+      return true;
+    }
+    var accept = (hardRelations.length || Number.isFinite(options.facingClearance) || moded.length) ? function (placed) {
       var indexed = placementIndex(publicPlacements(placed, ordered));
       return hardRelations.every(function (relation) { return relationSatisfied(relation, indexed); }) &&
-        facingClearanceSatisfied(publicPlacements(placed, ordered), options.facingClearance);
+        facingClearanceSatisfied(publicPlacements(placed, ordered), options.facingClearance) &&
+        modesSatisfied(placed, true);
     } : null;
-    var acceptPartial = hardRelations.length ? function (placed) {
+    var acceptPartial = (hardRelations.length || moded.length) ? function (placed) {
+      if (moded.length && !modesSatisfied(placed, false)) return false;
       var indexed = placementIndex(publicPlacements(placed, ordered));
       return hardRelations.every(function (relation) {
         var ids = [relation.subject, relation.target].concat(relation.targets || []).filter(Boolean);

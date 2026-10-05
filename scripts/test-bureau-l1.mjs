@@ -37,7 +37,9 @@ assert.deepEqual(
     // PONDERATION_AGENCEMENT.md et normalizeOptions() dans generator.js.
     priorities: ['compact'], priority: 'compact',
     // DIVERS-1 : le repas suit la classe par défaut (75 m² : « moyen », hébergé).
-    diningMode: 'auto', separateDining: false
+    diningMode: 'auto', separateDining: false,
+    // Studio : ni chambre ni cuisine séparée sous 35 m² ; sinon désactivé.
+    studioMode: false
   }
 );
 assert.equal(G.normalizeOptions({ officeType: 'none', offices: 1 }).offices, 0);

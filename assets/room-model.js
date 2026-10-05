@@ -98,7 +98,11 @@
     var programs = [{ type: type, room: room, variant: variant }];
     var composition = COMPOSITIONS[type];
     if (composition && context[composition.flag] && socle.rooms[composition.with]) {
-      programs.push({ type: composition.with, room: socle.rooms[composition.with], variant: null });
+      // Une pièce dotée de variantes compose sa première : un équipement
+      // étiqueté d'une variante n'existe pas pour une variante nulle.
+      var composee = socle.rooms[composition.with];
+      programs.push({ type: composition.with, room: composee,
+        variant: composee.variants && composee.variants.length ? composee.variants[0] : null });
     }
     var equipments = [];
     var relations = [];
@@ -107,7 +111,14 @@
       selectedEquipments(program.room, program.variant, context).forEach(function (equipment) {
         equipments.push(Object.assign({}, equipment, { program: program.type }));
       });
-      relations.push.apply(relations, program.room.relations || []);
+      /* Une relation ne survit qu'aux équipements que la variante porte : le
+         séjour d'un studio n'a ni meuble média ni fauteuil à lier au canapé. */
+      var portes = (program.room.equipments || []).filter(function (equipment) {
+        return !equipment.variant || equipment.variant === program.variant;
+      }).map(function (equipment) { return equipment.id; });
+      relations.push.apply(relations, (program.room.relations || []).filter(function (relation) {
+        return portes.indexOf(relation.subject) !== -1 && (!relation.target || portes.indexOf(relation.target) !== -1);
+      }));
       (program.room.services || []).forEach(function (service) {
         if (services.indexOf(service) === -1) services.push(service);
       });
@@ -150,7 +161,7 @@
     var room = socle.rooms[type];
     var roomExists = Boolean(room);
     var variants = room && room.variants ? room.variants : [null];
-    var selectedVariant = variant === undefined ? variants[0] : variant;
+    var selectedVariant = (variant === undefined || (variant === null && variants[0] !== null)) ? variants[0] : variant;
     var variantExists = roomExists && variants.indexOf(selectedVariant) !== -1;
     var program = variantExists ? mergeProgram(type, selectedVariant, context) : { rooms: [], equipments: [], relations: [], services: [] };
     var equipments = program.equipments;

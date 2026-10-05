@@ -27,6 +27,13 @@
     <path class="outline" d="M26.4 81L193.6 81"/>
   </symbol>
 
+  <symbol id="furn-sofa_bed" viewBox="0 0 190 95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" data-label="Canapé convertible" data-w="1.90" data-h="0.95" data-rotatable="true">
+    <path d="M1 1h188v93H1z" />
+    <path d="M24 1v93M166 1v93" />
+    <path d="M24 26h142" />
+    <path d="M24 60h142" stroke-dasharray="6 5" />
+  </symbol>
+
   <symbol id="furn-sofa_angle" viewBox="0 0 220 220" data-label="Canapé d’angle" data-w="2.20" data-h="2.20" data-rotatable="true">
     <path class="outline" d="M0 22L1.67 13.58L6.44 6.44L13.58 1.67L22 0L198 0L206.42 1.67L213.56 6.44L218.33 13.58L220 22L220 101.2L218.33 109.62L213.56 116.76L206.42 121.53L198 123.2L77 123.2L77 198L75.33 206.42L70.56 213.56L63.42 218.33L55 220L22 220L13.58 218.33L6.44 213.56L1.67 206.42L0 198z"/>
     <path class="outline" d="M0 33L220 33"/>
@@ -413,6 +420,12 @@
     <path class="outline" d="M56.68 75.65L57.7 75.85L58.57 76.43L59.15 77.3L59.35 78.32L59.35 81.88L59.15 82.9L58.57 83.77L57.7 84.35L56.68 84.56L53.12 84.56L52.1 84.35L51.23 83.77L50.65 82.9L50.44 81.88L50.44 78.32L50.65 77.3L51.23 76.43L52.1 75.85L53.12 75.65z"/>
     <path class="outline" d="M126.88 5.44L127.9 5.65L128.77 6.23L129.35 7.1L129.56 8.12L129.56 11.68L129.35 12.7L128.77 13.57L127.9 14.15L126.88 14.36L123.32 14.36L122.3 14.15L121.43 13.57L120.85 12.7L120.65 11.68L120.65 8.12L120.85 7.1L121.43 6.23L122.3 5.65L123.32 5.44z"/>
     <path class="outline" d="M126.88 75.65L127.9 75.85L128.77 76.43L129.35 77.3L129.56 78.32L129.56 81.88L129.35 82.9L128.77 83.77L127.9 84.35L126.88 84.56L123.32 84.56L122.3 84.35L121.43 83.77L120.85 82.9L120.65 81.88L120.65 78.32L120.85 77.3L121.43 76.43L122.3 75.85L123.32 75.65z"/>
+  </symbol>
+
+  <symbol id="furn-kitchenette" viewBox="0 0 120 60" data-label="Kitchenette" data-w="1.20" data-h="0.60" data-rotatable="true">
+    <path class="outline" d="M0 0L120 0L120 60L0 60z"/>
+    <path class="outline" d="M0 49.2L120 49.2"/>
+    <path class="outline" d="M60 0L60 49.2"/>
   </symbol>
 
 </svg>

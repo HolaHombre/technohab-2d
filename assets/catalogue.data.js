@@ -90,7 +90,7 @@
     e('canape', 'Canapé (2 et 3 places)', [B, S], 'implemente', { moteur: ['sofa'] }),
     e('canape-angle', 'Canapé d’angle', [S], 'implemente', { moteur: ['sofa'], note: 'Dès 30 m² ; la latéralité (droit, gauche) n’est pas distinguée.' }),
     e('canape-meridienne', 'Canapé avec méridienne, canapé modulable', [S], 'partiel', { moteur: ['sofa'], note: 'Au-delà de la gamme d’angle.' }),
-    e('banquette-convertible', 'Banquette convertible', [S], 'partiel', { moteur: ['sofa'], note: 'Le couchage d’appoint et son déploiement ne sont pas modélisés.' }),
+    e('banquette-convertible', 'Banquette / canapé convertible', [S, C], 'implemente', { moteur: ['sofa_bed'], note: 'Deux états (canapé, lit déplié de 0,45 m) ; en mode nuit, les zones d’usage des autres équipements sont désactivées tant qu’un accès de 0,60 m au lit reste libre. Programme STUDIO seulement.' }),
     e('fauteuil', 'Fauteuil (club, crapaud, rond)', [B, C, S], 'implemente', { moteur: ['armchair'], note: 'Seul équipement de séjour sans zone d’usage.' }),
     e('siege-bureau', 'Chaise et fauteuil de bureau', [B], 'implemente', { moteur: ['office_chair'] }),
     e('chaise-table', 'Chaise de table', [B, K, R], 'implemente', { moteur: ['dining_table_2', 'dining_table_4'], zone: 'portee', note: 'Portée par l’équipement table : les assises sont dessinées avec le symbole ArchLang et leur recul vit dans la zone `front` ou `around` de la table.' }),
@@ -134,7 +134,7 @@
     e('plan-travail', 'Plan de travail (droit, sifflet, chaussette, bout arrondi)', [K, W], 'implemente', { moteur: ['worktop'], note: 'Les formes ne sont pas distinguées.' }),
     e('colonne-cuisine', 'Colonne de cuisine', [K], 'partiel', { moteur: ['worktop'], note: 'Module au sol couvert par le linéaire générique.' }),
     e('meuble-haut', 'Meuble haut de cuisine', [K], 'ecarte', { note: 'Aucune emprise au sol.' }),
-    e('kitchenette', 'Kitchenette compacte', [K], 'partiel', { moteur: ['sink', 'hob', 'fridge'], note: 'Bloc composite : ses trois fonctions sont couvertes une à une.' }),
+    e('kitchenette', 'Kitchenette compacte', [K], 'partiel', { moteur: ['kitchenette', 'sink', 'hob', 'fridge'], note: 'Bloc composite servi au studio par l’équipement kitchenette ; ses trois fonctions sont aussi couvertes une à une.' }),
     e('poubelle', 'Poubelle', [B, K, W, C, S], 'ecarte', { note: 'Usage non contraignant.' }),
     e('vmc-bouche', 'Bouche d’extraction VMC', [K], 'ecarte', { note: 'Hors domaine : réseaux.' }),
 

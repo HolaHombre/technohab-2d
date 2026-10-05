@@ -10,7 +10,7 @@ externe doit conserver ici sa provenance et sa licence.
 - Usage TechnoHab actuel : source externe préférée et table de correspondance
   pour les symboles de mobilier (`assets/icon-provenance.data.js`).
 - Révision : `ec9f9f771ed1d3154b475322289c88727f79bf60` (v1.36.0), auteur Chan Meng.
-- État : 42 symboles de `assets/icons/furniture.svg` sont `adapted` : leur
+- État : 43 symboles de `assets/icons/furniture.svg` sont `adapted` : leur
   géométrie est celle de `fixtureGlyph` (`src/elements/fixtures-glyphs.ts`),
   convertie en SVG, mise à l'échelle du viewBox en cm, sans aplat, en trait
   `currentColor`. Les autres restent des dessins TechnoHab tant que leur fiche

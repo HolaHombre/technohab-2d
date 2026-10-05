@@ -564,6 +564,13 @@
         scope: scope(BATH)
       },
       {
+        id: 'VAL-SERVICE-ASPECT-MAX-001', version: '1.0.0',
+        label: 'Allongement maximal d’une pièce de service (salle d’eau, WC)',
+        quantity: 'ratio', value: 3.0, unit: 'ratio', status: 'PROVISIONAL', ruleLevel: 'GUIDELINE',
+        source: doctrine('Mesure du 25 septembre 2026, constat de Théo', 'Une salle d’eau ou un WC prenait toute la profondeur de sa poche : 1,7 × 7,4 m, ou 0,9 × 3,6 m pour 26 WC sur 44 mesurés. Un rapport de 2,5 borne la longueur à 4,3 m pour une salle d’eau et à 2,3 m pour un WC. Valeur à calibrer, non mesurée sur un centile.'),
+        scope: scope(BATH.concat(WC))
+      },
+      {
         id: 'VAL-EQ-031', version: '1.0.0', label: 'Receveur de douche confortable',
         quantity: 'dimensions-2d', value: { width: 0.9, depth: 0.9 }, unit: 'm',
         status: 'ADOPTED', ruleLevel: 'HARD', source: compilation('§4 — Salle d’eau'), scope: scope(BATH, ['eau'])

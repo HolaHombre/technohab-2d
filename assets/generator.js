@@ -138,7 +138,7 @@
      même graine et les mêmes options. À incrémenter dès qu'un changement
      modifie le plan issu d'une graine + options données ; l'archive la
      conserve et signale toute divergence au rejeu, sans prétendre rejouer. */
-  var ENGINE_REVISION = 'moteur-2026-09-25.1';
+  var ENGINE_REVISION = 'moteur-2026-09-25.3';
 
   function encodeSeed(value) {
     return (value >>> 0).toString(36).toUpperCase().padStart(7, '0').slice(-7);
@@ -184,6 +184,9 @@
   /* Salle à manger autonome — DIVERS-1, décidé le 25 septembre 2026 :
      « automatique » suit la classe (pièce dédiée dès « grand », soit
      VAL-CLASSE-MOYEN-MIN-001), l'utilisateur peut forcer l'un ou l'autre. */
+  var SURFACE_MIN = 35;
+  var SURFACE_MIN_STUDIO = 12;
+
   function diningModeOf(input) {
     return ['auto', 'separate', 'hosted'].indexOf(input.diningMode) >= 0 ? input.diningMode : 'auto';
   }
@@ -202,7 +205,13 @@
 
   function normalizeOptions(input) {
     input = input || {};
-    var surface = Math.min(250, Math.max(35, Number(input.surface) || 75));
+    /* STUDIO (TABLE_PROGRAMME_BANDES.md §6) : la surface minimale du moteur
+       descend à 12 m² — pour le studio seul. Sans chambre, sous 35 m², le
+       programme est celui du studio ; toute autre demande garde le plancher de
+       35 m² et le programme d'origine (coexistence décidée le 26 septembre 2026). */
+    var demandedBedrooms = Math.min(5, Math.max(0, Math.trunc(Number(input.bedrooms) || 0)));
+    var surface = Math.min(250, Math.max(demandedBedrooms === 0 ? SURFACE_MIN_STUDIO : SURFACE_MIN, Number(input.surface) || 75));
+    var studioMode = demandedBedrooms === 0 && surface < SURFACE_MIN;
     var officeVariant = ['compact', 'convertible'].indexOf(input.officeVariant) >= 0
       ? input.officeVariant : 'compact';
     var offices = Math.min(1, Math.max(0, Math.trunc(Number(input.offices) || 0)));
@@ -225,8 +234,9 @@
       // rectangle), soustractive (L, U, un quartier retiré du rectangle
       // englobant), additive — celle-ci pas encore servie.
       shape: ['square', 'rectangle', 'lShape', 'uShape'].indexOf(input.shape) >= 0 ? input.shape : 'rectangle',
+      studioMode: studioMode,
       diningMode: diningModeOf(input),
-      separateDining: separateDiningOf(input, surface),
+      separateDining: studioMode ? false : separateDiningOf(input, surface),
       priorities: normalizePriorities(input),
       // Rétrocompatibilité et portée assumée : `priority` (singulier) reste
       // lu par l'enveloppe (`envelopeAspect`) et la découpe (`layout`), qui
@@ -267,6 +277,7 @@
     var fit = root.TechnoHabFit;
     var agrement = fit && fit.agrementOf ? fit.agrementOf(type) : 0.6;
     var maxRatio = fit && fit.maxRatioOf ? fit.maxRatioOf(type) : null;
+    var maxAspect = fit && fit.maxAspectOf ? fit.maxAspectOf(type) : null;
     var besoin = coutReel(type);
     var numbered = type === 'bedroom' || type === 'bath' || (index !== undefined && index !== null && index > 1);
     var label = definition ? definition.label : type;
@@ -283,7 +294,15 @@
       // O1 — l'enveloppe de surface est portée par le programme. Le plafond
       // reste relatif au besoin meublable calculé, jamais à une aire absolue.
       maxRatio: maxRatio,
-      maxArea: maxRatio === null ? null : round(Math.max(plancher.area, besoin * maxRatio), 2)
+      maxArea: maxRatio === null ? null : round(Math.max(plancher.area, besoin * maxRatio), 2),
+      /* Allongement maximal d'une pièce de service. Il ne borne pas la cible ni
+         n'invalide un plan : il dit jusqu'où la disposition laisse une pièce
+         s'étirer avant de rendre le surplus à sa voisine. Exprimé en aire
+         (côté minimal² × allongement) pour servir le même mécanisme que le
+         plafond O1. */
+      maxAspect: maxAspect,
+      maxAspectArea: maxAspect === null ? null
+        : round(Math.max(plancher.area, plancher.side * plancher.side * maxAspect), 2)
     };
   }
 
@@ -514,16 +533,25 @@
       });
     }
 
-    var rooms = [createRoom('living')];
+    var rooms = [createRoom('living', undefined, options.studioMode ? 'studio' : undefined)];
     var index;
-    if (options.separateKitchen) rooms.push(createRoom('kitchen'));
+    if (options.studioMode) {
+      // STUDIO : une seule pièce de vie qui porte le couchage (canapé
+      // convertible), une kitchenette et l'espace repas à deux chaises.
+      options.offices = 0;
+      composeInto(rooms[0], 'kitchen', 'Studio');
+      rooms[0].hostedKitchenVariant = 'kitchenette';
+      composeInto(rooms[0], 'dining', 'Studio');
+      rooms[0].hostedDiningVariant = 'studio';
+    } else if (options.separateKitchen) rooms.push(createRoom('kitchen'));
     else composeInto(rooms[0], 'kitchen', 'Séjour avec cuisine ouverte');
     /* DIVERS-1 — le repas est une fonction obligatoire de tout plan
        (DECISIONS_PROGRAMME.md §2.1, y compris T1) : hébergée par le séjour
        par défaut, « coin repas » tant qu'elle n'est pas autonome. Jusqu'au
        24 septembre 2026 cette décision n'était tenue nulle part — `dining`
        n'était généré dans aucun plan. */
-    if (options.separateDining) rooms.push(createRoom('dining', 1, 'salle'));
+    if (options.studioMode) { /* repas déjà hébergé par le studio */ }
+    else if (options.separateDining) rooms.push(createRoom('dining', 1, 'salle'));
     else {
       composeInto(rooms[0], 'dining', options.separateKitchen ? 'Séjour avec coin repas'
         : 'Séjour avec cuisine ouverte et coin repas');
@@ -563,7 +591,7 @@
        couchage. `composeInto()` cumule les programmes sur une même pièce, et
        le solveur d'agencement les additionne — un studio doit loger canapé,
        lit et linéaire de cuisine dans le même volume. */
-    if (typologie && typologie.verse) {
+    if (typologie && typologie.verse && !options.studioMode) {
       typologie.verse.forEach(function (versement) {
         var hote = rooms.find(function (room) { return room.id === versement.hote; });
         if (hote) composeInto(hote, versement.programme, versement.label || hote.label);
@@ -1717,7 +1745,7 @@
     if (!fit || !fit.programOf) return { equipments: [], relations: [], facingClearance: null, accessClearance: null, maxFurnitureRatio: null };
     var programs = [{ type: room.type, value: programForType(room.type, roomVariant(room), room, resolution) }];
     (room.composedWith || []).forEach(function (type) {
-      programs.push({ type: type, value: programForType(type, type === 'bedroom' ? 'enfant' : type === 'dining' ? (room.hostedDiningVariant || 'coin') : null, room, resolution) });
+      programs.push({ type: type, value: programForType(type, type === 'bedroom' ? 'enfant' : type === 'dining' ? (room.hostedDiningVariant || 'coin') : type === 'kitchen' ? (room.hostedKitchenVariant || null) : null, room, resolution) });
     });
     var equipments = [], relations = [], ids = {};
     programs.forEach(function (entry) {
@@ -2066,14 +2094,20 @@
   function transfererSurplusPlafonne(boxes, desiredEdges) {
     var transfers = 0;
     boxes.forEach(function (room) {
-      if (room.agrement !== 0 || !Number.isFinite(room.maxArea) || room.parts.length !== 1) return;
+      var plafondO1 = room.agrement === 0 && Number.isFinite(room.maxArea);
+      var plafond = null;
+      if (plafondO1) plafond = room.maxArea;
+      if (Number.isFinite(room.maxAspectArea)) {
+        plafond = plafond === null ? room.maxAspectArea : Math.min(plafond, room.maxAspectArea);
+      }
+      if (plafond === null || room.parts.length !== 1) return;
       var rect = room.parts[0];
       var width = rect.x1 - rect.x0;
       var height = rect.y1 - rect.y0;
-      if (width * height <= room.maxArea + 0.005) return;
+      if (width * height <= plafond + 0.005) return;
       var vertical = height >= width;
       var short = vertical ? width : height;
-      var keptLength = room.maxArea / short;
+      var keptLength = plafond / short;
       var long = vertical ? height : width;
       if (keptLength >= long - 0.005 || keptLength < room.minSide) return;
 
@@ -2112,6 +2146,8 @@
               x1: keepStart ? rect.x1 : rect.x1 - keptLength };
         var candidates = boxes.filter(function (candidate) {
           if (candidate === room || !(candidate.agrement > 0) || candidate.maxArea !== null) return false;
+          // Une pièce déjà décrochée (rangement, réserve) passerait à 8 arêtes : TH2D-FORME-001.
+          if (candidate.parts.length !== 1) return false;
           return candidate.parts.some(function (part) {
             if (vertical) {
               var side = Math.abs(part.x1 - rect.x0) < CONTACT || Math.abs(part.x0 - rect.x1) < CONTACT;
@@ -3125,14 +3161,19 @@
        en bandes ne trouve pas, mais il refuse plus souvent : la typologie en
        bandes reste donc en repli, et c'est elle qui sert les studios, les
        programmes saturés et tout ce que le squelette ne sait pas loger. */
-    var parSquelette = poserParSquelette(rawOptions, variant, requestedSeed);
+    /* Un studio n'a pas de circulation à mettre en squelette : le séjour dessert.
+       Le squelette n'y produisait que des lanières de 2,5 × 8 m, et la
+       typologie sait poser le coin d'eau et lire la forme demandée. */
+    var parSquelette = program.options.studioMode ? null
+      : poserParSquelette(rawOptions, variant, requestedSeed);
     if (parSquelette) return attachContractMetadata(parSquelette, program);
 
     /* Le levier M5 ne transforme pas un programme historiquement servi en
        NON_TROUVE. Si sa sélection diversifiée s'épuise, un unique passage
        avec l'ordre antérieur reste disponible ; la mesure branche→porte et
        son coût restent actifs dans le plan publié. */
-    if (!(root.TechnoHabAblations && root.TechnoHabAblations.disableM5BranchUtility)) {
+    if (!program.options.studioMode &&
+        !(root.TechnoHabAblations && root.TechnoHabAblations.disableM5BranchUtility)) {
       var ablationsPrecedentes = root.TechnoHabAblations;
       root.TechnoHabAblations = Object.assign({}, ablationsPrecedentes || {}, {
         disableM5Search: true
@@ -3153,8 +3194,18 @@
        séjour dessert — et une boucle qui s'arrêtait à un ne s'exécutait alors
        jamais. C'était la cause des 224 programmes sans plan. */
     for (var plafond = couloirsVoulus; plafond >= 0; plafond -= 1) {
-      var tentative = poserAvecTypologie(rawOptions, plafond, variant, requestedSeed);
-      if (tentative) return attachContractMetadata(tentative, program);
+      /* Le coin d'eau d'un studio se tire (miroirs, transposition) et une
+         disposition géométriquement juste peut buter sur le débattement de la
+         porte ou la zone d'usage : on retente avec des graines voisines, dérivées
+         de la première donc rejouables, avant de déclarer le studio impossible. */
+      var reprises = program.options.studioMode ? 8 : 1;
+      for (var reprise = 0; reprise < reprises; reprise += 1) {
+        var graineReprise = typeof requestedSeed === 'number'
+          ? (requestedSeed + Math.imul(reprise, 0x9E3779B1)) >>> 0 : requestedSeed;
+        var varianteReprise = typeof requestedSeed === 'number' ? variant : (variant || 1) + reprise * 1000;
+        var tentative = poserAvecTypologie(rawOptions, plafond, varianteReprise, graineReprise);
+        if (tentative) return attachContractMetadata(tentative, program);
+      }
     }
     throw generationError('NON_TROUVE', 'generatePlan : aucune disposition ne sert ce programme.');
   }
@@ -3837,6 +3888,7 @@
         variant: roomVariant(room) || undefined,
         composedWith: room.composedWith ? room.composedWith.slice() : undefined,
         hostedDiningVariant: room.hostedDiningVariant,
+        hostedKitchenVariant: room.hostedKitchenVariant,
         minArea: room.minArea, minSide: room.minSide, targetArea: room.targetArea,
         area: usableGeometry.usableArea,
         usableArea: usableGeometry.usableArea,
