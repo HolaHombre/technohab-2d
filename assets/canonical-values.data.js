@@ -571,6 +571,25 @@
         scope: scope(BATH.concat(WC))
       },
       {
+        // WC-BORNE — la croissance d'une pièce de service n'est plus bornée
+        // par un seuil seul : elle reste possible, mais son coût croît
+        // exponentiellement avec l'excédent de surface et avec l'allongement.
+        id: 'VAL-SCORE-BOUNDED-GROWTH-WEIGHT-001', version: '1.0.0',
+        label: 'Coût de base de la croissance d’une pièce de service bornée',
+        quantity: 'score-weight', value: 2, unit: 'points-per-requirement',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('Décision de Théo, 6 octobre 2026 (WC-BORNE)', 'Une pièce bornée peut grandir ou s’allonger, mais chaque pas coûte plus que le précédent : coût = poids × (e^(taux × excédent de surface) − 1 + e^(taux × (allongement − 1)) − 1). Le carré est l’allongement de référence, la surface programmée celle de la surface. Poids fixé pour qu’un WC de 1,0 × 3,9 m coûte plus qu’une adjacence souhaitable manquée, sans pouvoir acheter une adjacence obligatoire, filtrée en amont. Convention N3, à étalonner.'),
+        scope: scope(BATH.concat(WC))
+      },
+      {
+        id: 'VAL-SCORE-BOUNDED-GROWTH-RATE-001', version: '1.0.0',
+        label: 'Taux de croissance exponentielle du coût d’une pièce de service bornée',
+        quantity: 'ratio', value: 1.2, unit: 'ratio',
+        status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
+        source: doctrine('Décision de Théo, 6 octobre 2026 (WC-BORNE)', 'Un excédent de 100 % de la surface programmée multiplie le coût de base par e^1,2 − 1 ≈ 2,3 ; un allongement de 3:1 par e^2,4 − 1 ≈ 10. Effet de seuil sans seuil : la pente devient vite dissuasive. Convention N3, à étalonner sur la mesure O0.'),
+        scope: scope(BATH.concat(WC))
+      },
+      {
         id: 'VAL-EQ-031', version: '1.0.0', label: 'Receveur de douche confortable',
         quantity: 'dimensions-2d', value: { width: 0.9, depth: 0.9 }, unit: 'm',
         status: 'ADOPTED', ruleLevel: 'HARD', source: compilation('§4 — Salle d’eau'), scope: scope(BATH, ['eau'])

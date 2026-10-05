@@ -2091,9 +2091,36 @@
      Le segment conservé reste du côté de la desserte demandée lorsqu'elle se
      trouve à une extrémité. Cette opération précède les autres façonnages ; la
      pièce plafonnée ne peut ensuite recevoir ni bande ni décrochement. */
+  /* WC-BORNE — coût relatif de la forme d'une pièce bornée : excédent de
+     surface et allongement, chacun à pente exponentielle. Sans poids : il
+     sert à ordonner, le poids n'intervient qu'au score (validatePlanUsage). */
+  function penteCroissanceBornee(area, targetArea, width, height) {
+    var rate = valeurCanonique('VAL-SCORE-BOUNDED-GROWTH-RATE-001', 1.2);
+    var growth = targetArea > 0 ? Math.max(0, area / targetArea - 1) : 0;
+    var elongation = Math.max(width, height) / Math.max(0.01, Math.min(width, height));
+    return Math.exp(rate * growth) - 1 + Math.exp(rate * (elongation - 1)) - 1;
+  }
+
   function transfererSurplusPlafonne(boxes, desiredEdges) {
     var transfers = 0;
-    boxes.forEach(function (room) {
+    /* WC-BORNE — les receveurs sont rares (une seule partie, agrément
+       positif) : la première pièce servie peut priver la suivante. L'ordre
+       n'est donc plus celui du programme : la pièce dont la forme coûte le
+       plus cher passe d'abord. Mesuré le 6 octobre 2026 : à 250 m², la salle
+       d'eau cédait son surplus à la chambre voisine, qui ne pouvait plus
+       recevoir celui du WC, resté en bande de 1,00 × 3,85 m. */
+    var ordre = boxes.map(function (room, index) {
+      var rect = room.parts && room.parts.length === 1 ? room.parts[0] : null;
+      var bornee = Number.isFinite(room.maxAspectArea) ||
+        (room.agrement === 0 && Number.isFinite(room.maxArea));
+      var pente = rect && bornee
+        ? penteCroissanceBornee((rect.x1 - rect.x0) * (rect.y1 - rect.y0), room.targetArea,
+          rect.x1 - rect.x0, rect.y1 - rect.y0)
+        : -1;
+      return { room: room, index: index, pente: pente };
+    }).sort(function (a, b) { return b.pente - a.pente || a.index - b.index; })
+      .map(function (entry) { return entry.room; });
+    ordre.forEach(function (room) {
       var plafondO1 = room.agrement === 0 && Number.isFinite(room.maxArea);
       var plafond = null;
       if (plafondO1) plafond = room.maxArea;
@@ -3809,7 +3836,47 @@
     if (oversizeCost > 0) plan.scoreBreakdown.compactOversize = oversizeCost;
     if (compactComfortCost > 0) plan.scoreBreakdown.compactComfort = compactComfortCost;
 
-    plan.score = round((plan.score || 0) + targetCost + comfortCost + oversizeCost + compactComfortCost, 2);
+    /* WC-BORNE — une pièce de service bornée (celles dont le socle déclare un
+       `maxAspect`) peut grandir ou s'allonger, mais à un coût exponentiel :
+       aucun seuil n'interdit la forme, la pente la rend perdante dès qu'une
+       autre organisation conforme existe. Jugé sur la surface utile construite,
+       après le transfert de surplus : c'est la pièce qu'on habitera. Les
+       candidats qui violent une adjacence obligatoire sont filtrés en amont,
+       ce coût ne peut donc arbitrer qu'entre plans conformes. */
+    var fit = root.TechnoHabFit;
+    var growthWeight = preferencesDisabled ? 0
+      : valeurCanonique('VAL-SCORE-BOUNDED-GROWTH-WEIGHT-001', 2);
+    var growthRate = valeurCanonique('VAL-SCORE-BOUNDED-GROWTH-RATE-001', 1.2);
+    var boundedRooms = [];
+    var boundedCost = 0;
+    plan.rooms.forEach(function (room) {
+      if (!fit || !fit.maxAspectOf || fit.maxAspectOf(room.type) === null) return;
+      var rect = room.usableRect || room.usableBounds;
+      if (!rect || !(room.targetArea > 0)) return;
+      var width = Math.abs(rect.x1 - rect.x0), height = Math.abs(rect.y1 - rect.y0);
+      if (!(width > 0 && height > 0)) return;
+      var area = Number.isFinite(room.usableArea) ? room.usableArea : width * height;
+      var growth = Math.max(0, area / room.targetArea - 1);
+      var elongation = Math.max(width, height) / Math.min(width, height);
+      var cost = growthWeight * (Math.exp(growthRate * growth) - 1 +
+        Math.exp(growthRate * (elongation - 1)) - 1);
+      boundedCost += cost;
+      boundedRooms.push({ roomId: room.id, area: round(area, 2), targetArea: room.targetArea,
+        growth: round(growth, 3), elongation: round(elongation, 2), cost: round(cost, 2) });
+    });
+    boundedCost = round(boundedCost, 2);
+    plan.boundedGrowthObjective = {
+      method: 'exponential-growth-and-elongation-v1',
+      rooms: boundedRooms,
+      cost: boundedCost,
+      weightValueId: 'VAL-SCORE-BOUNDED-GROWTH-WEIGHT-001',
+      rateValueId: 'VAL-SCORE-BOUNDED-GROWTH-RATE-001'
+    };
+    delete plan.scoreBreakdown.boundedGrowth;
+    if (boundedCost > 0) plan.scoreBreakdown.boundedGrowth = boundedCost;
+
+    plan.score = round((plan.score || 0) + targetCost + comfortCost + oversizeCost +
+      compactComfortCost + boundedCost, 2);
     return plan;
   }
 

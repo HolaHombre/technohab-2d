@@ -7,12 +7,18 @@
       "programmedArea": 1.434,
       "generated": 30,
       "nonFound": 0,
-      "meanArea": 2.86,
-      "maxArea": 2.888,
+      "meanArea": 2.183,
+      "maxArea": 2.216,
       "nonRect": 0,
-      "worstSeed": 195948557,
-      "worstUsable": [1.1, 2.8],
-      "candidates": [1, 1],
+      "worstSeed": 523124044,
+      "worstUsable": [
+        1.1,
+        2.21
+      ],
+      "candidates": [
+        1,
+        1
+      ],
       "retries": 0
     },
     {
@@ -20,12 +26,18 @@
       "programmedArea": 1.5,
       "generated": 30,
       "nonFound": 0,
-      "meanArea": 2.909,
-      "maxArea": 3.158,
+      "meanArea": 2.185,
+      "maxArea": 2.361,
       "nonRect": 0,
-      "worstSeed": 1432778632,
-      "worstUsable": [1.206, 2.782],
-      "candidates": [1, 1],
+      "worstSeed": 1111638594,
+      "worstUsable": [
+        1.05,
+        2.461
+      ],
+      "candidates": [
+        1,
+        1
+      ],
       "retries": 0
     },
     {
@@ -33,12 +45,18 @@
       "programmedArea": 1.5,
       "generated": 30,
       "nonFound": 0,
-      "meanArea": 3.092,
-      "maxArea": 3.319,
+      "meanArea": 2.155,
+      "maxArea": 2.242,
       "nonRect": 0,
-      "worstSeed": 1432778632,
-      "worstUsable": [1.025, 3.454],
-      "candidates": [1, 1],
+      "worstSeed": 1010580540,
+      "worstUsable": [
+        1.006,
+        2.445
+      ],
+      "candidates": [
+        1,
+        1
+      ],
       "retries": 0
     }
   ]
