@@ -71,12 +71,25 @@ Format et cycle : [`../MetaProjet/METHODE.md`](../MetaProjet/METHODE.md) (D-020)
 Le détail historique des jalons reste dans les sections numérotées ci-dessous ;
 seuls le travail actif et le todo immédiat suivent ce format.
 
+**Relevé du 6 octobre 2026, sur une copie propre de HEAD** (le worktree porte
+des modifications moteur non commitées). Les tests ciblés des trois items en
+revue sont verts ; ils attendent la validation visuelle de Théo.
+`I1/L1-bureau`, `done` le 24 septembre, quitte le pilotage. **`npm run
+technohab:validate` échoue à l'étape 60/63, instrument O0** : la référence
+`scripts/references/O0_REFERENCE.json` date du 2 septembre et ne correspond plus
+au moteur commité les 24 et 25 septembre — surface du WC à 90 et 250 m²
+(moyenne 2,909 → 2,898 et 3,092 → 3,237 m² ; maximum 3,158 → 3,293 et
+3,319 → 3,406 m²), pires graines différentes. Les 59 étapes précédentes passent,
+les étapes 61 à 63 n'ont pas tourné. Régression ou nouvelle référence : à
+trancher par Théo, la référence n'est pas réécrite d'office. Deux items du todo
+sont `in_progress` sans figurer ici, `V-REV-mobile` et `PROGRAMME-BANDES` : le
+pilotage doit dire lequel est l'item courant.
+
 | Item courant | État | Gate de validation | Vérification | Documentation | Mis à jour |
 |---|---|---|---|---|---|
-| `I1/C-P4a — bureau et chaise optionnels dans la chambre enfant` | `needs_review` | À partir de 11 m², une chambre enfant demande le couple plateau + chaise ; il n'est affiché que si le solveur place les deux et le recul propre de la chaise ; les chambres plus petites et parentales restent inchangées | Banc diagnostic de 8 graines : couple demandé 16 fois et conservé 7 fois, les 9 replis étant dus à la place réellement requise ; restitution visuelle du nouveau couple à confirmer par Théo | `ROADMAP.md` ; `SUIVI_REGLES_PIECES.md` ; socle, compilé, générateur et sprite | 2026-09-24 |
-| `I1/L1-bureau — bureau autonome activé` | `done` | Choix absent/compact/convertible → trigger déclaratif → plan complet avec plateau, chaise et recul propre → profil et export | `test-bureau-l1.mjs` : absence, deux variantes, refus surfacique et trois graines complètes ; tests C4 et définition verts | questionnaire, socle, compilé, générateur, profil et suivi | 2026-09-24 |
-| `CAT-1 — catalogue local` | `needs_review` | Le footer ouvre une page listant les équipements et pièces depuis le compilé, avec icônes, dimensions, circulation et disponibilité | Navigation par `#catalogue`, retour atelier, `test-catalog-ui.mjs` ; contrôle visuel attendu | `index.html`, `app.js`, `styles.css` | 2026-09-24 |
-| `CAT-2 — inventaire complet du mobilier` | `needs_review` | La page « Équipements & pièces » montre tout le mobilier d'un logement — couvert, partiel, spécifié, manquant, écarté — y compris sans icône ni cote, en vues par pièce et par zone d'usage ; l'avancement se lit d'un coup d'œil | `test-catalogue-mobilier.mjs` : chaque équipement du socle est référencé, aucune cote redoublée, tout écart motivé ; `test-catalog-ui.mjs` ; contrôle visuel fait sur ordinateur et à 375 px | [`DIFFERENTIEL_MEUBLES.md`](DIFFERENTIEL_MEUBLES.md), `assets/catalogue.data.js` | 2026-09-25 |
+| `I1/C-P4a — bureau et chaise optionnels dans la chambre enfant` | `needs_review` | À partir de 11 m², une chambre enfant demande le couple plateau + chaise ; il n'est affiché que si le solveur place les deux et le recul propre de la chaise ; les chambres plus petites et parentales restent inchangées | Banc diagnostic de 8 graines : couple demandé 16 fois et conservé 7 fois, les 9 replis étant dus à la place réellement requise ; restitution visuelle du nouveau couple à confirmer par Théo · `test-bureau-c4.mjs` vert sur HEAD le 6 oct. | `ROADMAP.md` ; `SUIVI_REGLES_PIECES.md` ; socle, compilé, générateur et sprite | 2026-10-06 |
+| `CAT-1 — catalogue local` | `needs_review` | Le footer ouvre une page listant les équipements et pièces depuis le compilé, avec icônes, dimensions, circulation et disponibilité | Navigation par `#catalogue`, retour atelier, `test-catalog-ui.mjs` ; contrôle visuel attendu · `test-catalog-ui.mjs` vert sur HEAD le 6 oct. (31 équipements et pièces) | `index.html`, `app.js`, `styles.css` | 2026-10-06 |
+| `CAT-2 — inventaire complet du mobilier` | `needs_review` | La page « Équipements & pièces » montre tout le mobilier d'un logement — couvert, partiel, spécifié, manquant, écarté — y compris sans icône ni cote, en vues par pièce et par zone d'usage ; l'avancement se lit d'un coup d'œil | `test-catalogue-mobilier.mjs` : chaque équipement du socle est référencé, aucune cote redoublée, tout écart motivé ; `test-catalog-ui.mjs` ; contrôle visuel fait sur ordinateur et à 375 px · `test-catalogue-mobilier.mjs` et `test-catalog-ui.mjs` verts sur HEAD le 6 oct. (83 types, 31 équipements du socle référencés) | [`DIFFERENTIEL_MEUBLES.md`](DIFFERENTIEL_MEUBLES.md), `assets/catalogue.data.js` | 2026-10-06 |
 
 ## Todo
 
