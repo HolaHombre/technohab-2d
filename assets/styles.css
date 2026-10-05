@@ -907,6 +907,44 @@ h2, .panel-heading h2 { font-size: 1.2rem; }
   text-transform: none;
 }
 .footer-rules .rules-meta { display: none; }
+.footer-legal { min-width: 0; display: flex; align-items: center; gap: 18px; }
+.footer-mentions > summary {
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+  color: var(--marble-dim);
+}
+.footer-mentions > summary::-webkit-details-marker { display: none; }
+.footer-mentions > summary:hover,
+.footer-mentions[open] > summary { color: var(--blue); }
+.footer-mentions .mentions-corps {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  bottom: calc(100% + 1px);
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(620px, calc(100vh - 140px));
+  overflow: auto;
+  padding: 28px;
+  border: 1px solid var(--marble);
+  background: rgba(248, 250, 248, .99);
+  box-shadow: 0 -14px 40px rgba(11, 21, 16, .12);
+  color: var(--marble);
+  font: 400 13px/1.55 var(--body);
+  letter-spacing: normal;
+  text-transform: none;
+}
+.mentions-corps h2 { margin: 0 0 14px; font: 600 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
+.mentions-corps h3 { margin: 18px 0 6px; font: 600 9px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--marble-dim); }
+.mentions-corps p { margin: 0 0 8px; }
+.mentions-corps a { color: var(--blue); }
+.mentions-corps .mentions-date { margin-top: 16px; color: var(--marble-dim); font-size: 11px; }
+/* Note, mentions et outils ne tiennent sur une ligne qu'au-delà de 1400px :
+   en deçà, les mentions passent dessous plutôt que de chevaucher les outils. */
+@media (max-width: 1400px) {
+  .app-footer { flex-wrap: wrap; }
+  .footer-legal { order: 2; width: 100%; padding: 12px 0; border-top: 1px solid var(--marble-faint); }
+}
 
 .catalog-page {
   min-height: 0;

@@ -6,6 +6,9 @@
      doit la faire monter, sans quoi le journal mélangera des jugements
      portant sur des plans que le code ne produit plus. */
   var APP_VERSION = '3.3.0-alpha.1';
+  /* Le numéro montré au visiteur. Il ne suit pas le moteur : c'est APP_VERSION,
+     et elle seule, qui date les avis et les exports. */
+  var PUBLIC_VERSION = '1.0.1';
   var STORAGE_KEY = 'technohab:mvp-2d:v2';
   var HISTORY_KEY = 'technohab:mvp-2d:history:v1';
   var HISTORY_MAX = 20;
@@ -209,7 +212,9 @@
     });
   }
 
-  document.getElementById('app-version').textContent = 'v' + APP_VERSION;
+  var appVersionLabel = document.getElementById('app-version');
+  appVersionLabel.textContent = 'V ' + PUBLIC_VERSION;
+  appVersionLabel.title = 'Moteur ' + APP_VERSION;
   readFastSaves();
   renderFastSaves();
   function readForm() {
