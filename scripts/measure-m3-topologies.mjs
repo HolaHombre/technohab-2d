@@ -70,7 +70,9 @@ const rows = surfaces.map((surface) => {
 
 const large = rows.filter((row) => row.surface >= 180);
 const result = {
-  measuredAt: '2026-08-28',
+  // Photographie régénérée le 6 octobre 2026 sur décision de Théo : celle du
+  // 28 août était dépassée depuis 31720ef ; poids du regroupement technique abaissé à 2.
+  measuredAt: '2026-10-06',
   method: {
     selection: '48 fixed plans, 4 surfaces × 12 seeds',
     note: 'Photographie moteur ; les cinq producteurs sont testés isolément par test-m3-topologies.mjs.'

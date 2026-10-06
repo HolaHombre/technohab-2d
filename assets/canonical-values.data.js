@@ -89,11 +89,11 @@
         scope: scope(ALL_ROOMS)
       },
       {
-        id: 'VAL-SCORE-SERVICES-DISTANCE-EXCESS-WEIGHT-001', version: '1.0.0',
+        id: 'VAL-SCORE-SERVICES-DISTANCE-EXCESS-WEIGHT-001', version: '1.1.0',
         label: 'Coût de l’excédent de distance entre deux pièces humides',
-        quantity: 'score-weight', value: 10, unit: 'points-per-meter',
+        quantity: 'score-weight', value: 2, unit: 'points-per-meter',
         status: 'PROVISIONAL', ruleLevel: 'PREFERENCE',
-        source: doctrine('PLACEMENT_ET_ADJACENCES.md §2.4', 'Préférence, jamais un blocage : le poids doit départager deux topologies sans jamais peser autant qu’une adjacence demandée (VAL-CIRC-FACADE-EXCESS-WEIGHT-001 = 18). 10 points par mètre au-delà du seuil de groupement tient cet ordre pour l’écart usuel sur un plan de 35 à 250 m². Convention N3, à étalonner sur corpus.'),
+        source: doctrine('PLACEMENT_ET_ADJACENCES.md §2.4', 'Préférence, jamais un blocage : le poids doit départager deux topologies sans jamais peser autant qu’une adjacence demandée (VAL-CIRC-FACADE-EXCESS-WEIGHT-001 = 18). Abaissé de 10 à 2 points par mètre le 6 octobre 2026 sur décision de Théo : à 10, le regroupement achetait jusqu’à plusieurs mètres de couloir (banc M3.0). Mesuré sur le banc M3.0 : desserte jugée moyenne à 130 / 180 m² de 16,37 / 17,43 à 15,14 / 16,33 m, pire cas de 24,71 à 22,34 m ; excédent moyen entre pièces humides de 10,8 à 13,4 m. En dessous de 2, le regroupement se perd sans gain de desserte proportionné (à 0 : 18,2 m d’excédent, desserte à 180 m² de 18,25 m). Ce poids n’est pas la cause principale de l’allongement de desserte constaté depuis le 24 septembre (DESSERTE-130-180). Convention N3, à étalonner sur corpus.'),
         scope: scope(ALL_ROOMS)
       },
       {

@@ -1,5 +1,5 @@
 {
-  "measuredAt": "2026-08-28",
+  "measuredAt": "2026-10-06",
   "method": {
     "selection": "48 fixed plans, 4 surfaces × 12 seeds",
     "note": "Photographie moteur ; les cinq producteurs sont testés isolément par test-m3-topologies.mjs."
@@ -8,53 +8,78 @@
     "plans": 48,
     "hardPlans": 0,
     "mandatoryMisses": 0,
-    "tFamilyOnLargePrograms": 14,
+    "tFamilyOnLargePrograms": 21,
     "selectedStrategies": [
       "barre",
       "hall",
-      "jour-nuit"
+      "jour-nuit",
+      "t"
     ]
   },
   "rows": [
     {
       "surface": 90,
       "plans": 12,
-      "strategies": { "jour-nuit": 12 },
-      "families": { "T": 12 },
+      "strategies": {
+        "hall": 11,
+        "barre": 1
+      },
+      "families": {
+        "T": 11,
+        "barre": 1
+      },
       "hardPlans": 0,
       "mandatoryMisses": 0,
-      "branchMean": 2,
-      "candidatesComparedMean": 2.92
+      "branchMean": 1.92,
+      "candidatesComparedMean": 2.25
     },
     {
       "surface": 130,
       "plans": 12,
-      "strategies": { "jour-nuit": 10, "barre": 2 },
-      "families": { "T": 10, "barre": 2 },
+      "strategies": {
+        "hall": 10,
+        "t": 2
+      },
+      "families": {
+        "T": 12
+      },
       "hardPlans": 0,
       "mandatoryMisses": 0,
-      "branchMean": 1.83,
-      "candidatesComparedMean": 4.25
+      "branchMean": 2,
+      "candidatesComparedMean": 3.67
     },
     {
       "surface": 180,
       "plans": 12,
-      "strategies": { "jour-nuit": 11, "barre": 1 },
-      "families": { "T": 11, "barre": 1 },
+      "strategies": {
+        "jour-nuit": 9,
+        "barre": 2,
+        "hall": 1
+      },
+      "families": {
+        "T": 10,
+        "barre": 2
+      },
       "hardPlans": 0,
       "mandatoryMisses": 0,
-      "branchMean": 1.92,
-      "candidatesComparedMean": 4.42
+      "branchMean": 1.83,
+      "candidatesComparedMean": 4.17
     },
     {
       "surface": 250,
       "plans": 12,
-      "strategies": { "jour-nuit": 2, "barre": 9, "hall": 1 },
-      "families": { "T": 3, "barre": 9 },
+      "strategies": {
+        "jour-nuit": 11,
+        "barre": 1
+      },
+      "families": {
+        "T": 11,
+        "barre": 1
+      },
       "hardPlans": 0,
       "mandatoryMisses": 0,
-      "branchMean": 1.25,
-      "candidatesComparedMean": 4.83
+      "branchMean": 1.92,
+      "candidatesComparedMean": 4.33
     }
   ]
 }
