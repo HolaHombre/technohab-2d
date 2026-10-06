@@ -26,13 +26,13 @@
       "programmedArea": 1.5,
       "generated": 30,
       "nonFound": 0,
-      "meanArea": 2.185,
-      "maxArea": 2.361,
+      "meanArea": 2.175,
+      "maxArea": 2.366,
       "nonRect": 0,
-      "worstSeed": 1111638594,
+      "worstSeed": 4027431597,
       "worstUsable": [
-        1.05,
-        2.461
+        1.032,
+        2.509
       ],
       "candidates": [
         1,
@@ -45,13 +45,13 @@
       "programmedArea": 1.5,
       "generated": 30,
       "nonFound": 0,
-      "meanArea": 2.155,
-      "maxArea": 2.242,
+      "meanArea": 2.152,
+      "maxArea": 2.261,
       "nonRect": 0,
-      "worstSeed": 1010580540,
+      "worstSeed": 655894552,
       "worstUsable": [
-        1.006,
-        2.445
+        1.01,
+        2.455
       ],
       "candidates": [
         1,

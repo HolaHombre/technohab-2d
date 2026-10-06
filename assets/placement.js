@@ -558,6 +558,10 @@
 
     if (context.faces && context.faces.length) {
       for (var face of oriented(context.faces, equipment)) {
+        // Recherche ciblée de BED-WET-WALL-001 : l'appelant peut interdire à
+        // un équipement les murs mitoyens de certaines pièces.
+        if (equipment.avoidNeighborTypes && face.neighborType &&
+            equipment.avoidNeighborTypes.indexOf(face.neighborType) !== -1) continue;
         var span = face.length - equipmentWidth;
         if (span < 0) continue;
         for (var faceOffset of offsetsOnSpan(span, anchor === 'corner')) {

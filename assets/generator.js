@@ -1857,31 +1857,50 @@
         });
       }
       /* BED-WET-WALL-001 — `validate` rend la première pose qui tient. Quand
-         elle adosse un lit à une pièce humide, chercher d'autres poses ; la
-         meilleure note l'emporte, la pose initiale comprise. Une règle
-         `GUIDELINE` reste une préférence : si aucune autre pose ne fait mieux,
-         la première demeure. */
+         elle adosse un lit à une pièce humide, une seule recherche ciblée
+         interdit au lit ces murs ; la meilleure note l'emporte, la pose
+         initiale comprise. Une règle `GUIDELINE` reste une préférence : si
+         l'autre pose n'existe pas ou fait moins bien, la première demeure.
+         Mesuré le 6 octobre 2026 : une recherche aléatoire à 24 essais
+         trouvait les mêmes poses, mais ralentissait la génération de 25 à 50 %. */
       if (result.fits && options.optimizeS4 && placement.againstRoomViolations &&
           placement.againstRoomViolations(result.placements, program.relations, options.context)) {
-        var alternative = placement.optimize(program.equipments, rectangle, {
+        var avoid = {};
+        program.relations.forEach(function (relation) {
+          if (relation.kind === 'not-against-room') avoid[relation.subject] = relation.rooms || [];
+        });
+        var alternative = placement.validate(program.equipments.map(function (equipment) {
+          return avoid[equipment.id]
+            ? Object.assign({}, equipment, { avoidNeighborTypes: avoid[equipment.id] })
+            : equipment;
+        }), rectangle, {
           relations: program.relations,
           context: options.context || null,
           facingClearance: program.facingClearance,
-          s4: options.s4,
-          validation: result,
-          seed: options.seed,
-          // Mesuré le 6 octobre 2026 : à 8 essais, la recherche manquait une
-          // pose mieux notée dans la plupart des cas ; 24 est le plafond
-          // d'`optimize`, payé seulement par les pièces où la relation échoue.
-          attempts: 24
+          s4: options.s4
         });
-        if (alternative.fits && alternative !== result) {
-          var initialScore = placement.assess(result.placements, rectangle, program.relations,
-            options.context, result.s4).score;
-          var alternativeScore = alternative.optimization ? alternative.optimization.score
-            : placement.assess(alternative.placements, rectangle, program.relations,
-              options.context, alternative.s4).score;
-          if (alternativeScore > initialScore) result = alternative;
+        var initialScore = placement.assess(result.placements, rectangle, program.relations,
+          options.context, result.s4).score;
+        function noteDe(candidate) {
+          return candidate.optimization ? candidate.optimization.score
+            : placement.assess(candidate.placements, rectangle, program.relations,
+              options.context, candidate.s4).score;
+        }
+        if (!(alternative.fits && noteDe(alternative) > initialScore)) {
+          // Repli : la pose ciblée manque ou fait moins bien. Une recherche
+          // bornée à 8 essais compare d'autres familles de pose.
+          alternative = placement.optimize(program.equipments, rectangle, {
+            relations: program.relations,
+            context: options.context || null,
+            facingClearance: program.facingClearance,
+            s4: options.s4,
+            validation: result,
+            seed: options.seed,
+            attempts: 8
+          });
+        }
+        if (alternative.fits && alternative !== result && noteDe(alternative) > initialScore) {
+          result = alternative;
         }
       }
       last = { result: result, program: program };
@@ -3127,9 +3146,37 @@
      disposition posée n'a rien à rattraper. */
   /* Ameublement final du plan retenu, relations à la pièce voisine comprises.
      Une seule fois par plan : `attachContractMetadata` peut être rappelée. */
+  /* Un équipement du plan retenu enfreint-il déjà une relation à la pièce
+     voisine ? Lu sur les poses publiées et les faces des murs, sans solveur :
+     l'ameublement final n'est refait que s'il y a quelque chose à corriger.
+     Mesuré le 6 octobre 2026 : le refaire pour chaque plan ajoutait 20 %
+     d'appels à `validate` et faisait passer test-m2-performance au-dessus de
+     son budget. */
+  function voisinageEnfreint(plan) {
+    var types = {};
+    plan.rooms.forEach(function (room) { types[room.id] = room.type; });
+    return plan.rooms.some(function (room) {
+      return compiledRoomProgram(room).relations.some(function (relation) {
+        if (relation.kind !== 'not-against-room') return false;
+        var pose = (room.placements || []).find(function (candidate) {
+          return candidate.equipmentId === relation.subject;
+        });
+        if (!pose || !pose.wallId) return false;
+        var wall = plan.walls.find(function (candidate) { return candidate.id === pose.wallId; });
+        if (!wall || !wall.faces) return false;
+        var other = Object.keys(wall.faces).find(function (space) { return space !== room.id; });
+        return (relation.rooms || []).indexOf(types[other]) !== -1;
+      });
+    });
+  }
+
   function meublerAvecVoisinage(plan) {
     if (!plan || plan.furnishedWithNeighbors || !plan.rooms || !plan.walls) return plan;
     plan.furnishedWithNeighbors = true;
+    if (!voisinageEnfreint(plan)) {
+      plan.finalFurnishing = { method: 'neighbor-relations-after-selection-v1', scoreDelta: 0, refurnished: false };
+      return plan;
+    }
     /* Le score classe la géométrie : la sélection entre plans (y compris
        `buildSelection`, qui compare des plans déjà rendus) doit lire le même
        score qu'avant l'ameublement final. L'écart que cet ameublement aurait
@@ -3139,7 +3186,8 @@
     validatePlanUsage(plan, { voisinage: true });
     plan.finalFurnishing = {
       method: 'neighbor-relations-after-selection-v1',
-      scoreDelta: round(plan.score - rankingScore, 2)
+      scoreDelta: round(plan.score - rankingScore, 2),
+      refurnished: true
     };
     plan.score = rankingScore;
     plan.scoreBreakdown = rankingBreakdown;
