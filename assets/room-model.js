@@ -7,7 +7,10 @@
   var ANCHORS = ['wall', 'corner', 'free'];
   var USAGE_FACES = ['front', 'back', 'long', 'foot', 'around'];
   var RELATION_KINDS = ['near', 'distance-range', 'gap-range', 'perimeter-max',
-    'same-wall', 'different-wall', 'between', 'faces', 'workstation'];
+    'same-wall', 'different-wall', 'between', 'faces', 'workstation', 'not-against-room'];
+  /* Une relation à la pièce voisine ne porte que sur un équipement : la
+     cible est un type de pièce de l'autre côté du mur, pas un meuble. */
+  var ROOM_SCOPED_KINDS = ['not-against-room'];
 
   // Ces règles portent sur la désignation d'une pièce, avant toute géométrie.
   // Elles sont génériques : un nouveau type de pièce profite du même contrôle
@@ -141,6 +144,9 @@
 
   function relationReferences(relation, ids) {
     var resolved = Object.assign({}, relation);
+    if (relation.subjectAny) {
+      resolved.subject = relation.subjectAny.find(function (id) { return ids.indexOf(id) !== -1; }) || null;
+    }
     if (relation.targetAny) {
       resolved.target = relation.targetAny.find(function (id) { return ids.indexOf(id) !== -1; }) || null;
     }
@@ -148,7 +154,8 @@
     if (resolved.target) references.push(resolved.target);
     if (resolved.targets) references.push.apply(references, resolved.targets);
     var validKind = RELATION_KINDS.indexOf(resolved.kind) !== -1;
-    var validReferences = references.length >= 2 && references.every(function (id) { return ids.indexOf(id) !== -1; });
+    var minimum = ROOM_SCOPED_KINDS.indexOf(resolved.kind) !== -1 ? 1 : 2;
+    var validReferences = references.length >= minimum && references.every(function (id) { return id && ids.indexOf(id) !== -1; });
     return { valid: validKind && validReferences, relation: resolved };
   }
 

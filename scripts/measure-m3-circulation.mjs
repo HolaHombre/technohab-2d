@@ -94,7 +94,9 @@ function measure(G) {
 const rows = measure(engine(30));
 
 const result = {
-  measuredAt: '2026-08-29',
+  // Photographie régénérée le 6 octobre 2026 sur décision de Théo, après
+  // PROGRAMME-BANDES (16971b8), WC-BORNE et BED-WET-WALL-001.
+  measuredAt: '2026-10-06',
   method: {
     selection: '21 fixed attempts, 7 surfaces × 3 seeds; S4 neutralized to isolate M3.0',
     branchProxy: 'branch-service-span-v2',

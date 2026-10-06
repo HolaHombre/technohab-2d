@@ -262,6 +262,9 @@
       ],
       relations: [
         { code: 'BED-STORAGE-001', kind: 'different-wall', subject: 'wardrobe', targetAny: ['bed_90', 'bed_140'], level: 'GUIDELINE', weight: 1.4, label: 'Le rangement libère le mur de tête du lit' },
+        // profils/chambre.md §6 — `UNDESIRABLE`, acoustique. La tête de lit se
+        // déduit de l'ancrage : un lit `anchor: 'wall'` s'adosse par sa tête.
+        { code: 'BED-WET-WALL-001', kind: 'not-against-room', subjectAny: ['bed_90', 'bed_140'], rooms: ['wc', 'bath'], level: 'GUIDELINE', weight: 1.4, label: 'La tête de lit ne s’adosse pas à un WC ou une salle d’eau' },
         { code: 'BED-OFFICE-STATION-001', kind: 'workstation', subject: 'office_chair', target: 'desk', min: 0, max: 0.20, maxOffset: 0.15, optional: true, level: 'HARD', weight: 2, label: 'La chaise forme un poste avec le plateau' }
       ]
     },

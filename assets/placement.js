@@ -114,6 +114,13 @@
 
   function roomContext(room, plan) {
     var rectangle = room.usableBounds || room.usableRect || room;
+    function neighborTypeOf(wallId) {
+      var wall = (plan.walls || []).find(function (candidate) { return candidate.id === wallId; });
+      if (!wall || !wall.faces) return null;
+      var other = Object.keys(wall.faces).find(function (space) { return space !== room.id; });
+      if (!other) return null;
+      return other === 'exterior' ? 'exterior' : ((plan.roomTypes || {})[other] || null);
+    }
     var width = rectangle.x1 - rectangle.x0, height = rectangle.y1 - rectangle.y0;
     var openings = [], blocked = [];
     function addOpening(opening, kind) {
@@ -189,6 +196,10 @@
         faces: (room.wallFaces || []).map(function (face) {
           return {
             id: face.id, faceId: face.faceId, wallId: face.wallId,
+            // BED-WET-WALL-001 — un mur sépare exactement deux espaces : le
+            // type de l'autre suffit à juger un meuble adossé à ce mur.
+            // Absent pendant la sélection des plans : voir `validatePlanUsage`.
+            neighborType: plan.voisinage ? neighborTypeOf(face.wallId) : null,
             orientation: face.orientation, side: face.side, length: face.length,
             normal: { x: face.normal.x, y: face.normal.y },
             axis: {
@@ -963,9 +974,35 @@
     return false;
   }
 
-  function relationQuality(relation, indexed, rectangle) {
+  /* BED-WET-WALL-001 — 0 si l'équipement s'adosse à un mur dont l'autre face
+     appartient à l'une des pièces visées, 1 sinon. `null` tant que les murs
+     ne sont pas construits : la relation est alors ignorée, pas comptée
+     comme tenue, pour ne pas déplacer le pré-classement des candidats. */
+  function againstRoomQuality(relation, subject, context) {
+    var faces = (context && context.faces) || [];
+    if (!faces.some(function (face) { return face.neighborType; })) return null;
+    var wall = placementWall(subject);
+    if (!wall) return 1;
+    var face = faces.find(function (candidate) { return candidate.wallId === wall; });
+    return face && (relation.rooms || []).indexOf(face.neighborType) !== -1 ? 0 : 1;
+  }
+
+  /* Nombre de relations à la pièce voisine non tenues par une pose complète.
+     Le générateur s'en sert pour chercher une autre pose avant d'accepter
+     un lit adossé à une pièce humide. */
+  function againstRoomViolations(placements, relations, context) {
+    var indexed = placementIndex(placements || []);
+    return (relations || []).filter(function (relation) {
+      if (relation.kind !== 'not-against-room') return false;
+      var members = relationMembers(relation, indexed);
+      return members.subject && againstRoomQuality(relation, members.subject, context) === 0;
+    }).length;
+  }
+
+  function relationQuality(relation, indexed, rectangle, context) {
     var members = relationMembers(relation, indexed);
-    if (!members.subject) return 0;
+    if (!members.subject) return relation.kind === 'not-against-room' ? null : 0;
+    if (relation.kind === 'not-against-room') return againstRoomQuality(relation, members.subject, context);
     if (relation.kind === 'between') return betweenOnWall(members.subject, members.targets[0], members.targets[1]) ? 1 : 0;
     if (relation.kind === 'perimeter-max') {
       if (members.targets.length !== 2 || !members.targets[0] || !members.targets[1]) return 0;
@@ -1002,7 +1039,9 @@
     var relationWeights = 0;
     (relations || []).forEach(function (relation) {
       var weight = relation.weight || 1;
-      weightedRelations += relationQuality(relation, indexed, rectangle) * weight;
+      var quality = relationQuality(relation, indexed, rectangle, context);
+      if (quality === null) return;
+      weightedRelations += quality * weight;
       relationWeights += weight;
     });
     var relationScore = relationWeights ? weightedRelations / relationWeights : 0.65;
@@ -1357,6 +1396,7 @@
     optimize: optimize,
     score: scorePlacements,
     assess: assessPlacements,
+    againstRoomViolations: againstRoomViolations,
     assessClearanceLevels: assessClearanceLevels,
     assessS4: assessS4,
     assessOccupancy: assessOccupancy,

@@ -1855,6 +1855,34 @@
           attempts: options.attempts || 8
         });
       }
+      /* BED-WET-WALL-001 — `validate` rend la première pose qui tient. Quand
+         elle adosse un lit à une pièce humide, chercher d'autres poses ; la
+         meilleure note l'emporte, la pose initiale comprise. Une règle
+         `GUIDELINE` reste une préférence : si aucune autre pose ne fait mieux,
+         la première demeure. */
+      if (result.fits && options.optimizeS4 && placement.againstRoomViolations &&
+          placement.againstRoomViolations(result.placements, program.relations, options.context)) {
+        var alternative = placement.optimize(program.equipments, rectangle, {
+          relations: program.relations,
+          context: options.context || null,
+          facingClearance: program.facingClearance,
+          s4: options.s4,
+          validation: result,
+          seed: options.seed,
+          // Mesuré le 6 octobre 2026 : à 8 essais, la recherche manquait une
+          // pose mieux notée dans la plupart des cas ; 24 est le plafond
+          // d'`optimize`, payé seulement par les pièces où la relation échoue.
+          attempts: 24
+        });
+        if (alternative.fits && alternative !== result) {
+          var initialScore = placement.assess(result.placements, rectangle, program.relations,
+            options.context, result.s4).score;
+          var alternativeScore = alternative.optimization ? alternative.optimization.score
+            : placement.assess(alternative.placements, rectangle, program.relations,
+              options.context, alternative.s4).score;
+          if (alternativeScore > initialScore) result = alternative;
+        }
+      }
       last = { result: result, program: program };
       if (result.fits) {
         return {
@@ -3096,8 +3124,30 @@
      `faconner` vaut désormais false : cession de circulation et décrochements
      étaient des rattrapages d'une découpe qui ne visait pas juste. Une
      disposition posée n'a rien à rattraper. */
+  /* Ameublement final du plan retenu, relations à la pièce voisine comprises.
+     Une seule fois par plan : `attachContractMetadata` peut être rappelée. */
+  function meublerAvecVoisinage(plan) {
+    if (!plan || plan.furnishedWithNeighbors || !plan.rooms || !plan.walls) return plan;
+    plan.furnishedWithNeighbors = true;
+    /* Le score classe la géométrie : la sélection entre plans (y compris
+       `buildSelection`, qui compare des plans déjà rendus) doit lire le même
+       score qu'avant l'ameublement final. L'écart que cet ameublement aurait
+       apporté reste consigné, il n'est pas perdu. */
+    var rankingScore = plan.score;
+    var rankingBreakdown = Object.assign({}, plan.scoreBreakdown || {});
+    validatePlanUsage(plan, { voisinage: true });
+    plan.finalFurnishing = {
+      method: 'neighbor-relations-after-selection-v1',
+      scoreDelta: round(plan.score - rankingScore, 2)
+    };
+    plan.score = rankingScore;
+    plan.scoreBreakdown = rankingBreakdown;
+    return plan;
+  }
+
   function attachContractMetadata(plan, program) {
     var contracts = root.TechnoHabContracts;
+    plan = meublerAvecVoisinage(plan);
     if (!contracts || !plan) return plan;
     var profiles = contracts.profileManifest(program, plan);
     plan.contractVersion = contracts.version;
@@ -3620,10 +3670,20 @@
     };
   }
 
-  function validatePlanUsage(plan) {
+  /* `options.voisinage` active les relations à la pièce voisine
+     (BED-WET-WALL-001). Elles ne servent qu'à meubler le plan retenu : une
+     préférence d'ameublement ne choisit pas le plan. Mesuré le 6 octobre
+     2026 — actives pendant la sélection, elles faisaient retenir à 130 et
+     180 m² des plans dont la desserte s'allongeait de 3 à 10 m. */
+  function validatePlanUsage(plan, options) {
     var placement = root.TechnoHabPlacement;
     if (!placement || !placement.validate) return plan;
-    var usagePlan = { portes: plan.portes || [], entree: plan.entree, fenetres: plan.fenetres || [] };
+    // Rendre l'appel répétable : les coûts d'usage remplacent les précédents.
+    if (plan.scoreBeforeUsage === undefined) plan.scoreBeforeUsage = plan.score || 0;
+    var usagePlan = { portes: plan.portes || [], entree: plan.entree, fenetres: plan.fenetres || [],
+      walls: plan.walls || [],
+      roomTypes: plan.rooms.reduce(function (types, room) { types[room.id] = room.type; return types; }, {}),
+      voisinage: Boolean(options && options.voisinage) };
     var swingConflictByRoom = {};
     var clearanceTotals = {
       targetRequired: 0, targetMet: 0, comfortRequired: 0, comfortMet: 0
@@ -3875,7 +3935,7 @@
     delete plan.scoreBreakdown.boundedGrowth;
     if (boundedCost > 0) plan.scoreBreakdown.boundedGrowth = boundedCost;
 
-    plan.score = round((plan.score || 0) + targetCost + comfortCost + oversizeCost +
+    plan.score = round(plan.scoreBeforeUsage + targetCost + comfortCost + oversizeCost +
       compactComfortCost + boundedCost, 2);
     return plan;
   }

@@ -170,7 +170,7 @@ enfant. Le test C4 interdit le retour au plancher unique.
 |---|---|
 | Tête de lit contre un mur plein | `REQUIRED` |
 | Tête de lit sous une fenêtre | `UNDESIRABLE` |
-| Tête de lit contre un mur de WC ou de salle d'eau | `UNDESIRABLE` — acoustique |
+| Tête de lit contre un mur de WC ou de salle d'eau | `UNDESIRABLE` — acoustique · `BED-WET-WALL-001`, actif |
 | Lit accessible des deux côtés, `parentale` | `REQUIRED` |
 | Lit accessible d'un côté, `enfant` | `ACCEPTABLE` |
 | Débattement de porte sur le lit ou la penderie | `FORBIDDEN` (`S3`) |
@@ -188,6 +188,15 @@ géométrie. Deux voies : soit la tête de lit se déduit de l'ancrage — un li
 gratuit — soit ces règles attendent que le mobilier entre dans la boucle
 (lot M2). La première voie est disponible tout de suite et suffit à quatre des
 cinq règles.
+
+*Mise en œuvre le 6 octobre 2026 pour l'adossement aux pièces humides.*
+`BED-WET-WALL-001` suit la première voie : la tête de lit est le mur qui porte
+le lit, et un mur sépare exactement deux espaces, ce qui donne la pièce d'en
+face. La relation est `GUIDELINE` (poids 1,4, comme `BED-STORAGE-001`), neutre
+tant que les murs ne sont pas construits. Quand la première pose trouvée
+adosse le lit à un WC ou une salle d'eau, le générateur cherche d'autres poses
+et garde la mieux notée. Mesuré sur 90 plans : 25 lits sur 258 étaient adossés
+à une pièce humide, aucun après — `scripts/test-bed-wet-wall.mjs`.
 
 ## 7. Circulations
 

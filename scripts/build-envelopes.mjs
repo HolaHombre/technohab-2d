@@ -48,14 +48,20 @@ for (const [type, room] of Object.entries(socle.rooms)) {
     const ids = required.map((equipment) => equipment.id);
     const relations = (room.relations || []).map((relation) => {
       const resolved = { ...relation };
+      if (resolved.subjectAny) {
+        resolved.subject = resolved.subjectAny.find((id) => ids.includes(id)) || null;
+        delete resolved.subjectAny;
+      }
       if (resolved.targetAny) {
         resolved.target = resolved.targetAny.find((id) => ids.includes(id)) || null;
         delete resolved.targetAny;
       }
       return resolved;
     }).filter((relation) => {
+      // Une relation à la pièce voisine (BED-WET-WALL-001) n'a qu'un équipement.
+      const minimum = relation.kind === 'not-against-room' ? 1 : 2;
       const references = [relation.subject, relation.target].concat(relation.targets || []).filter(Boolean);
-      return references.length >= 2 && references.every((id) => ids.includes(id));
+      return relation.subject && references.length >= minimum && references.every((id) => ids.includes(id));
     });
     programs[variant || 'base'] = { equipments: required, relations };
     /* M4c — le cache d'enveloppe reste calculé sur le programme minimal,
@@ -68,14 +74,20 @@ for (const [type, room] of Object.entries(socle.rooms)) {
     const catalogIds = catalogEquipments.map((equipment) => equipment.id);
     const catalogRelations = (room.relations || []).map((relation) => {
       const resolved = { ...relation };
+      if (resolved.subjectAny) {
+        resolved.subject = resolved.subjectAny.find((id) => catalogIds.includes(id)) || null;
+        delete resolved.subjectAny;
+      }
       if (resolved.targetAny) {
         resolved.target = resolved.targetAny.find((id) => catalogIds.includes(id)) || null;
         delete resolved.targetAny;
       }
       return resolved;
     }).filter((relation) => {
+      // Une relation à la pièce voisine (BED-WET-WALL-001) n'a qu'un équipement.
+      const minimum = relation.kind === 'not-against-room' ? 1 : 2;
       const references = [relation.subject, relation.target].concat(relation.targets || []).filter(Boolean);
-      return references.length >= 2 && references.every((id) => catalogIds.includes(id));
+      return relation.subject && references.length >= minimum && references.every((id) => catalogIds.includes(id));
     });
     catalogs[variant || 'base'] = { equipments: catalogEquipments, relations: catalogRelations };
     if (verbose) {
@@ -285,7 +297,8 @@ ${body}
     var relations = catalog.relations.filter(function (relation) {
       var references = [relation.subject, relation.target].concat(relation.targets || []).filter(Boolean);
       if (relation.optional && !references.every(function (id) { return ids.indexOf(id) !== -1; })) return false;
-      return references.length >= 2 && references.every(function (id) { return ids.indexOf(id) !== -1; });
+      var minimum = relation.kind === 'not-against-room' ? 1 : 2;
+      return references.length >= minimum && references.every(function (id) { return ids.indexOf(id) !== -1; });
     });
     return {
       equipments: equipments,
